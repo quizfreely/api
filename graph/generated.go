@@ -87,6 +87,7 @@ type ComplexityRoot struct {
 		DeleteStudyset      func(childComplexity int, id string) int
 		RecordConfusedTerms func(childComplexity int, confusedTerms []*model.TermConfusionPairInput) int
 		RecordPracticeTest  func(childComplexity int, input *model.PracticeTestInput) int
+		UpdatePracticeTest  func(childComplexity int, input *model.PracticeTestInput) int
 		UpdateStudyset      func(childComplexity int, id string, studyset *model.StudysetInput, terms []*model.TermInput, newTerms []*model.NewTermInput, deleteTerms []*string) int
 		UpdateTermProgress  func(childComplexity int, termID string, progress model.TermProgressInput) int
 		UpdateUser          func(childComplexity int, displayName *string) int
@@ -190,6 +191,7 @@ type MutationResolver interface {
 	UpdateTermProgress(ctx context.Context, termID string, progress model.TermProgressInput) (*model.TermProgress, error)
 	RecordConfusedTerms(ctx context.Context, confusedTerms []*model.TermConfusionPairInput) (*bool, error)
 	RecordPracticeTest(ctx context.Context, input *model.PracticeTestInput) (*model.PracticeTest, error)
+	UpdatePracticeTest(ctx context.Context, input *model.PracticeTestInput) (*model.PracticeTest, error)
 }
 type QueryResolver interface {
 	Authed(ctx context.Context) (*bool, error)
@@ -423,6 +425,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.RecordPracticeTest(childComplexity, args["input"].(*model.PracticeTestInput)), true
+
+	case "Mutation.updatePracticeTest":
+		if e.complexity.Mutation.UpdatePracticeTest == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updatePracticeTest_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdatePracticeTest(childComplexity, args["input"].(*model.PracticeTestInput)), true
 
 	case "Mutation.updateStudyset":
 		if e.complexity.Mutation.UpdateStudyset == nil {
@@ -1098,6 +1112,17 @@ func (ec *executionContext) field_Mutation_recordConfusedTerms_args(ctx context.
 }
 
 func (ec *executionContext) field_Mutation_recordPracticeTest_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalOPracticeTestInput2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐPracticeTestInput)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updatePracticeTest_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalOPracticeTestInput2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐPracticeTestInput)
@@ -2706,6 +2731,70 @@ func (ec *executionContext) fieldContext_Mutation_recordPracticeTest(ctx context
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_recordPracticeTest_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updatePracticeTest(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_updatePracticeTest(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdatePracticeTest(rctx, fc.Args["input"].(*model.PracticeTestInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.PracticeTest)
+	fc.Result = res
+	return ec.marshalOPracticeTest2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐPracticeTest(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_updatePracticeTest(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_PracticeTest_id(ctx, field)
+			case "timestamp":
+				return ec.fieldContext_PracticeTest_timestamp(ctx, field)
+			case "questionsCorrect":
+				return ec.fieldContext_PracticeTest_questionsCorrect(ctx, field)
+			case "questionsTotal":
+				return ec.fieldContext_PracticeTest_questionsTotal(ctx, field)
+			case "questions":
+				return ec.fieldContext_PracticeTest_questions(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PracticeTest", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updatePracticeTest_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -7961,13 +8050,20 @@ func (ec *executionContext) unmarshalInputPracticeTestInput(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"timestamp", "studysetId", "questionsCorrect", "questionsTotal", "questions"}
+	fieldsInOrder := [...]string{"id", "timestamp", "studysetId", "questionsCorrect", "questionsTotal", "questions"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
 		case "timestamp":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("timestamp"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
@@ -8562,6 +8658,10 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "recordPracticeTest":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_recordPracticeTest(ctx, field)
+			})
+		case "updatePracticeTest":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updatePracticeTest(ctx, field)
 			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
