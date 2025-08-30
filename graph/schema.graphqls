@@ -172,10 +172,10 @@ input PracticeTestInput {
 }
 input QuestionInput {
     questionType: QuestionType
-    mcqInput: MCQInput
-    trueFalseQuestionInput: TrueFalseQuestionInput
-    matchQuestionInput: MatchQuestionInput
-    frqInput: FRQInput
+    mcq: MCQInput
+    trueFalseQuestion: TrueFalseQuestionInput
+    matchQuestion: MatchQuestionInput
+    frq: FRQInput
 }
 input MCQInput {
     term: TermInput
