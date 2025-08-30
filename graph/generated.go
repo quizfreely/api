@@ -8112,7 +8112,7 @@ func (ec *executionContext) unmarshalInputQuestionInput(ctx context.Context, obj
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"questionType", "mcqInput", "trueFalseQuestionInput", "matchQuestionInput", "frqInput"}
+	fieldsInOrder := [...]string{"questionType", "mcq", "trueFalseQuestion", "matchQuestion", "frq"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -8126,34 +8126,34 @@ func (ec *executionContext) unmarshalInputQuestionInput(ctx context.Context, obj
 				return it, err
 			}
 			it.QuestionType = data
-		case "mcqInput":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("mcqInput"))
+		case "mcq":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("mcq"))
 			data, err := ec.unmarshalOMCQInput2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐMCQInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.McqInput = data
-		case "trueFalseQuestionInput":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("trueFalseQuestionInput"))
+			it.Mcq = data
+		case "trueFalseQuestion":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("trueFalseQuestion"))
 			data, err := ec.unmarshalOTrueFalseQuestionInput2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTrueFalseQuestionInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.TrueFalseQuestionInput = data
-		case "matchQuestionInput":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("matchQuestionInput"))
+			it.TrueFalseQuestion = data
+		case "matchQuestion":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("matchQuestion"))
 			data, err := ec.unmarshalOMatchQuestionInput2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐMatchQuestionInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.MatchQuestionInput = data
-		case "frqInput":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("frqInput"))
+			it.MatchQuestion = data
+		case "frq":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("frq"))
 			data, err := ec.unmarshalOFRQInput2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐFRQInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.FrqInput = data
+			it.Frq = data
 		}
 	}
 
