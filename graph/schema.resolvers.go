@@ -423,7 +423,39 @@ RETURNING
 
 // UpdatePracticeTest is the resolver for the updatePracticeTest field.
 func (r *mutationResolver) UpdatePracticeTest(ctx context.Context, input *model.PracticeTestInput) (*model.PracticeTest, error) {
-	panic(fmt.Errorf("not implemented: UpdatePracticeTest - updatePracticeTest"))
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil {
+		return nil, fmt.Errorf("not authenticated")
+	}
+
+	if input.ID == nil {
+		return nil, fmt.Errorf("practice test id cannot be null when updating")
+	}
+
+	var practiceTest model.PracticeTest
+	err := pgxscan.Get(
+		ctx,
+		r.DB,
+		&practiceTest,
+		`UPDATE practice_tests SET questions_correct = $3, questions_total = $4, questions = $5
+WHERE user_id = $1 AND id = $2
+RETURNING
+	id,
+	to_char(timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as timestamp,
+	questions_correct,
+	questions_total,
+	questions`,
+		authedUser.ID,
+		input.ID,
+		input.QuestionsCorrect,
+		input.QuestionsTotal,
+		input.Questions,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("database error in updatePracticeTest: %w", err)
+	}
+
+	return &practiceTest, nil
 }
 
 // Authed is the resolver for the authed field.
