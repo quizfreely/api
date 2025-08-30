@@ -16,6 +16,7 @@ type Mutation {
     updateTermProgress(termId: ID!, progress: TermProgressInput!): TermProgress
     recordConfusedTerms(confusedTerms: [TermConfusionPairInput]): Boolean
     recordPracticeTest(input: PracticeTestInput): PracticeTest
+    updatePracticeTest(input: PracticeTestInput): PracticeTest
 }
 type User {
     id: ID
@@ -162,6 +163,7 @@ type FRQ {
     answeredString: String
 }
 input PracticeTestInput {
+    id: ID
     timestamp: String
     studysetId: ID
     questionsCorrect: Int
