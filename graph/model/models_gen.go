@@ -87,11 +87,11 @@ type Question struct {
 }
 
 type QuestionInput struct {
-	QuestionType           *QuestionType           `json:"questionType,omitempty"`
-	McqInput               *MCQInput               `json:"mcqInput,omitempty"`
-	TrueFalseQuestionInput *TrueFalseQuestionInput `json:"trueFalseQuestionInput,omitempty"`
-	MatchQuestionInput     *MatchQuestionInput     `json:"matchQuestionInput,omitempty"`
-	FrqInput               *FRQInput               `json:"frqInput,omitempty"`
+	QuestionType      *QuestionType           `json:"questionType,omitempty"`
+	Mcq               *MCQInput               `json:"mcq,omitempty"`
+	TrueFalseQuestion *TrueFalseQuestionInput `json:"trueFalseQuestion,omitempty"`
+	MatchQuestion     *MatchQuestionInput     `json:"matchQuestion,omitempty"`
+	Frq               *FRQInput               `json:"frq,omitempty"`
 }
 
 type StudysetInput struct {
