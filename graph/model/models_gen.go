@@ -67,6 +67,7 @@ type NewTermInput struct {
 }
 
 type PracticeTestInput struct {
+	ID               *string          `json:"id,omitempty"`
 	Timestamp        *string          `json:"timestamp,omitempty"`
 	StudysetID       *string          `json:"studysetId,omitempty"`
 	QuestionsCorrect *int32           `json:"questionsCorrect,omitempty"`

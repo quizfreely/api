@@ -421,6 +421,11 @@ RETURNING
 	return &practiceTest, nil
 }
 
+// UpdatePracticeTest is the resolver for the updatePracticeTest field.
+func (r *mutationResolver) UpdatePracticeTest(ctx context.Context, input *model.PracticeTestInput) (*model.PracticeTest, error) {
+	panic(fmt.Errorf("not implemented: UpdatePracticeTest - updatePracticeTest"))
+}
+
 // Authed is the resolver for the authed field.
 func (r *queryResolver) Authed(ctx context.Context) (*bool, error) {
 	authed := auth.AuthedUserContext(ctx) != nil
