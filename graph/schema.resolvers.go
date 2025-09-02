@@ -252,103 +252,118 @@ func (r *mutationResolver) UpdateUser(ctx context.Context, displayName *string) 
 }
 
 // UpdateTermProgress is the resolver for the updateTermProgress field.
-func (r *mutationResolver) UpdateTermProgress(ctx context.Context, termID string, progress model.TermProgressInput) (*model.TermProgress, error) {
+func (r *mutationResolver) UpdateTermProgress(ctx context.Context, termProgress []*model.TermProgressInput) ([]*model.TermProgress, error) {
 	authedUser := auth.AuthedUserContext(ctx)
 	if authedUser == nil {
 		return nil, fmt.Errorf("not authenticated")
 	}
-
-	var termProgress model.TermProgress
-	err := pgxscan.Get(
-		ctx,
-		r.DB,
-		&termProgress,
-		`INSERT INTO term_progress (
-    term_id, user_id,
-    term_first_reviewed_at, term_last_reviewed_at,
-	term_review_count,
-    def_first_reviewed_at, def_last_reviewed_at,
-	def_review_count,
-    term_leitner_system_box, def_leitner_system_box,
-	term_correct_count, term_incorrect_count,
-	def_correct_count, def_incorrect_count
-) VALUES (
-    $1, $2,
-	$3::timestamptz, $3::timestamptz,
-    CASE WHEN $3 IS NOT NULL THEN 1 ELSE 0 END,
-	$4::timestamptz, $4::timestamptz,
-    CASE WHEN $4 IS NOT NULL THEN 1 ELSE 0 END,
-    $5, $6,
-	COALESCE($7, 0), COALESCE($8, 0),
-	COALESCE($9, 0), COALESCE($10, 0)
-) ON CONFLICT (term_id, user_id) DO UPDATE SET
-	term_last_reviewed_at = COALESCE(
-		$3::timestamptz, term_progress.term_last_reviewed_at
-	),
-	def_last_reviewed_at = COALESCE(
-		$4::timestamptz, term_progress.def_last_reviewed_at
-	),
-    term_leitner_system_box = $5,
-    def_leitner_system_box = $6,
-    term_review_count = term_progress.term_review_count + 
-        (CASE WHEN $3 IS NOT NULL THEN 1 ELSE 0 END),
-    def_review_count = term_progress.def_review_count + 
-        (CASE WHEN $4 IS NOT NULL THEN 1 ELSE 0 END),
-	term_correct_count = term_progress.term_correct_count +
-		COALESCE($7, 0),
-	term_incorrect_count = term_progress.term_incorrect_count +
-		COALESCE($8, 0),
-	def_correct_count = term_progress.def_correct_count +
-		COALESCE($9, 0),
-	def_incorrect_count = term_progress.def_incorrect_count +
-		COALESCE($10, 0)
-RETURNING id,
-	to_char(term_first_reviewed_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as term_first_reviewed_at,
-	to_char(term_last_reviewed_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as term_last_reviewed_at,
-	term_review_count,
-	to_char(def_first_reviewed_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as def_first_reviewed_at,
-	to_char(def_last_reviewed_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as def_last_reviewed_at,
-	def_review_count,
-	term_leitner_system_box, def_leitner_system_box,
-	term_correct_count, term_incorrect_count,
-	def_correct_count, def_incorrect_count`,
-		termID,
-		authedUser.ID,
-		progress.TermReviewedAt,
-		progress.DefReviewedAt,
-		progress.TermLeitnerSystemBox,
-		progress.DefLeitnerSystemBox,
-		progress.TermCorrectIncrease,
-		progress.TermIncorrectIncrease,
-		progress.DefCorrectIncrease,
-		progress.DefIncorrectIncrease,
-	)
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to update term progress: %w", err)
+	if len(termProgress) == 0 {
+		return []*model.TermProgress{}, nil
 	}
 
-	_, err = r.DB.Exec(
-		ctx,
-		`INSERT INTO term_progress_history (
-	user_id, term_id, term_correct_count, term_incorrect_count,
-	def_correct_count, def_incorrect_count
-) VALUES (
-	$1, $2, $3, $4,
-	$5, $6
-)`,
-		authedUser.ID,
-		termID,
-		termProgress.TermCorrectCount,
-		termProgress.TermIncorrectCount,
-		termProgress.DefCorrectCount,
-		termProgress.DefIncorrectCount,
-	)
+	tx, err := r.DB.Begin(ctx)
 	if err != nil {
-		log.Error().Err(err).Msg("DB err inserting into term_progress_history in updateTermProgress")
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	// ---- Build bulk insert ----
+	valueStrings := make([]string, 0, len(termProgress))
+	valueArgs := make([]interface{}, 0, len(termProgress)*10)
+
+	for i, p := range termProgress {
+		// Each row has 10 parameters (adjust if needed)
+		base := i*10 + 1
+		valueStrings = append(valueStrings, fmt.Sprintf(
+			"($%d,$%d,$%d::timestamptz,$%d::timestamptz,CASE WHEN $%d IS NOT NULL THEN 1 ELSE 0 END,$%d::timestamptz,$%d::timestamptz,CASE WHEN $%d IS NOT NULL THEN 1 ELSE 0 END,$%d,$%d,COALESCE($%d,0),COALESCE($%d,0),COALESCE($%d,0),COALESCE($%d,0))",
+			base, base+1, base+2, base+2, base+2, base+3, base+3, base+3, base+4, base+5, base+6, base+7, base+8, base+9,
+		))
+
+		valueArgs = append(valueArgs,
+			p.TermID,
+			authedUser.ID,
+			p.TermReviewedAt,
+			p.DefReviewedAt,
+			p.TermLeitnerSystemBox,
+			p.DefLeitnerSystemBox,
+			p.TermCorrectIncrease,
+			p.TermIncorrectIncrease,
+			p.DefCorrectIncrease,
+			p.DefIncorrectIncrease,
+		)
 	}
 
-	return &termProgress, nil
+	query := fmt.Sprintf(`
+		INSERT INTO term_progress (
+			term_id, user_id,
+			term_first_reviewed_at, term_last_reviewed_at,
+			term_review_count,
+			def_first_reviewed_at, def_last_reviewed_at,
+			def_review_count,
+			term_leitner_system_box, def_leitner_system_box,
+			term_correct_count, term_incorrect_count,
+			def_correct_count, def_incorrect_count
+		) VALUES %s
+		ON CONFLICT (term_id, user_id) DO UPDATE SET
+			term_last_reviewed_at = COALESCE(EXCLUDED.term_last_reviewed_at, term_progress.term_last_reviewed_at),
+			def_last_reviewed_at = COALESCE(EXCLUDED.def_last_reviewed_at, term_progress.def_last_reviewed_at),
+			term_leitner_system_box = EXCLUDED.term_leitner_system_box,
+			def_leitner_system_box = EXCLUDED.def_leitner_system_box,
+			term_review_count = term_progress.term_review_count +
+				(CASE WHEN EXCLUDED.term_last_reviewed_at IS NOT NULL THEN 1 ELSE 0 END),
+			def_review_count = term_progress.def_review_count +
+				(CASE WHEN EXCLUDED.def_last_reviewed_at IS NOT NULL THEN 1 ELSE 0 END),
+			term_correct_count = term_progress.term_correct_count + EXCLUDED.term_correct_count,
+			term_incorrect_count = term_progress.term_incorrect_count + EXCLUDED.term_incorrect_count,
+			def_correct_count = term_progress.def_correct_count + EXCLUDED.def_correct_count,
+			def_incorrect_count = term_progress.def_incorrect_count + EXCLUDED.def_incorrect_count
+		RETURNING id,
+			to_char(term_first_reviewed_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as term_first_reviewed_at,
+			to_char(term_last_reviewed_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as term_last_reviewed_at,
+			term_review_count,
+			to_char(def_first_reviewed_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as def_first_reviewed_at,
+			to_char(def_last_reviewed_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as def_last_reviewed_at,
+			def_review_count,
+			term_leitner_system_box, def_leitner_system_box,
+			term_correct_count, term_incorrect_count,
+			def_correct_count, def_incorrect_count
+	`, strings.Join(valueStrings, ","))
+
+	var results []*model.TermProgress
+	if err := pgxscan.Select(ctx, tx, &results, query, valueArgs...); err != nil {
+		return nil, fmt.Errorf("bulk upsert failed: %w", err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	// ---- Bulk insert into history ----
+	histVals := make([]string, 0, len(results))
+	histArgs := make([]interface{}, 0, len(results)*6)
+	for i, tp := range results {
+		base := i*6 + 1
+		histVals = append(histVals, fmt.Sprintf("($%d,$%d,$%d,$%d,$%d,$%d)", base, base+1, base+2, base+3, base+4, base+5))
+		histArgs = append(histArgs,
+			authedUser.ID,
+			tp.ID,
+			tp.TermCorrectCount,
+			tp.TermIncorrectCount,
+			tp.DefCorrectCount,
+			tp.DefIncorrectCount,
+		)
+	}
+	histQuery := fmt.Sprintf(`
+		INSERT INTO term_progress_history (
+			user_id, term_id, term_correct_count, term_incorrect_count,
+			def_correct_count, def_incorrect_count
+		) VALUES %s`, strings.Join(histVals, ","))
+
+	if _, err := r.DB.Exec(ctx, histQuery, histArgs...); err != nil {
+		log.Error().Err(err).Msg("DB err inserting into term_progress_history in UpdateTermProgress")
+	}
+
+	return results, nil
 }
 
 // RecordConfusedTerms is the resolver for the recordConfusedTerms field.

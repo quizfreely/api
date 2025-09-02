@@ -131,6 +131,7 @@ type TermProgress struct {
 }
 
 type TermProgressInput struct {
+	TermID                string  `json:"termId"`
 	TermReviewedAt        *string `json:"termReviewedAt,omitempty"`
 	DefReviewedAt         *string `json:"defReviewedAt,omitempty"`
 	TermLeitnerSystemBox  *int32  `json:"termLeitnerSystemBox,omitempty"`
