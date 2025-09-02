@@ -89,7 +89,7 @@ type ComplexityRoot struct {
 		RecordPracticeTest  func(childComplexity int, input *model.PracticeTestInput) int
 		UpdatePracticeTest  func(childComplexity int, input *model.PracticeTestInput) int
 		UpdateStudyset      func(childComplexity int, id string, studyset *model.StudysetInput, terms []*model.TermInput, newTerms []*model.NewTermInput, deleteTerms []*string) int
-		UpdateTermProgress  func(childComplexity int, termID string, progress model.TermProgressInput) int
+		UpdateTermProgress  func(childComplexity int, progresses []*model.TermProgressInput) int
 		UpdateUser          func(childComplexity int, displayName *string) int
 	}
 
@@ -188,7 +188,7 @@ type MutationResolver interface {
 	UpdateStudyset(ctx context.Context, id string, studyset *model.StudysetInput, terms []*model.TermInput, newTerms []*model.NewTermInput, deleteTerms []*string) (*model.Studyset, error)
 	DeleteStudyset(ctx context.Context, id string) (*string, error)
 	UpdateUser(ctx context.Context, displayName *string) (*model.AuthedUser, error)
-	UpdateTermProgress(ctx context.Context, termID string, progress model.TermProgressInput) (*model.TermProgress, error)
+	UpdateTermProgress(ctx context.Context, progresses []*model.TermProgressInput) ([]*model.TermProgress, error)
 	RecordConfusedTerms(ctx context.Context, confusedTerms []*model.TermConfusionPairInput) (*bool, error)
 	RecordPracticeTest(ctx context.Context, input *model.PracticeTestInput) (*model.PracticeTest, error)
 	UpdatePracticeTest(ctx context.Context, input *model.PracticeTestInput) (*model.PracticeTest, error)
@@ -460,7 +460,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateTermProgress(childComplexity, args["termId"].(string), args["progress"].(model.TermProgressInput)), true
+		return e.complexity.Mutation.UpdateTermProgress(childComplexity, args["progresses"].([]*model.TermProgressInput)), true
 
 	case "Mutation.updateUser":
 		if e.complexity.Mutation.UpdateUser == nil {
@@ -1167,16 +1167,11 @@ func (ec *executionContext) field_Mutation_updateStudyset_args(ctx context.Conte
 func (ec *executionContext) field_Mutation_updateTermProgress_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "termId", ec.unmarshalNID2string)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "progresses", ec.unmarshalNTermProgressInput2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermProgressInputᚄ)
 	if err != nil {
 		return nil, err
 	}
-	args["termId"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "progress", ec.unmarshalNTermProgressInput2quizfreelyᚋapiᚋgraphᚋmodelᚐTermProgressInput)
-	if err != nil {
-		return nil, err
-	}
-	args["progress"] = arg1
+	args["progresses"] = arg0
 	return args, nil
 }
 
@@ -2555,7 +2550,7 @@ func (ec *executionContext) _Mutation_updateTermProgress(ctx context.Context, fi
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpdateTermProgress(rctx, fc.Args["termId"].(string), fc.Args["progress"].(model.TermProgressInput))
+		return ec.resolvers.Mutation().UpdateTermProgress(rctx, fc.Args["progresses"].([]*model.TermProgressInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2564,9 +2559,9 @@ func (ec *executionContext) _Mutation_updateTermProgress(ctx context.Context, fi
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.TermProgress)
+	res := resTmp.([]*model.TermProgress)
 	fc.Result = res
-	return ec.marshalOTermProgress2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermProgress(ctx, field.Selections, res)
+	return ec.marshalOTermProgress2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermProgress(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_updateTermProgress(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -8304,13 +8299,20 @@ func (ec *executionContext) unmarshalInputTermProgressInput(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"termReviewedAt", "defReviewedAt", "termLeitnerSystemBox", "defLeitnerSystemBox", "termCorrectIncrease", "termIncorrectIncrease", "defCorrectIncrease", "defIncorrectIncrease"}
+	fieldsInOrder := [...]string{"termId", "termReviewedAt", "defReviewedAt", "termLeitnerSystemBox", "defLeitnerSystemBox", "termCorrectIncrease", "termIncorrectIncrease", "defCorrectIncrease", "defIncorrectIncrease"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
+		case "termId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("termId"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TermID = data
 		case "termReviewedAt":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("termReviewedAt"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
@@ -9951,9 +9953,24 @@ func (ec *executionContext) unmarshalNStudysetInput2quizfreelyᚋapiᚋgraphᚋm
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalNTermProgressInput2quizfreelyᚋapiᚋgraphᚋmodelᚐTermProgressInput(ctx context.Context, v any) (model.TermProgressInput, error) {
+func (ec *executionContext) unmarshalNTermProgressInput2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermProgressInputᚄ(ctx context.Context, v any) ([]*model.TermProgressInput, error) {
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.TermProgressInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNTermProgressInput2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermProgressInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNTermProgressInput2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermProgressInput(ctx context.Context, v any) (*model.TermProgressInput, error) {
 	res, err := ec.unmarshalInputTermProgressInput(ctx, v)
-	return res, graphql.ErrorOnPath(ctx, err)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {
@@ -10781,6 +10798,47 @@ func (ec *executionContext) unmarshalOTermInput2ᚖquizfreelyᚋapiᚋgraphᚋmo
 	}
 	res, err := ec.unmarshalInputTermInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOTermProgress2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermProgress(ctx context.Context, sel ast.SelectionSet, v []*model.TermProgress) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOTermProgress2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermProgress(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
 }
 
 func (ec *executionContext) marshalOTermProgress2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermProgress(ctx context.Context, sel ast.SelectionSet, v *model.TermProgress) graphql.Marshaler {
