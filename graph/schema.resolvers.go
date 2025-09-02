@@ -15,6 +15,7 @@ import (
 
 	"github.com/georgysavva/scany/v2/pgxscan"
 	pgx "github.com/jackc/pgx/v5"
+	"github.com/rs/zerolog/log"
 )
 
 // CreateStudyset is the resolver for the createStudyset field.
@@ -325,6 +326,26 @@ RETURNING id,
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to update term progress: %w", err)
+	}
+
+	err = r.DB.Exec(
+		ctx,
+		`INSERT INTO term_progress_history (
+	user_id, term_id, term_correct_count, term_incorrect_count,
+	def_correct_count, def_incorrect_count
+) VALUES (
+	$1, $2, $3, $4,
+	$5, $6
+)`,
+		authedUser.ID,
+		termID,
+		termProgress.TermCorrectCount,
+		termProgress.TermIncorrectCount,
+		termProgress.DefCorrectCount,
+		termProgress.DefIncorrectCount,
+	)
+	if err != nil {
+		log.Error().Err(err).Msg("DB err inserting into term_progress_history in updateTermProgress")
 	}
 
 	return &termProgress, nil
