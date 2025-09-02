@@ -328,7 +328,7 @@ RETURNING id,
 		return nil, fmt.Errorf("failed to update term progress: %w", err)
 	}
 
-	err = r.DB.Exec(
+	_, err = r.DB.Exec(
 		ctx,
 		`INSERT INTO term_progress_history (
 	user_id, term_id, term_correct_count, term_incorrect_count,
