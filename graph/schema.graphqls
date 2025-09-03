@@ -3,6 +3,7 @@ type Query {
     authedUser: AuthedUser
     studyset(id: ID!): Studyset
     user(id: ID!): User
+    term(id: ID!): Term
     featuredStudysets(limit: Int, offset: Int): [Studyset]
     recentStudysets(limit: Int, offset: Int): [Studyset]
     searchStudysets(q: String!, limit: Int, offset: Int): [Studyset]
