@@ -44,6 +44,7 @@ type ResolverRoot interface {
 	Studyset() StudysetResolver
 	Term() TermResolver
 	TermConfusionPair() TermConfusionPairResolver
+	TermProgress() TermProgressResolver
 }
 
 type DirectiveRoot struct {
@@ -89,7 +90,7 @@ type ComplexityRoot struct {
 		RecordPracticeTest  func(childComplexity int, input *model.PracticeTestInput) int
 		UpdatePracticeTest  func(childComplexity int, input *model.PracticeTestInput) int
 		UpdateStudyset      func(childComplexity int, id string, studyset *model.StudysetInput, terms []*model.TermInput, newTerms []*model.NewTermInput, deleteTerms []*string) int
-		UpdateTermProgress  func(childComplexity int, progresses []*model.TermProgressInput) int
+		UpdateTermProgress  func(childComplexity int, termProgress []*model.TermProgressInput) int
 		UpdateUser          func(childComplexity int, displayName *string) int
 	}
 
@@ -136,6 +137,7 @@ type ComplexityRoot struct {
 		Def                      func(childComplexity int) int
 		ID                       func(childComplexity int) int
 		Progress                 func(childComplexity int) int
+		ProgressHistory          func(childComplexity int) int
 		SortOrder                func(childComplexity int) int
 		Term                     func(childComplexity int) int
 		TopConfusionPairs        func(childComplexity int) int
@@ -168,6 +170,15 @@ type ComplexityRoot struct {
 		TermReviewCount      func(childComplexity int) int
 	}
 
+	TermProgressHistory struct {
+		DefCorrectCount    func(childComplexity int) int
+		DefIncorrectCount  func(childComplexity int) int
+		ID                 func(childComplexity int) int
+		TermCorrectCount   func(childComplexity int) int
+		TermIncorrectCount func(childComplexity int) int
+		Timestamp          func(childComplexity int) int
+	}
+
 	TrueFalseQuestion struct {
 		AnswerWith   func(childComplexity int) int
 		AnsweredBool func(childComplexity int) int
@@ -188,7 +199,7 @@ type MutationResolver interface {
 	UpdateStudyset(ctx context.Context, id string, studyset *model.StudysetInput, terms []*model.TermInput, newTerms []*model.NewTermInput, deleteTerms []*string) (*model.Studyset, error)
 	DeleteStudyset(ctx context.Context, id string) (*string, error)
 	UpdateUser(ctx context.Context, displayName *string) (*model.AuthedUser, error)
-	UpdateTermProgress(ctx context.Context, progresses []*model.TermProgressInput) ([]*model.TermProgress, error)
+	UpdateTermProgress(ctx context.Context, termProgress []*model.TermProgressInput) ([]*model.TermProgress, error)
 	RecordConfusedTerms(ctx context.Context, confusedTerms []*model.TermConfusionPairInput) (*bool, error)
 	RecordPracticeTest(ctx context.Context, input *model.PracticeTestInput) (*model.PracticeTest, error)
 	UpdatePracticeTest(ctx context.Context, input *model.PracticeTestInput) (*model.PracticeTest, error)
@@ -211,12 +222,24 @@ type StudysetResolver interface {
 }
 type TermResolver interface {
 	Progress(ctx context.Context, obj *model.Term) (*model.TermProgress, error)
+	ProgressHistory(ctx context.Context, obj *model.Term) ([]*model.TermProgressHistory, error)
 	TopConfusionPairs(ctx context.Context, obj *model.Term) ([]*model.TermConfusionPair, error)
 	TopReverseConfusionPairs(ctx context.Context, obj *model.Term) ([]*model.TermConfusionPair, error)
 }
 type TermConfusionPairResolver interface {
 	Term(ctx context.Context, obj *model.TermConfusionPair) (*model.Term, error)
 	ConfusedTerm(ctx context.Context, obj *model.TermConfusionPair) (*model.Term, error)
+}
+type TermProgressResolver interface {
+	TermFirstReviewedAt(ctx context.Context, obj *model.TermProgress) (*string, error)
+	TermLastReviewedAt(ctx context.Context, obj *model.TermProgress) (*string, error)
+	TermReviewCount(ctx context.Context, obj *model.TermProgress) (*int32, error)
+	DefFirstReviewedAt(ctx context.Context, obj *model.TermProgress) (*string, error)
+	DefLastReviewedAt(ctx context.Context, obj *model.TermProgress) (*string, error)
+	DefReviewCount(ctx context.Context, obj *model.TermProgress) (*int32, error)
+
+	TermLeitnerSystemBox(ctx context.Context, obj *model.TermProgress) (*int32, error)
+	DefLeitnerSystemBox(ctx context.Context, obj *model.TermProgress) (*int32, error)
 }
 
 type executableSchema struct {
@@ -460,7 +483,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateTermProgress(childComplexity, args["progresses"].([]*model.TermProgressInput)), true
+		return e.complexity.Mutation.UpdateTermProgress(childComplexity, args["termProgress"].([]*model.TermProgressInput)), true
 
 	case "Mutation.updateUser":
 		if e.complexity.Mutation.UpdateUser == nil {
@@ -714,6 +737,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Term.Progress(childComplexity), true
 
+	case "Term.progressHistory":
+		if e.complexity.Term.ProgressHistory == nil {
+			break
+		}
+
+		return e.complexity.Term.ProgressHistory(childComplexity), true
+
 	case "Term.sortOrder":
 		if e.complexity.Term.SortOrder == nil {
 			break
@@ -881,6 +911,48 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.TermProgress.TermReviewCount(childComplexity), true
+
+	case "TermProgressHistory.defCorrectCount":
+		if e.complexity.TermProgressHistory.DefCorrectCount == nil {
+			break
+		}
+
+		return e.complexity.TermProgressHistory.DefCorrectCount(childComplexity), true
+
+	case "TermProgressHistory.defIncorrectCount":
+		if e.complexity.TermProgressHistory.DefIncorrectCount == nil {
+			break
+		}
+
+		return e.complexity.TermProgressHistory.DefIncorrectCount(childComplexity), true
+
+	case "TermProgressHistory.id":
+		if e.complexity.TermProgressHistory.ID == nil {
+			break
+		}
+
+		return e.complexity.TermProgressHistory.ID(childComplexity), true
+
+	case "TermProgressHistory.termCorrectCount":
+		if e.complexity.TermProgressHistory.TermCorrectCount == nil {
+			break
+		}
+
+		return e.complexity.TermProgressHistory.TermCorrectCount(childComplexity), true
+
+	case "TermProgressHistory.termIncorrectCount":
+		if e.complexity.TermProgressHistory.TermIncorrectCount == nil {
+			break
+		}
+
+		return e.complexity.TermProgressHistory.TermIncorrectCount(childComplexity), true
+
+	case "TermProgressHistory.timestamp":
+		if e.complexity.TermProgressHistory.Timestamp == nil {
+			break
+		}
+
+		return e.complexity.TermProgressHistory.Timestamp(childComplexity), true
 
 	case "TrueFalseQuestion.answerWith":
 		if e.complexity.TrueFalseQuestion.AnswerWith == nil {
@@ -1167,11 +1239,11 @@ func (ec *executionContext) field_Mutation_updateStudyset_args(ctx context.Conte
 func (ec *executionContext) field_Mutation_updateTermProgress_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "progresses", ec.unmarshalNTermProgressInput2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermProgressInputᚄ)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "termProgress", ec.unmarshalNTermProgressInput2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermProgressInputᚄ)
 	if err != nil {
 		return nil, err
 	}
-	args["progresses"] = arg0
+	args["termProgress"] = arg0
 	return args, nil
 }
 
@@ -1591,6 +1663,8 @@ func (ec *executionContext) fieldContext_FRQ_term(_ context.Context, field graph
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
 				return ec.fieldContext_Term_progress(ctx, field)
+			case "progressHistory":
+				return ec.fieldContext_Term_progressHistory(ctx, field)
 			case "topConfusionPairs":
 				return ec.fieldContext_Term_topConfusionPairs(ctx, field)
 			case "topReverseConfusionPairs":
@@ -1816,6 +1890,8 @@ func (ec *executionContext) fieldContext_MCQ_term(_ context.Context, field graph
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
 				return ec.fieldContext_Term_progress(ctx, field)
+			case "progressHistory":
+				return ec.fieldContext_Term_progressHistory(ctx, field)
 			case "topConfusionPairs":
 				return ec.fieldContext_Term_topConfusionPairs(ctx, field)
 			case "topReverseConfusionPairs":
@@ -1959,6 +2035,8 @@ func (ec *executionContext) fieldContext_MCQ_answeredTerm(_ context.Context, fie
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
 				return ec.fieldContext_Term_progress(ctx, field)
+			case "progressHistory":
+				return ec.fieldContext_Term_progressHistory(ctx, field)
 			case "topConfusionPairs":
 				return ec.fieldContext_Term_topConfusionPairs(ctx, field)
 			case "topReverseConfusionPairs":
@@ -2020,6 +2098,8 @@ func (ec *executionContext) fieldContext_MCQ_distractors(_ context.Context, fiel
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
 				return ec.fieldContext_Term_progress(ctx, field)
+			case "progressHistory":
+				return ec.fieldContext_Term_progressHistory(ctx, field)
 			case "topConfusionPairs":
 				return ec.fieldContext_Term_topConfusionPairs(ctx, field)
 			case "topReverseConfusionPairs":
@@ -2081,6 +2161,8 @@ func (ec *executionContext) fieldContext_MatchQuestion_term(_ context.Context, f
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
 				return ec.fieldContext_Term_progress(ctx, field)
+			case "progressHistory":
+				return ec.fieldContext_Term_progressHistory(ctx, field)
 			case "topConfusionPairs":
 				return ec.fieldContext_Term_topConfusionPairs(ctx, field)
 			case "topReverseConfusionPairs":
@@ -2224,6 +2306,8 @@ func (ec *executionContext) fieldContext_MatchQuestion_answeredTerm(_ context.Co
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
 				return ec.fieldContext_Term_progress(ctx, field)
+			case "progressHistory":
+				return ec.fieldContext_Term_progressHistory(ctx, field)
 			case "topConfusionPairs":
 				return ec.fieldContext_Term_topConfusionPairs(ctx, field)
 			case "topReverseConfusionPairs":
@@ -2550,7 +2634,7 @@ func (ec *executionContext) _Mutation_updateTermProgress(ctx context.Context, fi
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpdateTermProgress(rctx, fc.Args["progresses"].([]*model.TermProgressInput))
+		return ec.resolvers.Mutation().UpdateTermProgress(rctx, fc.Args["termProgress"].([]*model.TermProgressInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4160,6 +4244,8 @@ func (ec *executionContext) fieldContext_Studyset_terms(_ context.Context, field
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
 				return ec.fieldContext_Term_progress(ctx, field)
+			case "progressHistory":
+				return ec.fieldContext_Term_progressHistory(ctx, field)
 			case "topConfusionPairs":
 				return ec.fieldContext_Term_topConfusionPairs(ctx, field)
 			case "topReverseConfusionPairs":
@@ -4502,6 +4588,61 @@ func (ec *executionContext) fieldContext_Term_progress(_ context.Context, field 
 	return fc, nil
 }
 
+func (ec *executionContext) _Term_progressHistory(ctx context.Context, field graphql.CollectedField, obj *model.Term) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Term_progressHistory(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Term().ProgressHistory(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.TermProgressHistory)
+	fc.Result = res
+	return ec.marshalOTermProgressHistory2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermProgressHistory(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Term_progressHistory(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Term",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_TermProgressHistory_id(ctx, field)
+			case "timestamp":
+				return ec.fieldContext_TermProgressHistory_timestamp(ctx, field)
+			case "termCorrectCount":
+				return ec.fieldContext_TermProgressHistory_termCorrectCount(ctx, field)
+			case "termIncorrectCount":
+				return ec.fieldContext_TermProgressHistory_termIncorrectCount(ctx, field)
+			case "defCorrectCount":
+				return ec.fieldContext_TermProgressHistory_defCorrectCount(ctx, field)
+			case "defIncorrectCount":
+				return ec.fieldContext_TermProgressHistory_defIncorrectCount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TermProgressHistory", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Term_topConfusionPairs(ctx context.Context, field graphql.CollectedField, obj *model.Term) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Term_topConfusionPairs(ctx, field)
 	if err != nil {
@@ -4781,6 +4922,8 @@ func (ec *executionContext) fieldContext_TermConfusionPair_term(_ context.Contex
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
 				return ec.fieldContext_Term_progress(ctx, field)
+			case "progressHistory":
+				return ec.fieldContext_Term_progressHistory(ctx, field)
 			case "topConfusionPairs":
 				return ec.fieldContext_Term_topConfusionPairs(ctx, field)
 			case "topReverseConfusionPairs":
@@ -4842,6 +4985,8 @@ func (ec *executionContext) fieldContext_TermConfusionPair_confusedTerm(_ contex
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
 				return ec.fieldContext_Term_progress(ctx, field)
+			case "progressHistory":
+				return ec.fieldContext_Term_progressHistory(ctx, field)
 			case "topConfusionPairs":
 				return ec.fieldContext_Term_topConfusionPairs(ctx, field)
 			case "topReverseConfusionPairs":
@@ -5035,7 +5180,7 @@ func (ec *executionContext) _TermProgress_termFirstReviewedAt(ctx context.Contex
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.TermFirstReviewedAt, nil
+		return ec.resolvers.TermProgress().TermFirstReviewedAt(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5053,8 +5198,8 @@ func (ec *executionContext) fieldContext_TermProgress_termFirstReviewedAt(_ cont
 	fc = &graphql.FieldContext{
 		Object:     "TermProgress",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
 		},
@@ -5076,7 +5221,7 @@ func (ec *executionContext) _TermProgress_termLastReviewedAt(ctx context.Context
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.TermLastReviewedAt, nil
+		return ec.resolvers.TermProgress().TermLastReviewedAt(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5094,8 +5239,8 @@ func (ec *executionContext) fieldContext_TermProgress_termLastReviewedAt(_ conte
 	fc = &graphql.FieldContext{
 		Object:     "TermProgress",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
 		},
@@ -5117,7 +5262,7 @@ func (ec *executionContext) _TermProgress_termReviewCount(ctx context.Context, f
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.TermReviewCount, nil
+		return ec.resolvers.TermProgress().TermReviewCount(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5135,8 +5280,8 @@ func (ec *executionContext) fieldContext_TermProgress_termReviewCount(_ context.
 	fc = &graphql.FieldContext{
 		Object:     "TermProgress",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
 		},
@@ -5158,7 +5303,7 @@ func (ec *executionContext) _TermProgress_defFirstReviewedAt(ctx context.Context
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.DefFirstReviewedAt, nil
+		return ec.resolvers.TermProgress().DefFirstReviewedAt(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5176,8 +5321,8 @@ func (ec *executionContext) fieldContext_TermProgress_defFirstReviewedAt(_ conte
 	fc = &graphql.FieldContext{
 		Object:     "TermProgress",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
 		},
@@ -5199,7 +5344,7 @@ func (ec *executionContext) _TermProgress_defLastReviewedAt(ctx context.Context,
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.DefLastReviewedAt, nil
+		return ec.resolvers.TermProgress().DefLastReviewedAt(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5217,8 +5362,8 @@ func (ec *executionContext) fieldContext_TermProgress_defLastReviewedAt(_ contex
 	fc = &graphql.FieldContext{
 		Object:     "TermProgress",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
 		},
@@ -5240,7 +5385,7 @@ func (ec *executionContext) _TermProgress_defReviewCount(ctx context.Context, fi
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.DefReviewCount, nil
+		return ec.resolvers.TermProgress().DefReviewCount(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5258,8 +5403,8 @@ func (ec *executionContext) fieldContext_TermProgress_defReviewCount(_ context.C
 	fc = &graphql.FieldContext{
 		Object:     "TermProgress",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
 		},
@@ -5445,7 +5590,7 @@ func (ec *executionContext) _TermProgress_termLeitnerSystemBox(ctx context.Conte
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.TermLeitnerSystemBox, nil
+		return ec.resolvers.TermProgress().TermLeitnerSystemBox(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5463,8 +5608,8 @@ func (ec *executionContext) fieldContext_TermProgress_termLeitnerSystemBox(_ con
 	fc = &graphql.FieldContext{
 		Object:     "TermProgress",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
 		},
@@ -5486,7 +5631,7 @@ func (ec *executionContext) _TermProgress_defLeitnerSystemBox(ctx context.Contex
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.DefLeitnerSystemBox, nil
+		return ec.resolvers.TermProgress().DefLeitnerSystemBox(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5503,6 +5648,252 @@ func (ec *executionContext) _TermProgress_defLeitnerSystemBox(ctx context.Contex
 func (ec *executionContext) fieldContext_TermProgress_defLeitnerSystemBox(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "TermProgress",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TermProgressHistory_id(ctx context.Context, field graphql.CollectedField, obj *model.TermProgressHistory) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TermProgressHistory_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TermProgressHistory_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TermProgressHistory",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TermProgressHistory_timestamp(ctx context.Context, field graphql.CollectedField, obj *model.TermProgressHistory) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TermProgressHistory_timestamp(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Timestamp, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TermProgressHistory_timestamp(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TermProgressHistory",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TermProgressHistory_termCorrectCount(ctx context.Context, field graphql.CollectedField, obj *model.TermProgressHistory) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TermProgressHistory_termCorrectCount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TermCorrectCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int32)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint32(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TermProgressHistory_termCorrectCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TermProgressHistory",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TermProgressHistory_termIncorrectCount(ctx context.Context, field graphql.CollectedField, obj *model.TermProgressHistory) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TermProgressHistory_termIncorrectCount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TermIncorrectCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int32)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint32(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TermProgressHistory_termIncorrectCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TermProgressHistory",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TermProgressHistory_defCorrectCount(ctx context.Context, field graphql.CollectedField, obj *model.TermProgressHistory) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TermProgressHistory_defCorrectCount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DefCorrectCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int32)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint32(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TermProgressHistory_defCorrectCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TermProgressHistory",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TermProgressHistory_defIncorrectCount(ctx context.Context, field graphql.CollectedField, obj *model.TermProgressHistory) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TermProgressHistory_defIncorrectCount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DefIncorrectCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int32)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint32(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TermProgressHistory_defIncorrectCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TermProgressHistory",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -5559,6 +5950,8 @@ func (ec *executionContext) fieldContext_TrueFalseQuestion_term(_ context.Contex
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
 				return ec.fieldContext_Term_progress(ctx, field)
+			case "progressHistory":
+				return ec.fieldContext_Term_progressHistory(ctx, field)
 			case "topConfusionPairs":
 				return ec.fieldContext_Term_topConfusionPairs(ctx, field)
 			case "topReverseConfusionPairs":
@@ -5743,6 +6136,8 @@ func (ec *executionContext) fieldContext_TrueFalseQuestion_distractor(_ context.
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
 				return ec.fieldContext_Term_progress(ctx, field)
+			case "progressHistory":
+				return ec.fieldContext_Term_progressHistory(ctx, field)
 			case "topConfusionPairs":
 				return ec.fieldContext_Term_topConfusionPairs(ctx, field)
 			case "topReverseConfusionPairs":
@@ -9204,6 +9599,39 @@ func (ec *executionContext) _Term(ctx context.Context, sel ast.SelectionSet, obj
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "progressHistory":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Term_progressHistory(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "topConfusionPairs":
 			field := field
 
@@ -9419,17 +9847,203 @@ func (ec *executionContext) _TermProgress(ctx context.Context, sel ast.Selection
 		case "id":
 			out.Values[i] = ec._TermProgress_id(ctx, field, obj)
 		case "termFirstReviewedAt":
-			out.Values[i] = ec._TermProgress_termFirstReviewedAt(ctx, field, obj)
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._TermProgress_termFirstReviewedAt(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "termLastReviewedAt":
-			out.Values[i] = ec._TermProgress_termLastReviewedAt(ctx, field, obj)
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._TermProgress_termLastReviewedAt(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "termReviewCount":
-			out.Values[i] = ec._TermProgress_termReviewCount(ctx, field, obj)
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._TermProgress_termReviewCount(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "defFirstReviewedAt":
-			out.Values[i] = ec._TermProgress_defFirstReviewedAt(ctx, field, obj)
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._TermProgress_defFirstReviewedAt(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "defLastReviewedAt":
-			out.Values[i] = ec._TermProgress_defLastReviewedAt(ctx, field, obj)
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._TermProgress_defLastReviewedAt(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "defReviewCount":
-			out.Values[i] = ec._TermProgress_defReviewCount(ctx, field, obj)
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._TermProgress_defReviewCount(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "termCorrectCount":
 			out.Values[i] = ec._TermProgress_termCorrectCount(ctx, field, obj)
 		case "termIncorrectCount":
@@ -9439,9 +10053,117 @@ func (ec *executionContext) _TermProgress(ctx context.Context, sel ast.Selection
 		case "defIncorrectCount":
 			out.Values[i] = ec._TermProgress_defIncorrectCount(ctx, field, obj)
 		case "termLeitnerSystemBox":
-			out.Values[i] = ec._TermProgress_termLeitnerSystemBox(ctx, field, obj)
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._TermProgress_termLeitnerSystemBox(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "defLeitnerSystemBox":
-			out.Values[i] = ec._TermProgress_defLeitnerSystemBox(ctx, field, obj)
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._TermProgress_defLeitnerSystemBox(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var termProgressHistoryImplementors = []string{"TermProgressHistory"}
+
+func (ec *executionContext) _TermProgressHistory(ctx context.Context, sel ast.SelectionSet, obj *model.TermProgressHistory) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, termProgressHistoryImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TermProgressHistory")
+		case "id":
+			out.Values[i] = ec._TermProgressHistory_id(ctx, field, obj)
+		case "timestamp":
+			out.Values[i] = ec._TermProgressHistory_timestamp(ctx, field, obj)
+		case "termCorrectCount":
+			out.Values[i] = ec._TermProgressHistory_termCorrectCount(ctx, field, obj)
+		case "termIncorrectCount":
+			out.Values[i] = ec._TermProgressHistory_termIncorrectCount(ctx, field, obj)
+		case "defCorrectCount":
+			out.Values[i] = ec._TermProgressHistory_defCorrectCount(ctx, field, obj)
+		case "defIncorrectCount":
+			out.Values[i] = ec._TermProgressHistory_defIncorrectCount(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -10846,6 +11568,54 @@ func (ec *executionContext) marshalOTermProgress2ᚖquizfreelyᚋapiᚋgraphᚋm
 		return graphql.Null
 	}
 	return ec._TermProgress(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOTermProgressHistory2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermProgressHistory(ctx context.Context, sel ast.SelectionSet, v []*model.TermProgressHistory) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOTermProgressHistory2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermProgressHistory(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalOTermProgressHistory2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermProgressHistory(ctx context.Context, sel ast.SelectionSet, v *model.TermProgressHistory) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._TermProgressHistory(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOTrueFalseQuestion2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTrueFalseQuestion(ctx context.Context, sel ast.SelectionSet, v *model.TrueFalseQuestion) graphql.Marshaler {
