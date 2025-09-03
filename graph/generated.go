@@ -106,6 +106,7 @@ type ComplexityRoot struct {
 		AuthedUser        func(childComplexity int) int
 		FeaturedStudysets func(childComplexity int, limit *int32, offset *int32) int
 		MyStudysets       func(childComplexity int, limit *int32, offset *int32) int
+		PracticeTest      func(childComplexity int, id string) int
 		RecentStudysets   func(childComplexity int, limit *int32, offset *int32) int
 		SearchStudysets   func(childComplexity int, q string, limit *int32, offset *int32) int
 		Studyset          func(childComplexity int, id string) int
@@ -214,6 +215,7 @@ type QueryResolver interface {
 	RecentStudysets(ctx context.Context, limit *int32, offset *int32) ([]*model.Studyset, error)
 	SearchStudysets(ctx context.Context, q string, limit *int32, offset *int32) ([]*model.Studyset, error)
 	MyStudysets(ctx context.Context, limit *int32, offset *int32) ([]*model.Studyset, error)
+	PracticeTest(ctx context.Context, id string) (*model.PracticeTest, error)
 }
 type StudysetResolver interface {
 	User(ctx context.Context, obj *model.Studyset) (*model.User, error)
@@ -559,6 +561,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.MyStudysets(childComplexity, args["limit"].(*int32), args["offset"].(*int32)), true
+
+	case "Query.practiceTest":
+		if e.complexity.Query.PracticeTest == nil {
+			break
+		}
+
+		args, err := ec.field_Query_practiceTest_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.PracticeTest(childComplexity, args["id"].(string)), true
 
 	case "Query.recentStudysets":
 		if e.complexity.Query.RecentStudysets == nil {
@@ -1300,6 +1314,17 @@ func (ec *executionContext) field_Query_myStudysets_args(ctx context.Context, ra
 		return nil, err
 	}
 	args["offset"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_practiceTest_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -3682,6 +3707,70 @@ func (ec *executionContext) fieldContext_Query_myStudysets(ctx context.Context, 
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_myStudysets_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_practiceTest(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_practiceTest(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().PracticeTest(rctx, fc.Args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.PracticeTest)
+	fc.Result = res
+	return ec.marshalOPracticeTest2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐPracticeTest(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_practiceTest(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_PracticeTest_id(ctx, field)
+			case "timestamp":
+				return ec.fieldContext_PracticeTest_timestamp(ctx, field)
+			case "questionsCorrect":
+				return ec.fieldContext_PracticeTest_questionsCorrect(ctx, field)
+			case "questionsTotal":
+				return ec.fieldContext_PracticeTest_questionsTotal(ctx, field)
+			case "questions":
+				return ec.fieldContext_PracticeTest_questions(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PracticeTest", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_practiceTest_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -9395,6 +9484,25 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_myStudysets(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "practiceTest":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_practiceTest(ctx, field)
 				return res
 			}
 

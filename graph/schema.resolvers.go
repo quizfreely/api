@@ -744,6 +744,11 @@ func (r *queryResolver) MyStudysets(ctx context.Context, limit *int32, offset *i
 	return studysets, nil
 }
 
+// PracticeTest is the resolver for the practiceTest field.
+func (r *queryResolver) PracticeTest(ctx context.Context, id string) (*model.PracticeTest, error) {
+	panic(fmt.Errorf("not implemented: PracticeTest - practiceTest"))
+}
+
 // User is the resolver for the user field.
 func (r *studysetResolver) User(ctx context.Context, obj *model.Studyset) (*model.User, error) {
 	if obj.UserID == nil {
