@@ -50,6 +50,7 @@ type Term {
     def: String
     sortOrder: Int
     progress: TermProgress
+    progressHistory: [TermProgressHistory]
     topConfusionPairs: [TermConfusionPair]
     topReverseConfusionPairs: [TermConfusionPair]
     createdAt: String
@@ -84,6 +85,14 @@ type TermProgress {
     defIncorrectCount: Int
     termLeitnerSystemBox: Int
     defLeitnerSystemBox: Int
+}
+type TermProgressHistory {
+    id: ID
+    timestamp: String,
+    termCorrectCount: Int
+    termIncorrectCount: Int
+    defCorrectCount: Int
+    defIncorrectCount: Int
 }
 input TermProgressInput {
     termId: ID!
