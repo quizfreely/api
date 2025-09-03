@@ -129,6 +129,7 @@ input TermConfusionPairInput {
 type PracticeTest {
     id: ID
     timestamp: String
+    studysetId: ID
     questionsCorrect: Int
     questionsTotal: Int
     questions: [Question]

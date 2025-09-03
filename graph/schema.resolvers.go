@@ -746,7 +746,24 @@ func (r *queryResolver) MyStudysets(ctx context.Context, limit *int32, offset *i
 
 // PracticeTest is the resolver for the practiceTest field.
 func (r *queryResolver) PracticeTest(ctx context.Context, id string) (*model.PracticeTest, error) {
-	panic(fmt.Errorf("not implemented: PracticeTest - practiceTest"))
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil {
+		return nil, fmt.Errorf("not authenticated")
+	}
+
+	var practiceTest model.PracticeTest
+	err := pgxscan.Select(
+		ctx,
+		r.DB,
+		&practiceTest,
+		`SELECT pt.id,
+	to_char(pt.timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as timestamp
+	pt.questions_correct,
+	pt.questions_total,
+	pt.questions
+FROM practice_tests pt
+JOIN `
+	)
 }
 
 // User is the resolver for the user field.
