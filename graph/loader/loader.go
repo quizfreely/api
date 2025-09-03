@@ -372,6 +372,7 @@ type Loaders struct {
 	TermByStudysetIDLoader *dataloadgen.Loader[string, []*model.Term]
 	TermsCountByStudysetIDLoader *dataloadgen.Loader[string, *int32]
 	TermProgressLoader *dataloadgen.Loader[string, *model.TermProgress]
+	TermProgressHistoryLoader *dataloadgen.Loader[string, []*model.TermProgressHistory]
 	TermTopConfusionPairsLoader *dataloadgen.Loader[string, []*model.TermConfusionPair]
 	TermTopReverseConfusionPairsLoader *dataloadgen.Loader[string, []*model.TermConfusionPair]
 	PracticeTestByStudysetIDLoader *dataloadgen.Loader[string, []*model.PracticeTest]
@@ -387,6 +388,7 @@ func NewLoaders(db *pgxpool.Pool) *Loaders {
 		TermByStudysetIDLoader: dataloadgen.NewLoader(dr.getTermsByStudysetIDs, dataloadgen.WithWait(time.Millisecond)),
 		TermsCountByStudysetIDLoader: dataloadgen.NewLoader(dr.getTermsCountByStudysetIDs, dataloadgen.WithWait(time.Millisecond)),
 		TermProgressLoader: dataloadgen.NewLoader(dr.getTermsProgress, dataloadgen.WithWait(time.Millisecond)),
+		TermProgressHistoryLoader: dataloadgen.NewLoader(dr.getTermsProgressHistory, dataloadgen.WithWait(time.Millisecond)),
 		TermTopConfusionPairsLoader: dataloadgen.NewLoader(dr.getTermsTopConfusionPairs, dataloadgen.WithWait(time.Millisecond)),
 		TermTopReverseConfusionPairsLoader: dataloadgen.NewLoader(dr.getTermsTopReverseConfusionPairs, dataloadgen.WithWait(time.Millisecond)),
 		PracticeTestByStudysetIDLoader: dataloadgen.NewLoader(dr.getPracticeTestsByStudysetIDs, dataloadgen.WithWait(time.Millisecond)),
@@ -464,6 +466,18 @@ func GetTermProgress(ctx context.Context, termID string) (*model.TermProgress, e
 func GetTermsProgress(ctx context.Context, termIDs []string) ([]*model.TermProgress, error) {
 	loaders := For(ctx)
 	return loaders.TermProgressLoader.LoadAll(ctx, termIDs)
+}
+
+// GetTermProgressHistory returns a single term's progress history
+func GetTermProgressHistory(ctx context.Context, termID string) ([]*model.TermProgressHistory, error) {
+	loaders := For(ctx)
+	return loaders.TermProgressHistoryLoader.Load(ctx, termID)
+}
+
+// GetTermsProgressHistory returns many terms' progress histories
+func GetTermsProgressHistory(ctx context.Context, termIDs []string) ([][]*model.TermProgressHistory, error) {
+	loaders := For(ctx)
+	return loaders.TermProgressHistoryLoader.LoadAll(ctx, termIDs)
 }
 
 // GetTermTopReverseConfusionPairs returns a single term's confusion pairs
