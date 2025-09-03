@@ -568,9 +568,9 @@ func (r *queryResolver) Term(ctx context.Context, id string) (*model.Term, error
 			ctx,
 			r.DB,
 			&term,
-			`SELECT id, term, def, sort_order,
-		to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
-		to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
+			`SELECT terms.id, terms.term, terms.def, terms.sort_order,
+		to_char(terms.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
+		to_char(terms.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 FROM terms
 JOIN studysets ON terms.studyset_id = studysets.id
 WHERE terms.id = $1 AND (
