@@ -431,7 +431,7 @@ ALTER TABLE ONLY public.term_confusion_pairs
 --
 
 ALTER TABLE ONLY public.term_progress_history
-    ADD CONSTRAINT term_progress_history_term_id_fkey FOREIGN KEY (term_id) REFERENCES public.terms(id);
+    ADD CONSTRAINT term_progress_history_term_id_fkey FOREIGN KEY (term_id) REFERENCES public.terms(id) ON DELETE CASCADE;
 
 
 --
@@ -439,7 +439,7 @@ ALTER TABLE ONLY public.term_progress_history
 --
 
 ALTER TABLE ONLY public.term_progress_history
-    ADD CONSTRAINT term_progress_history_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id);
+    ADD CONSTRAINT term_progress_history_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
 
 
 --
@@ -483,4 +483,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('202508201847'),
     ('202508202155'),
     ('202508211445'),
-    ('202509021427');
+    ('202509021427'),
+    ('202509030947');
