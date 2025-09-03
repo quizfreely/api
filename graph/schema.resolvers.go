@@ -790,46 +790,6 @@ func (r *termConfusionPairResolver) ConfusedTerm(ctx context.Context, obj *model
 	return loader.GetTermByID(ctx, *obj.ConfusedTermID)
 }
 
-// TermFirstReviewedAt is the resolver for the termFirstReviewedAt field.
-func (r *termProgressResolver) TermFirstReviewedAt(ctx context.Context, obj *model.TermProgress) (*string, error) {
-	panic(fmt.Errorf("not implemented: TermFirstReviewedAt - termFirstReviewedAt"))
-}
-
-// TermLastReviewedAt is the resolver for the termLastReviewedAt field.
-func (r *termProgressResolver) TermLastReviewedAt(ctx context.Context, obj *model.TermProgress) (*string, error) {
-	panic(fmt.Errorf("not implemented: TermLastReviewedAt - termLastReviewedAt"))
-}
-
-// TermReviewCount is the resolver for the termReviewCount field.
-func (r *termProgressResolver) TermReviewCount(ctx context.Context, obj *model.TermProgress) (*int32, error) {
-	panic(fmt.Errorf("not implemented: TermReviewCount - termReviewCount"))
-}
-
-// DefFirstReviewedAt is the resolver for the defFirstReviewedAt field.
-func (r *termProgressResolver) DefFirstReviewedAt(ctx context.Context, obj *model.TermProgress) (*string, error) {
-	panic(fmt.Errorf("not implemented: DefFirstReviewedAt - defFirstReviewedAt"))
-}
-
-// DefLastReviewedAt is the resolver for the defLastReviewedAt field.
-func (r *termProgressResolver) DefLastReviewedAt(ctx context.Context, obj *model.TermProgress) (*string, error) {
-	panic(fmt.Errorf("not implemented: DefLastReviewedAt - defLastReviewedAt"))
-}
-
-// DefReviewCount is the resolver for the defReviewCount field.
-func (r *termProgressResolver) DefReviewCount(ctx context.Context, obj *model.TermProgress) (*int32, error) {
-	panic(fmt.Errorf("not implemented: DefReviewCount - defReviewCount"))
-}
-
-// TermLeitnerSystemBox is the resolver for the termLeitnerSystemBox field.
-func (r *termProgressResolver) TermLeitnerSystemBox(ctx context.Context, obj *model.TermProgress) (*int32, error) {
-	panic(fmt.Errorf("not implemented: TermLeitnerSystemBox - termLeitnerSystemBox"))
-}
-
-// DefLeitnerSystemBox is the resolver for the defLeitnerSystemBox field.
-func (r *termProgressResolver) DefLeitnerSystemBox(ctx context.Context, obj *model.TermProgress) (*int32, error) {
-	panic(fmt.Errorf("not implemented: DefLeitnerSystemBox - defLeitnerSystemBox"))
-}
-
 // Mutation returns MutationResolver implementation.
 func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 
@@ -847,12 +807,43 @@ func (r *Resolver) TermConfusionPair() TermConfusionPairResolver {
 	return &termConfusionPairResolver{r}
 }
 
-// TermProgress returns TermProgressResolver implementation.
-func (r *Resolver) TermProgress() TermProgressResolver { return &termProgressResolver{r} }
-
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
 type studysetResolver struct{ *Resolver }
 type termResolver struct{ *Resolver }
 type termConfusionPairResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//    it when you're done.
+//  - You have helper methods in this file. Move them out to keep these resolver files clean.
+/*
+	func (r *termProgressResolver) TermFirstReviewedAt(ctx context.Context, obj *model.TermProgress) (*string, error) {
+	panic(fmt.Errorf("not implemented: TermFirstReviewedAt - termFirstReviewedAt"))
+}
+func (r *termProgressResolver) TermLastReviewedAt(ctx context.Context, obj *model.TermProgress) (*string, error) {
+	panic(fmt.Errorf("not implemented: TermLastReviewedAt - termLastReviewedAt"))
+}
+func (r *termProgressResolver) TermReviewCount(ctx context.Context, obj *model.TermProgress) (*int32, error) {
+	panic(fmt.Errorf("not implemented: TermReviewCount - termReviewCount"))
+}
+func (r *termProgressResolver) DefFirstReviewedAt(ctx context.Context, obj *model.TermProgress) (*string, error) {
+	panic(fmt.Errorf("not implemented: DefFirstReviewedAt - defFirstReviewedAt"))
+}
+func (r *termProgressResolver) DefLastReviewedAt(ctx context.Context, obj *model.TermProgress) (*string, error) {
+	panic(fmt.Errorf("not implemented: DefLastReviewedAt - defLastReviewedAt"))
+}
+func (r *termProgressResolver) DefReviewCount(ctx context.Context, obj *model.TermProgress) (*int32, error) {
+	panic(fmt.Errorf("not implemented: DefReviewCount - defReviewCount"))
+}
+func (r *termProgressResolver) TermLeitnerSystemBox(ctx context.Context, obj *model.TermProgress) (*int32, error) {
+	panic(fmt.Errorf("not implemented: TermLeitnerSystemBox - termLeitnerSystemBox"))
+}
+func (r *termProgressResolver) DefLeitnerSystemBox(ctx context.Context, obj *model.TermProgress) (*int32, error) {
+	panic(fmt.Errorf("not implemented: DefLeitnerSystemBox - defLeitnerSystemBox"))
+}
+func (r *Resolver) TermProgress() TermProgressResolver { return &termProgressResolver{r} }
 type termProgressResolver struct{ *Resolver }
+*/
