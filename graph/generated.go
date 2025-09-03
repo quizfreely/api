@@ -98,6 +98,7 @@ type ComplexityRoot struct {
 		Questions        func(childComplexity int) int
 		QuestionsCorrect func(childComplexity int) int
 		QuestionsTotal   func(childComplexity int) int
+		StudysetID       func(childComplexity int) int
 		Timestamp        func(childComplexity int) int
 	}
 
@@ -516,6 +517,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.PracticeTest.QuestionsTotal(childComplexity), true
+
+	case "PracticeTest.studysetId":
+		if e.complexity.PracticeTest.StudysetID == nil {
+			break
+		}
+
+		return e.complexity.PracticeTest.StudysetID(childComplexity), true
 
 	case "PracticeTest.timestamp":
 		if e.complexity.PracticeTest.Timestamp == nil {
@@ -2830,6 +2838,8 @@ func (ec *executionContext) fieldContext_Mutation_recordPracticeTest(ctx context
 				return ec.fieldContext_PracticeTest_id(ctx, field)
 			case "timestamp":
 				return ec.fieldContext_PracticeTest_timestamp(ctx, field)
+			case "studysetId":
+				return ec.fieldContext_PracticeTest_studysetId(ctx, field)
 			case "questionsCorrect":
 				return ec.fieldContext_PracticeTest_questionsCorrect(ctx, field)
 			case "questionsTotal":
@@ -2894,6 +2904,8 @@ func (ec *executionContext) fieldContext_Mutation_updatePracticeTest(ctx context
 				return ec.fieldContext_PracticeTest_id(ctx, field)
 			case "timestamp":
 				return ec.fieldContext_PracticeTest_timestamp(ctx, field)
+			case "studysetId":
+				return ec.fieldContext_PracticeTest_studysetId(ctx, field)
 			case "questionsCorrect":
 				return ec.fieldContext_PracticeTest_questionsCorrect(ctx, field)
 			case "questionsTotal":
@@ -2995,6 +3007,47 @@ func (ec *executionContext) fieldContext_PracticeTest_timestamp(_ context.Contex
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PracticeTest_studysetId(ctx context.Context, field graphql.CollectedField, obj *model.PracticeTest) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PracticeTest_studysetId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.StudysetID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PracticeTest_studysetId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PracticeTest",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
 		},
 	}
 	return fc, nil
@@ -3753,6 +3806,8 @@ func (ec *executionContext) fieldContext_Query_practiceTest(ctx context.Context,
 				return ec.fieldContext_PracticeTest_id(ctx, field)
 			case "timestamp":
 				return ec.fieldContext_PracticeTest_timestamp(ctx, field)
+			case "studysetId":
+				return ec.fieldContext_PracticeTest_studysetId(ctx, field)
 			case "questionsCorrect":
 				return ec.fieldContext_PracticeTest_questionsCorrect(ctx, field)
 			case "questionsTotal":
@@ -4518,6 +4573,8 @@ func (ec *executionContext) fieldContext_Studyset_practiceTests(_ context.Contex
 				return ec.fieldContext_PracticeTest_id(ctx, field)
 			case "timestamp":
 				return ec.fieldContext_PracticeTest_timestamp(ctx, field)
+			case "studysetId":
+				return ec.fieldContext_PracticeTest_studysetId(ctx, field)
 			case "questionsCorrect":
 				return ec.fieldContext_PracticeTest_questionsCorrect(ctx, field)
 			case "questionsTotal":
@@ -9274,6 +9331,8 @@ func (ec *executionContext) _PracticeTest(ctx context.Context, sel ast.Selection
 			out.Values[i] = ec._PracticeTest_id(ctx, field, obj)
 		case "timestamp":
 			out.Values[i] = ec._PracticeTest_timestamp(ctx, field, obj)
+		case "studysetId":
+			out.Values[i] = ec._PracticeTest_studysetId(ctx, field, obj)
 		case "questionsCorrect":
 			out.Values[i] = ec._PracticeTest_questionsCorrect(ctx, field, obj)
 		case "questionsTotal":
