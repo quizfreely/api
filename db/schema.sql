@@ -229,6 +229,22 @@ CREATE TABLE public.term_progress (
 
 
 --
+-- Name: term_progress_history; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.term_progress_history (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    "timestamp" timestamp with time zone DEFAULT now() NOT NULL,
+    term_id uuid NOT NULL,
+    user_id uuid NOT NULL,
+    term_correct_count integer,
+    term_incorrect_count integer,
+    def_correct_count integer,
+    def_incorrect_count integer
+);
+
+
+--
 -- Name: terms; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -280,7 +296,7 @@ ALTER TABLE ONLY auth.users
 --
 
 ALTER TABLE ONLY public.term_confusion_pairs
-    ADD CONSTRAINT confusion_pairs_unique UNIQUE (user_id, term_id, confused_term_id);
+    ADD CONSTRAINT confusion_pairs_unique UNIQUE (user_id, term_id, confused_term_id, answered_with);
 
 
 --
@@ -321,6 +337,14 @@ ALTER TABLE ONLY public.studysets
 
 ALTER TABLE ONLY public.term_confusion_pairs
     ADD CONSTRAINT term_confusion_pairs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: term_progress_history term_progress_history_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.term_progress_history
+    ADD CONSTRAINT term_progress_history_pkey PRIMARY KEY (id);
 
 
 --
@@ -403,6 +427,22 @@ ALTER TABLE ONLY public.term_confusion_pairs
 
 
 --
+-- Name: term_progress_history term_progress_history_term_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.term_progress_history
+    ADD CONSTRAINT term_progress_history_term_id_fkey FOREIGN KEY (term_id) REFERENCES public.terms(id);
+
+
+--
+-- Name: term_progress_history term_progress_history_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.term_progress_history
+    ADD CONSTRAINT term_progress_history_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id);
+
+
+--
 -- Name: term_progress term_progress_term_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -442,4 +482,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('202508191404'),
     ('202508201847'),
     ('202508202155'),
-    ('202508211445');
+    ('202508211445'),
+    ('202509021427');

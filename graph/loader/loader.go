@@ -189,13 +189,13 @@ func (dr *dataReader) getTermsProgressHistory(ctx context.Context, termIDs []str
 		ctx,
 		dr.db,
 		&termProgressHistory,
-		`SELECT id,
-    term_id,
-    to_char(timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as timestamp,
-    term_correct_count,
-    term_incorrect_count,
-    def_correct_count,
-    def_incorrect_count
+		`SELECT tph.id,
+    tph.term_id,
+    to_char(tph.timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as timestamp,
+    tph.term_correct_count,
+    tph.term_incorrect_count,
+    tph.def_correct_count,
+    tph.def_incorrect_count
 FROM unnest($1::uuid[]) WITH ORDINALITY AS input(term_id, og_order)
 LEFT JOIN term_progress_history tph
 	ON tph.term_id = input.term_id
