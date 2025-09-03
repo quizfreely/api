@@ -752,18 +752,26 @@ func (r *queryResolver) PracticeTest(ctx context.Context, id string) (*model.Pra
 	}
 
 	var practiceTest model.PracticeTest
-	err := pgxscan.Select(
+	err := pgxscan.Get(
 		ctx,
 		r.DB,
 		&practiceTest,
-		`SELECT pt.id,
-	to_char(pt.timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as timestamp
-	pt.questions_correct,
-	pt.questions_total,
-	pt.questions
-FROM practice_tests pt
-JOIN `
+		`SELECT id,
+	studyset_id,
+	to_char(timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as timestamp,
+	questions_correct,
+	questions_total,
+	questions
+FROM practice_tests
+WHERE id = $1 AND user_id = $2`,
+		id,
+		authedUser.ID,
 	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch practice test by id: %w", err)
+	}
+
+	return &practiceTest, nil
 }
 
 // User is the resolver for the user field.
