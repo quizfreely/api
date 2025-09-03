@@ -744,7 +744,12 @@ func (r *termResolver) Progress(ctx context.Context, obj *model.Term) (*model.Te
 
 // ProgressHistory is the resolver for the progressHistory field.
 func (r *termResolver) ProgressHistory(ctx context.Context, obj *model.Term) ([]*model.TermProgressHistory, error) {
-	panic(fmt.Errorf("not implemented: ProgressHistory - progressHistory"))
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil || authedUser.ID == nil || obj.ID == nil {
+		return nil, nil
+	}
+
+	return loader.GetTermProgressHistory(ctx, *obj.ID)
 }
 
 // TopConfusionPairs is the resolver for the top_confusion_pairs field.
