@@ -270,8 +270,10 @@ func (r *mutationResolver) UpdateTermProgress(ctx context.Context, termProgress 
 	// ---- Build bulk insert ----
 	valueStrings := make([]string, 0, len(termProgress))
 	valueArgs := make([]interface{}, 0, len(termProgress)*10)
+	termIDs := make([]string, len(termProgress))
 
 	for i, p := range termProgress {
+		termIDs[i] = p.TermID
 		// Each row has 10 parameters (adjust if needed)
 		base := i*10 + 1
 		valueStrings = append(valueStrings, fmt.Sprintf(
@@ -346,7 +348,7 @@ func (r *mutationResolver) UpdateTermProgress(ctx context.Context, termProgress 
 		histVals = append(histVals, fmt.Sprintf("($%d,$%d,$%d,$%d,$%d,$%d)", base, base+1, base+2, base+3, base+4, base+5))
 		histArgs = append(histArgs,
 			authedUser.ID,
-			tp.ID,
+			termIDs[i],
 			tp.TermCorrectCount,
 			tp.TermIncorrectCount,
 			tp.DefCorrectCount,
@@ -563,7 +565,7 @@ func (r *queryResolver) Term(ctx context.Context, id string) (*model.Term, error
 
 	var term model.Term
 	var err error
-	if (authedUser != nil) {
+	if authedUser != nil {
 		err = pgxscan.Get(
 			ctx,
 			r.DB,
