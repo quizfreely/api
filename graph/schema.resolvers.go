@@ -557,6 +557,53 @@ func (r *queryResolver) User(ctx context.Context, id string) (*model.User, error
 	return &user, nil
 }
 
+// Term is the resolver for the term field.
+func (r *queryResolver) Term(ctx context.Context, id string) (*model.Term, error) {
+	authedUser := auth.AuthedUserContext(ctx)
+
+	var term model.Term
+	var err error
+	if (authedUser != nil) {
+		err = pgxscan.Get(
+			ctx,
+			r.DB,
+			&term,
+			`SELECT id, term, def,
+		to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
+		to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
+FROM terms
+JOIN studysets ON terms.studyset_id = studysets.id
+WHERE terms.id = $1 AND (
+    	studysets.private = FALSE OR
+		studysets.user_id = $2
+)`,
+			id,
+			authedUser.ID,
+		)
+	} else {
+		err = pgxscan.Get(
+			ctx,
+			r.DB,
+			&term,
+			`SELECT id, term, def,
+		to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
+		to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
+FROM terms
+JOIN studysets ON terms.studyset_id = studysets.id
+WHERE terms.id = $1 AND studysets.private = FALSE`,
+			id,
+		)
+	}
+	if err != nil {
+		if pgxscan.NotFound(err) {
+			return nil, fmt.Errorf("term not found")
+		}
+		return nil, fmt.Errorf("failed to fetch term: %w", err)
+	}
+
+	return &term, nil
+}
+
 // FeaturedStudysets is the resolver for the featuredStudysets field.
 func (r *queryResolver) FeaturedStudysets(ctx context.Context, limit *int32, offset *int32) ([]*model.Studyset, error) {
 	l := 20
