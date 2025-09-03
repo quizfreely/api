@@ -1,6 +1,6 @@
 package model
 
-type TermProgress struct {
+type TermProgressHistory struct {
 	ID                   *string `json:"id,omitempty"`
 	TermID                   *string `json:"termId,omitempty"`
 	Timestamp            *string     `json:"timestamp,omitempty"`
