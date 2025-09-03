@@ -44,7 +44,6 @@ type ResolverRoot interface {
 	Studyset() StudysetResolver
 	Term() TermResolver
 	TermConfusionPair() TermConfusionPairResolver
-	TermProgress() TermProgressResolver
 }
 
 type DirectiveRoot struct {
@@ -229,17 +228,6 @@ type TermResolver interface {
 type TermConfusionPairResolver interface {
 	Term(ctx context.Context, obj *model.TermConfusionPair) (*model.Term, error)
 	ConfusedTerm(ctx context.Context, obj *model.TermConfusionPair) (*model.Term, error)
-}
-type TermProgressResolver interface {
-	TermFirstReviewedAt(ctx context.Context, obj *model.TermProgress) (*string, error)
-	TermLastReviewedAt(ctx context.Context, obj *model.TermProgress) (*string, error)
-	TermReviewCount(ctx context.Context, obj *model.TermProgress) (*int32, error)
-	DefFirstReviewedAt(ctx context.Context, obj *model.TermProgress) (*string, error)
-	DefLastReviewedAt(ctx context.Context, obj *model.TermProgress) (*string, error)
-	DefReviewCount(ctx context.Context, obj *model.TermProgress) (*int32, error)
-
-	TermLeitnerSystemBox(ctx context.Context, obj *model.TermProgress) (*int32, error)
-	DefLeitnerSystemBox(ctx context.Context, obj *model.TermProgress) (*int32, error)
 }
 
 type executableSchema struct {
@@ -5180,7 +5168,7 @@ func (ec *executionContext) _TermProgress_termFirstReviewedAt(ctx context.Contex
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.TermProgress().TermFirstReviewedAt(rctx, obj)
+		return obj.TermFirstReviewedAt, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5198,8 +5186,8 @@ func (ec *executionContext) fieldContext_TermProgress_termFirstReviewedAt(_ cont
 	fc = &graphql.FieldContext{
 		Object:     "TermProgress",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
 		},
@@ -5221,7 +5209,7 @@ func (ec *executionContext) _TermProgress_termLastReviewedAt(ctx context.Context
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.TermProgress().TermLastReviewedAt(rctx, obj)
+		return obj.TermLastReviewedAt, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5239,8 +5227,8 @@ func (ec *executionContext) fieldContext_TermProgress_termLastReviewedAt(_ conte
 	fc = &graphql.FieldContext{
 		Object:     "TermProgress",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
 		},
@@ -5262,7 +5250,7 @@ func (ec *executionContext) _TermProgress_termReviewCount(ctx context.Context, f
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.TermProgress().TermReviewCount(rctx, obj)
+		return obj.TermReviewCount, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5280,8 +5268,8 @@ func (ec *executionContext) fieldContext_TermProgress_termReviewCount(_ context.
 	fc = &graphql.FieldContext{
 		Object:     "TermProgress",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
 		},
@@ -5303,7 +5291,7 @@ func (ec *executionContext) _TermProgress_defFirstReviewedAt(ctx context.Context
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.TermProgress().DefFirstReviewedAt(rctx, obj)
+		return obj.DefFirstReviewedAt, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5321,8 +5309,8 @@ func (ec *executionContext) fieldContext_TermProgress_defFirstReviewedAt(_ conte
 	fc = &graphql.FieldContext{
 		Object:     "TermProgress",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
 		},
@@ -5344,7 +5332,7 @@ func (ec *executionContext) _TermProgress_defLastReviewedAt(ctx context.Context,
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.TermProgress().DefLastReviewedAt(rctx, obj)
+		return obj.DefLastReviewedAt, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5362,8 +5350,8 @@ func (ec *executionContext) fieldContext_TermProgress_defLastReviewedAt(_ contex
 	fc = &graphql.FieldContext{
 		Object:     "TermProgress",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
 		},
@@ -5385,7 +5373,7 @@ func (ec *executionContext) _TermProgress_defReviewCount(ctx context.Context, fi
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.TermProgress().DefReviewCount(rctx, obj)
+		return obj.DefReviewCount, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5403,8 +5391,8 @@ func (ec *executionContext) fieldContext_TermProgress_defReviewCount(_ context.C
 	fc = &graphql.FieldContext{
 		Object:     "TermProgress",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
 		},
@@ -5590,7 +5578,7 @@ func (ec *executionContext) _TermProgress_termLeitnerSystemBox(ctx context.Conte
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.TermProgress().TermLeitnerSystemBox(rctx, obj)
+		return obj.TermLeitnerSystemBox, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5608,8 +5596,8 @@ func (ec *executionContext) fieldContext_TermProgress_termLeitnerSystemBox(_ con
 	fc = &graphql.FieldContext{
 		Object:     "TermProgress",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
 		},
@@ -5631,7 +5619,7 @@ func (ec *executionContext) _TermProgress_defLeitnerSystemBox(ctx context.Contex
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.TermProgress().DefLeitnerSystemBox(rctx, obj)
+		return obj.DefLeitnerSystemBox, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5649,8 +5637,8 @@ func (ec *executionContext) fieldContext_TermProgress_defLeitnerSystemBox(_ cont
 	fc = &graphql.FieldContext{
 		Object:     "TermProgress",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
 		},
@@ -9847,203 +9835,17 @@ func (ec *executionContext) _TermProgress(ctx context.Context, sel ast.Selection
 		case "id":
 			out.Values[i] = ec._TermProgress_id(ctx, field, obj)
 		case "termFirstReviewedAt":
-			field := field
-
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._TermProgress_termFirstReviewedAt(ctx, field, obj)
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			out.Values[i] = ec._TermProgress_termFirstReviewedAt(ctx, field, obj)
 		case "termLastReviewedAt":
-			field := field
-
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._TermProgress_termLastReviewedAt(ctx, field, obj)
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			out.Values[i] = ec._TermProgress_termLastReviewedAt(ctx, field, obj)
 		case "termReviewCount":
-			field := field
-
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._TermProgress_termReviewCount(ctx, field, obj)
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			out.Values[i] = ec._TermProgress_termReviewCount(ctx, field, obj)
 		case "defFirstReviewedAt":
-			field := field
-
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._TermProgress_defFirstReviewedAt(ctx, field, obj)
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			out.Values[i] = ec._TermProgress_defFirstReviewedAt(ctx, field, obj)
 		case "defLastReviewedAt":
-			field := field
-
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._TermProgress_defLastReviewedAt(ctx, field, obj)
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			out.Values[i] = ec._TermProgress_defLastReviewedAt(ctx, field, obj)
 		case "defReviewCount":
-			field := field
-
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._TermProgress_defReviewCount(ctx, field, obj)
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			out.Values[i] = ec._TermProgress_defReviewCount(ctx, field, obj)
 		case "termCorrectCount":
 			out.Values[i] = ec._TermProgress_termCorrectCount(ctx, field, obj)
 		case "termIncorrectCount":
@@ -10053,71 +9855,9 @@ func (ec *executionContext) _TermProgress(ctx context.Context, sel ast.Selection
 		case "defIncorrectCount":
 			out.Values[i] = ec._TermProgress_defIncorrectCount(ctx, field, obj)
 		case "termLeitnerSystemBox":
-			field := field
-
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._TermProgress_termLeitnerSystemBox(ctx, field, obj)
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			out.Values[i] = ec._TermProgress_termLeitnerSystemBox(ctx, field, obj)
 		case "defLeitnerSystemBox":
-			field := field
-
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._TermProgress_defLeitnerSystemBox(ctx, field, obj)
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			out.Values[i] = ec._TermProgress_defLeitnerSystemBox(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
