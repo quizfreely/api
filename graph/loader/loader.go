@@ -180,6 +180,56 @@ ORDER BY input.og_order`,
 	return termsProgress, nil
 }
 
+func (dr *dataReader) getTermsProgressHistory(ctx context.Context, termIDs []string) ([][]*model.TermProgressHistory, []error) {
+	authedUser := auth.AuthedUserContext(ctx)
+
+	var termProgressHistory []*model.TermProgressHistory
+
+	err := pgxscan.Select(
+		ctx,
+		dr.db,
+		&termProgressHistory,
+		`SELECT id,
+    term_id,
+    confused_term_id,
+    answered_with,
+    confused_count,
+    to_char(last_confused_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as last_confused_at
+FROM (
+    SELECT tcp.*,
+        ROW_NUMBER() OVER (
+            PARTITION BY tcp.term_id
+            ORDER BY tcp.confused_count DESC
+        ) AS rn
+    FROM unnest($1::uuid[]) WITH ORDINALITY AS input(term_id, og_order)
+    LEFT JOIN term_confusion_pairs tcp
+        ON tcp.term_id = input.term_id
+       AND tcp.user_id = $2
+) ranked
+WHERE rn <= 3
+ORDER BY term_id, confused_count DESC`,
+		termIDs,
+		authedUser.ID,
+	)
+	if err != nil {
+		return nil, []error{err}
+	}
+
+    grouped := make(map[string][]*model.TermConfusionPair)
+    for _, c := range confusionPairs {
+        if c.TermID != nil {
+			grouped[*c.TermID] = append(grouped[*c.TermID], c)
+		}
+    }
+
+    orderedConfusionPairs := make([][]*model.TermConfusionPair, len(termIDs))
+    for i, id := range termIDs {
+        orderedConfusionPairs[i] = grouped[id]
+    }
+
+	return orderedConfusionPairs, nil
+}
+
 func (dr *dataReader) getTermsTopConfusionPairs(ctx context.Context, termIDs []string) ([][]*model.TermConfusionPair, []error) {
 	authedUser := auth.AuthedUserContext(ctx)
 
