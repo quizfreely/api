@@ -114,20 +114,13 @@ type TermInput struct {
 	SortOrder *int32  `json:"sortOrder,omitempty"`
 }
 
-type TermProgress struct {
-	ID                   *string `json:"id,omitempty"`
-	TermFirstReviewedAt  *string `json:"termFirstReviewedAt,omitempty"`
-	TermLastReviewedAt   *string `json:"termLastReviewedAt,omitempty"`
-	TermReviewCount      *int32  `json:"termReviewCount,omitempty"`
-	DefFirstReviewedAt   *string `json:"defFirstReviewedAt,omitempty"`
-	DefLastReviewedAt    *string `json:"defLastReviewedAt,omitempty"`
-	DefReviewCount       *int32  `json:"defReviewCount,omitempty"`
-	TermCorrectCount     *int32  `json:"termCorrectCount,omitempty"`
-	TermIncorrectCount   *int32  `json:"termIncorrectCount,omitempty"`
-	DefCorrectCount      *int32  `json:"defCorrectCount,omitempty"`
-	DefIncorrectCount    *int32  `json:"defIncorrectCount,omitempty"`
-	TermLeitnerSystemBox *int32  `json:"termLeitnerSystemBox,omitempty"`
-	DefLeitnerSystemBox  *int32  `json:"defLeitnerSystemBox,omitempty"`
+type TermProgressHistory struct {
+	ID                 *string `json:"id,omitempty"`
+	Timestamp          *string `json:"timestamp,omitempty"`
+	TermCorrectCount   *int32  `json:"termCorrectCount,omitempty"`
+	TermIncorrectCount *int32  `json:"termIncorrectCount,omitempty"`
+	DefCorrectCount    *int32  `json:"defCorrectCount,omitempty"`
+	DefIncorrectCount  *int32  `json:"defIncorrectCount,omitempty"`
 }
 
 type TermProgressInput struct {
