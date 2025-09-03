@@ -196,8 +196,11 @@ func (dr *dataReader) getTermsProgressHistory(ctx context.Context, termIDs []str
     term_incorrect_count,
     def_correct_count,
     def_incorrect_count
-FROM (
-`,
+FROM unnest($1::uuid[]) WITH ORDINALITY AS input(term_id, og_order)
+LEFT JOIN term_progress_history tph
+	ON tph.term_id = input.term_id
+	AND tph.user_id = $2
+ORDER BY input.og_order ASC, tph.timestamp DESC`,
 		termIDs,
 		authedUser.ID,
 	)
@@ -205,19 +208,19 @@ FROM (
 		return nil, []error{err}
 	}
 
-    grouped := make(map[string][]*model.TermConfusionPair)
-    for _, c := range confusionPairs {
-        if c.TermID != nil {
-			grouped[*c.TermID] = append(grouped[*c.TermID], c)
+    grouped := make(map[string][]*model.TermProgressHistory)
+    for _, tph := range termProgressHistory {
+        if tph.TermID != nil {
+			grouped[*tph.TermID] = append(grouped[*tph.TermID], tph)
 		}
     }
 
-    orderedConfusionPairs := make([][]*model.TermConfusionPair, len(termIDs))
+    orderedProgressHistory := make([][]*model.TermProgressHistory, len(termIDs))
     for i, id := range termIDs {
-        orderedConfusionPairs[i] = grouped[id]
+        orderedProgressHistory[i] = grouped[id]
     }
 
-	return orderedConfusionPairs, nil
+	return orderedProgressHistory, nil
 }
 
 func (dr *dataReader) getTermsTopConfusionPairs(ctx context.Context, termIDs []string) ([][]*model.TermConfusionPair, []error) {
