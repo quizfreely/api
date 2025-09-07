@@ -153,6 +153,7 @@ type MCQ {
     correct: Boolean
     answeredTerm: Term
     distractors: [Term]
+    correctChoiceIndex: Int
 }
 type TrueFalseQuestion {
     term: Term
@@ -196,6 +197,7 @@ input MCQInput {
     correct: Boolean
     answeredTerm: TermInput
     distractors: [TermInput]
+    correctChoiceIndex: Int
 }
 input TrueFalseQuestionInput {
     term: TermInput
