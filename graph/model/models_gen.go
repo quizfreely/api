@@ -26,19 +26,21 @@ type FRQInput struct {
 }
 
 type Mcq struct {
-	Term         *Term       `json:"term,omitempty"`
-	AnswerWith   *AnswerWith `json:"answerWith,omitempty"`
-	Correct      *bool       `json:"correct,omitempty"`
-	AnsweredTerm *Term       `json:"answeredTerm,omitempty"`
-	Distractors  []*Term     `json:"distractors,omitempty"`
+	Term               *Term       `json:"term,omitempty"`
+	AnswerWith         *AnswerWith `json:"answerWith,omitempty"`
+	Correct            *bool       `json:"correct,omitempty"`
+	AnsweredTerm       *Term       `json:"answeredTerm,omitempty"`
+	Distractors        []*Term     `json:"distractors,omitempty"`
+	CorrectChoiceIndex *int32      `json:"correctChoiceIndex,omitempty"`
 }
 
 type MCQInput struct {
-	Term         *TermInput   `json:"term,omitempty"`
-	AnswerWith   *AnswerWith  `json:"answerWith,omitempty"`
-	Correct      *bool        `json:"correct,omitempty"`
-	AnsweredTerm *TermInput   `json:"answeredTerm,omitempty"`
-	Distractors  []*TermInput `json:"distractors,omitempty"`
+	Term               *TermInput   `json:"term,omitempty"`
+	AnswerWith         *AnswerWith  `json:"answerWith,omitempty"`
+	Correct            *bool        `json:"correct,omitempty"`
+	AnsweredTerm       *TermInput   `json:"answeredTerm,omitempty"`
+	Distractors        []*TermInput `json:"distractors,omitempty"`
+	CorrectChoiceIndex *int32       `json:"correctChoiceIndex,omitempty"`
 }
 
 type MatchQuestion struct {
