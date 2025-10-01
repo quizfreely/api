@@ -774,6 +774,11 @@ WHERE id = $1 AND user_id = $2`,
 	return &practiceTest, nil
 }
 
+// FeaturedCategories is the resolver for the featuredCategories field.
+func (r *queryResolver) FeaturedCategories(ctx context.Context) ([]*model.Category, error) {
+	panic(fmt.Errorf("not implemented: FeaturedCategories - featuredCategories"))
+}
+
 // User is the resolver for the user field.
 func (r *studysetResolver) User(ctx context.Context, obj *model.Studyset) (*model.User, error) {
 	if obj.UserID == nil {
