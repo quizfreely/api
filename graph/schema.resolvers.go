@@ -511,7 +511,7 @@ func (r *mutationResolver) CreateFeaturedCategory(ctx context.Context, title *st
 		`INSERT INTO featured_categories
 (title) VALUES ($1)
 RETURNING id, title`,
-		title
+		title,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("database error in CreateFeaturedCategory: %w", err)
