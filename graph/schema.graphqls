@@ -9,6 +9,7 @@ type Query {
     searchStudysets(q: String!, limit: Int, offset: Int): [Studyset]
     myStudysets(limit: Int, offset: Int): [Studyset]
     practiceTest(id: ID!): PracticeTest
+    featuredCategories: [Category]
 }
 type Mutation {
     createStudyset(studyset: StudysetInput!, terms: [NewTermInput]): Studyset
@@ -219,4 +220,8 @@ input FRQInput {
     correct: Boolean
     userMarkedCorrect: Boolean
     answeredString: String
+}
+type Category {
+    title: String
+    studysets: [Studyset]
 }
