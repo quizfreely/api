@@ -804,7 +804,7 @@ GROUP BY fc.id, fc.title`,
 		return nil, fmt.Errorf("failed to get featured categories: %w", err)
 	}
 
-	return &featuredCategories, nil
+	return featuredCategories, nil
 }
 
 // User is the resolver for the user field.
