@@ -608,8 +608,8 @@ WHERE terms.id = $1 AND studysets.private = FALSE`,
 
 // FeaturedStudysets is the resolver for the featuredStudysets field.
 func (r *queryResolver) FeaturedStudysets(ctx context.Context, limit *int32, offset *int32) ([]*model.Studyset, error) {
-	l := 20
-	if limit != nil && *limit > 0 && *limit < 20 {
+	l := 24
+	if limit != nil && *limit > 0 && *limit < 1000 {
 		l = int(*limit)
 	}
 
@@ -642,8 +642,8 @@ func (r *queryResolver) FeaturedStudysets(ctx context.Context, limit *int32, off
 
 // RecentStudysets is the resolver for the recentStudysets field.
 func (r *queryResolver) RecentStudysets(ctx context.Context, limit *int32, offset *int32) ([]*model.Studyset, error) {
-	l := 20
-	if limit != nil && *limit > 0 && *limit < 20 {
+	l := 24
+	if limit != nil && *limit > 0 && *limit < 1000 {
 		l = int(*limit)
 	}
 
@@ -675,8 +675,8 @@ func (r *queryResolver) RecentStudysets(ctx context.Context, limit *int32, offse
 
 // SearchStudysets is the resolver for the searchStudysets field.
 func (r *queryResolver) SearchStudysets(ctx context.Context, q string, limit *int32, offset *int32) ([]*model.Studyset, error) {
-	l := 20
-	if limit != nil && *limit > 0 && *limit < 20 {
+	l := 240
+	if limit != nil && *limit > 0 && *limit < 1000 {
 		l = int(*limit)
 	}
 
@@ -713,8 +713,8 @@ func (r *queryResolver) MyStudysets(ctx context.Context, limit *int32, offset *i
 		return nil, fmt.Errorf("not authenticated")
 	}
 
-	l := 20
-	if limit != nil && *limit > 0 && *limit < 20 {
+	l := 240
+	if limit != nil && *limit > 0 && *limit < 1000 {
 		l = int(*limit)
 	}
 
