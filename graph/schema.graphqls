@@ -32,6 +32,7 @@ type AuthedUser {
     displayName: String
     authType: AuthType
     oauthGoogleEmail: String
+    modPerms: Boolean
 }
 enum AuthType {
     USERNAME_PASSWORD

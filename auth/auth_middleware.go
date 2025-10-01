@@ -57,7 +57,7 @@ func (ah *AuthHandler) AuthMiddleware(next http.Handler) http.Handler {
 				r.Context(),
 				ah.DB,
 				authedUser,
-				`SELECT u.id, u.username, u.display_name, u.auth_type, u.oauth_google_email
+				`SELECT u.id, u.username, u.display_name, u.auth_type, u.oauth_google_email, mod_perms
 FROM auth.sessions s
 JOIN auth.users u ON s.user_id = u.id
 WHERE s.token = $1 AND s.expire_at > now()`,

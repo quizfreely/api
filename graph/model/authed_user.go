@@ -6,4 +6,5 @@ type AuthedUser struct {
 	DisplayName      *string   `json:"displayName,omitempty" db:"display_name"`
 	AuthType         *AuthType `json:"authType,omitempty" db:"auth_type"`
 	OauthGoogleEmail *string   `json:"oauthGoogleEmail,omitempty" db:"oauth_google_email"`
+	ModPerms         *bool     `json:"modPerms,omitempty" db:"mod_perms"`
 }
