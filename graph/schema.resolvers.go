@@ -776,7 +776,35 @@ WHERE id = $1 AND user_id = $2`,
 
 // FeaturedCategories is the resolver for the featuredCategories field.
 func (r *queryResolver) FeaturedCategories(ctx context.Context) ([]*model.Category, error) {
-	panic(fmt.Errorf("not implemented: FeaturedCategories - featuredCategories"))
+	var featuredCategories [model.Category]
+	err := pgxscan.Select(
+		ctx,
+		r.DB,
+		&featuredCategories,
+		`SELECT 
+    fc.id,
+    fc.title,
+    COALESCE(
+        json_agg(
+            json_build_object(
+                'id', s.id,
+                'title', s.title,
+                'private', s.private,
+                'updatedAt', s.updated_at
+            )
+        ) FILTER (WHERE s.id IS NOT NULL), 
+        '[]'
+    ) AS studysets
+FROM featured_categories fc
+LEFT JOIN studysets s 
+    ON s.featured_category_id = fc.id
+GROUP BY fc.id, fc.title`,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get featured categories: %w", err)
+	}
+
+	return &featuredCategories, nil
 }
 
 // User is the resolver for the user field.
