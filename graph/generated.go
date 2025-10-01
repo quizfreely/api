@@ -54,11 +54,13 @@ type ComplexityRoot struct {
 		AuthType         func(childComplexity int) int
 		DisplayName      func(childComplexity int) int
 		ID               func(childComplexity int) int
+		ModPerms         func(childComplexity int) int
 		OauthGoogleEmail func(childComplexity int) int
 		Username         func(childComplexity int) int
 	}
 
 	Category struct {
+		ID        func(childComplexity int) int
 		Studysets func(childComplexity int) int
 		Title     func(childComplexity int) int
 	}
@@ -89,14 +91,16 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		CreateStudyset      func(childComplexity int, studyset model.StudysetInput, terms []*model.NewTermInput) int
-		DeleteStudyset      func(childComplexity int, id string) int
-		RecordConfusedTerms func(childComplexity int, confusedTerms []*model.TermConfusionPairInput) int
-		RecordPracticeTest  func(childComplexity int, input *model.PracticeTestInput) int
-		UpdatePracticeTest  func(childComplexity int, input *model.PracticeTestInput) int
-		UpdateStudyset      func(childComplexity int, id string, studyset *model.StudysetInput, terms []*model.TermInput, newTerms []*model.NewTermInput, deleteTerms []*string) int
-		UpdateTermProgress  func(childComplexity int, termProgress []*model.TermProgressInput) int
-		UpdateUser          func(childComplexity int, displayName *string) int
+		CreateFeaturedCategory      func(childComplexity int, name *string) int
+		CreateStudyset              func(childComplexity int, studyset model.StudysetInput, terms []*model.NewTermInput) int
+		DeleteStudyset              func(childComplexity int, id string) int
+		RecordConfusedTerms         func(childComplexity int, confusedTerms []*model.TermConfusionPairInput) int
+		RecordPracticeTest          func(childComplexity int, input *model.PracticeTestInput) int
+		SetStudysetFeaturedCategory func(childComplexity int, studysetID *string, categoryID *string) int
+		UpdatePracticeTest          func(childComplexity int, input *model.PracticeTestInput) int
+		UpdateStudyset              func(childComplexity int, id string, studyset *model.StudysetInput, terms []*model.TermInput, newTerms []*model.NewTermInput, deleteTerms []*string) int
+		UpdateTermProgress          func(childComplexity int, termProgress []*model.TermProgressInput) int
+		UpdateUser                  func(childComplexity int, displayName *string) int
 	}
 
 	PracticeTest struct {
@@ -212,6 +216,8 @@ type MutationResolver interface {
 	RecordConfusedTerms(ctx context.Context, confusedTerms []*model.TermConfusionPairInput) (*bool, error)
 	RecordPracticeTest(ctx context.Context, input *model.PracticeTestInput) (*model.PracticeTest, error)
 	UpdatePracticeTest(ctx context.Context, input *model.PracticeTestInput) (*model.PracticeTest, error)
+	CreateFeaturedCategory(ctx context.Context, name *string) (*model.Category, error)
+	SetStudysetFeaturedCategory(ctx context.Context, studysetID *string, categoryID *string) (*bool, error)
 }
 type QueryResolver interface {
 	Authed(ctx context.Context) (*bool, error)
@@ -283,6 +289,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.AuthedUser.ID(childComplexity), true
 
+	case "AuthedUser.modPerms":
+		if e.complexity.AuthedUser.ModPerms == nil {
+			break
+		}
+
+		return e.complexity.AuthedUser.ModPerms(childComplexity), true
+
 	case "AuthedUser.oauthGoogleEmail":
 		if e.complexity.AuthedUser.OauthGoogleEmail == nil {
 			break
@@ -296,6 +309,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.AuthedUser.Username(childComplexity), true
+
+	case "Category.id":
+		if e.complexity.Category.ID == nil {
+			break
+		}
+
+		return e.complexity.Category.ID(childComplexity), true
 
 	case "Category.studysets":
 		if e.complexity.Category.Studysets == nil {
@@ -423,6 +443,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.MatchQuestion.Term(childComplexity), true
 
+	case "Mutation.createFeaturedCategory":
+		if e.complexity.Mutation.CreateFeaturedCategory == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createFeaturedCategory_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateFeaturedCategory(childComplexity, args["name"].(*string)), true
+
 	case "Mutation.createStudyset":
 		if e.complexity.Mutation.CreateStudyset == nil {
 			break
@@ -470,6 +502,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.RecordPracticeTest(childComplexity, args["input"].(*model.PracticeTestInput)), true
+
+	case "Mutation.setStudysetFeaturedCategory":
+		if e.complexity.Mutation.SetStudysetFeaturedCategory == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_setStudysetFeaturedCategory_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.SetStudysetFeaturedCategory(childComplexity, args["studysetId"].(*string), args["categoryId"].(*string)), true
 
 	case "Mutation.updatePracticeTest":
 		if e.complexity.Mutation.UpdatePracticeTest == nil {
@@ -1205,6 +1249,17 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
 // region    ***************************** args.gotpl *****************************
 
+func (ec *executionContext) field_Mutation_createFeaturedCategory_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "name", ec.unmarshalOString2ᚖstring)
+	if err != nil {
+		return nil, err
+	}
+	args["name"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_createStudyset_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -1251,6 +1306,22 @@ func (ec *executionContext) field_Mutation_recordPracticeTest_args(ctx context.C
 		return nil, err
 	}
 	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_setStudysetFeaturedCategory_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "studysetId", ec.unmarshalOID2ᚖstring)
+	if err != nil {
+		return nil, err
+	}
+	args["studysetId"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "categoryId", ec.unmarshalOID2ᚖstring)
+	if err != nil {
+		return nil, err
+	}
+	args["categoryId"] = arg1
 	return args, nil
 }
 
@@ -1694,6 +1765,88 @@ func (ec *executionContext) fieldContext_AuthedUser_oauthGoogleEmail(_ context.C
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AuthedUser_modPerms(ctx context.Context, field graphql.CollectedField, obj *model.AuthedUser) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AuthedUser_modPerms(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ModPerms, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AuthedUser_modPerms(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AuthedUser",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Category_id(ctx context.Context, field graphql.CollectedField, obj *model.Category) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Category_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Category_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Category",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
 		},
 	}
 	return fc, nil
@@ -2825,6 +2978,8 @@ func (ec *executionContext) fieldContext_Mutation_updateUser(ctx context.Context
 				return ec.fieldContext_AuthedUser_authType(ctx, field)
 			case "oauthGoogleEmail":
 				return ec.fieldContext_AuthedUser_oauthGoogleEmail(ctx, field)
+			case "modPerms":
+				return ec.fieldContext_AuthedUser_modPerms(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type AuthedUser", field.Name)
 		},
@@ -3101,6 +3256,118 @@ func (ec *executionContext) fieldContext_Mutation_updatePracticeTest(ctx context
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_updatePracticeTest_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_createFeaturedCategory(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_createFeaturedCategory(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().CreateFeaturedCategory(rctx, fc.Args["name"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.Category)
+	fc.Result = res
+	return ec.marshalOCategory2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐCategory(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_createFeaturedCategory(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Category_id(ctx, field)
+			case "title":
+				return ec.fieldContext_Category_title(ctx, field)
+			case "studysets":
+				return ec.fieldContext_Category_studysets(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Category", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createFeaturedCategory_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_setStudysetFeaturedCategory(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_setStudysetFeaturedCategory(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().SetStudysetFeaturedCategory(rctx, fc.Args["studysetId"].(*string), fc.Args["categoryId"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_setStudysetFeaturedCategory(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_setStudysetFeaturedCategory_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -3452,6 +3719,8 @@ func (ec *executionContext) fieldContext_Query_authedUser(_ context.Context, fie
 				return ec.fieldContext_AuthedUser_authType(ctx, field)
 			case "oauthGoogleEmail":
 				return ec.fieldContext_AuthedUser_oauthGoogleEmail(ctx, field)
+			case "modPerms":
+				return ec.fieldContext_AuthedUser_modPerms(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type AuthedUser", field.Name)
 		},
@@ -4045,6 +4314,8 @@ func (ec *executionContext) fieldContext_Query_featuredCategories(_ context.Cont
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "id":
+				return ec.fieldContext_Category_id(ctx, field)
 			case "title":
 				return ec.fieldContext_Category_title(ctx, field)
 			case "studysets":
@@ -9320,6 +9591,8 @@ func (ec *executionContext) _AuthedUser(ctx context.Context, sel ast.SelectionSe
 			out.Values[i] = ec._AuthedUser_authType(ctx, field, obj)
 		case "oauthGoogleEmail":
 			out.Values[i] = ec._AuthedUser_oauthGoogleEmail(ctx, field, obj)
+		case "modPerms":
+			out.Values[i] = ec._AuthedUser_modPerms(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -9354,6 +9627,8 @@ func (ec *executionContext) _Category(ctx context.Context, sel ast.SelectionSet,
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Category")
+		case "id":
+			out.Values[i] = ec._Category_id(ctx, field, obj)
 		case "title":
 			out.Values[i] = ec._Category_title(ctx, field, obj)
 		case "studysets":
@@ -9565,6 +9840,14 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "updatePracticeTest":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_updatePracticeTest(ctx, field)
+			})
+		case "createFeaturedCategory":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createFeaturedCategory(ctx, field)
+			})
+		case "setStudysetFeaturedCategory":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_setStudysetFeaturedCategory(ctx, field)
 			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))

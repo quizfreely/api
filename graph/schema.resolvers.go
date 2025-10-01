@@ -496,6 +496,50 @@ RETURNING
 	return &practiceTest, nil
 }
 
+// CreateFeaturedCategory is the resolver for the createFeaturedCategory field.
+func (r *mutationResolver) CreateFeaturedCategory(ctx context.Context, name *string) (*model.Category, error) {
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil || !authedUser.ModPerms {
+		return nil, fmt.Errorf("only mods are allowed to create featured categories")
+	}
+
+	var category model.Category
+	err := pgxscan.Get(
+		ctx,
+		r.DB,
+		&practiceTest,
+		`INSERT INTO featured_categories
+(title) VALUES ($1)
+RETURNING id, title`,
+		name
+	)
+	if err != nil {
+		return nil, fmt.Errorf("database error in CreateFeaturedCategory: %w", err)
+	}
+
+	return &category, nil
+}
+
+// SetStudysetFeaturedCategory is the resolver for the setStudysetFeaturedCategory field.
+func (r *mutationResolver) SetStudysetFeaturedCategory(ctx context.Context, studysetID *string, categoryID *string) (*bool, error) {
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil || !authedUser.ModPerms {
+		return nil, fmt.Errorf("only mods are allowed to set featured categories")
+	}
+
+	_, err := r.DB.Exec(
+		ctx,
+		"UPDATE studysets SET featured_category_id = $1 WHERE id = $2",
+		categoryID,
+		studysetID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update studyset's featured category: %w", err)
+	}
+
+	return true
+}
+
 // Authed is the resolver for the authed field.
 func (r *queryResolver) Authed(ctx context.Context) (*bool, error) {
 	authed := auth.AuthedUserContext(ctx) != nil

@@ -10,6 +10,7 @@ import (
 )
 
 type Category struct {
+	ID        *string     `json:"id,omitempty"`
 	Title     *string     `json:"title,omitempty"`
 	Studysets []*Studyset `json:"studysets,omitempty"`
 }
