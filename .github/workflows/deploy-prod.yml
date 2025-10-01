@@ -22,10 +22,10 @@ jobs:
           ssh -i ~/.ssh/id_ed25519 \
             quizfreely@server.quizfreely.org \
             "sudo systemctl stop quizfreely-api.service"
-      - name: Use SCP to upload api-server executable
+      - name: SCP to upload api-server executable
         run: scp api-server quizfreely@server.quizfreely.org:/home/quizfreely/api/api-server
-      - name: Use SCP to upload db folder
-        run: scp --delete db/ quizfreely@server.quizfreely.org:/home/quizfreely/api/db/
+      - name: rsync to update db folder
+        run: rsync --delete db/ quizfreely@server.quizfreely.org:/home/quizfreely/api/db/
       - name: SSH into server, update DB, & start systemd service
         run: |
           ssh -i ~/.ssh/id_ed25519 \
