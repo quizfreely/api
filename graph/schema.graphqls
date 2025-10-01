@@ -20,6 +20,8 @@ type Mutation {
     recordConfusedTerms(confusedTerms: [TermConfusionPairInput]): Boolean
     recordPracticeTest(input: PracticeTestInput): PracticeTest
     updatePracticeTest(input: PracticeTestInput): PracticeTest
+    createFeaturedCategory(name: String): Category
+    setStudysetFeaturedCategory(studysetId: ID, categoryId: ID): Boolean
 }
 type User {
     id: ID
@@ -223,6 +225,7 @@ input FRQInput {
     answeredString: String
 }
 type Category {
+    id: ID
     title: String
     studysets: [Studyset]
 }
