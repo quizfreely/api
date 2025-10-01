@@ -91,7 +91,7 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		CreateFeaturedCategory      func(childComplexity int, name *string) int
+		CreateFeaturedCategory      func(childComplexity int, title *string) int
 		CreateStudyset              func(childComplexity int, studyset model.StudysetInput, terms []*model.NewTermInput) int
 		DeleteStudyset              func(childComplexity int, id string) int
 		RecordConfusedTerms         func(childComplexity int, confusedTerms []*model.TermConfusionPairInput) int
@@ -216,7 +216,7 @@ type MutationResolver interface {
 	RecordConfusedTerms(ctx context.Context, confusedTerms []*model.TermConfusionPairInput) (*bool, error)
 	RecordPracticeTest(ctx context.Context, input *model.PracticeTestInput) (*model.PracticeTest, error)
 	UpdatePracticeTest(ctx context.Context, input *model.PracticeTestInput) (*model.PracticeTest, error)
-	CreateFeaturedCategory(ctx context.Context, name *string) (*model.Category, error)
+	CreateFeaturedCategory(ctx context.Context, title *string) (*model.Category, error)
 	SetStudysetFeaturedCategory(ctx context.Context, studysetID *string, categoryID *string) (*bool, error)
 }
 type QueryResolver interface {
@@ -453,7 +453,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreateFeaturedCategory(childComplexity, args["name"].(*string)), true
+		return e.complexity.Mutation.CreateFeaturedCategory(childComplexity, args["title"].(*string)), true
 
 	case "Mutation.createStudyset":
 		if e.complexity.Mutation.CreateStudyset == nil {
@@ -1252,11 +1252,11 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 func (ec *executionContext) field_Mutation_createFeaturedCategory_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "name", ec.unmarshalOString2ᚖstring)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "title", ec.unmarshalOString2ᚖstring)
 	if err != nil {
 		return nil, err
 	}
-	args["name"] = arg0
+	args["title"] = arg0
 	return args, nil
 }
 
@@ -3276,7 +3276,7 @@ func (ec *executionContext) _Mutation_createFeaturedCategory(ctx context.Context
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateFeaturedCategory(rctx, fc.Args["name"].(*string))
+		return ec.resolvers.Mutation().CreateFeaturedCategory(rctx, fc.Args["title"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
