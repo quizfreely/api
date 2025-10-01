@@ -499,7 +499,7 @@ RETURNING
 // CreateFeaturedCategory is the resolver for the createFeaturedCategory field.
 func (r *mutationResolver) CreateFeaturedCategory(ctx context.Context, title *string) (*model.Category, error) {
 	authedUser := auth.AuthedUserContext(ctx)
-	if authedUser == nil || !authedUser.ModPerms {
+	if authedUser == nil || authedUser.ModPerms != true {
 		return nil, fmt.Errorf("only mods are allowed to create featured categories")
 	}
 
@@ -523,7 +523,7 @@ RETURNING id, title`,
 // SetStudysetFeaturedCategory is the resolver for the setStudysetFeaturedCategory field.
 func (r *mutationResolver) SetStudysetFeaturedCategory(ctx context.Context, studysetID *string, categoryID *string) (*bool, error) {
 	authedUser := auth.AuthedUserContext(ctx)
-	if authedUser == nil || !authedUser.ModPerms {
+	if authedUser == nil || authedUser.ModPerms != true {
 		return nil, fmt.Errorf("only mods are allowed to set featured categories")
 	}
 
