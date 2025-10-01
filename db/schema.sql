@@ -136,7 +136,8 @@ CREATE TABLE auth.users (
     display_name text NOT NULL,
     auth_type public.auth_type_enum NOT NULL,
     oauth_google_sub text,
-    oauth_google_email text
+    oauth_google_email text,
+    mod_perms boolean DEFAULT false NOT NULL
 );
 
 
@@ -512,4 +513,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('202508211445'),
     ('202509021427'),
     ('202509030947'),
-    ('202509302346');
+    ('202509302346'),
+    ('202510010013');
