@@ -25,7 +25,7 @@ jobs:
       - name: SCP to upload api-server executable
         run: scp api-server quizfreely@server.quizfreely.org:/home/quizfreely/api/api-server
       - name: rsync to update db folder
-        run: rsync --delete db/ quizfreely@server.quizfreely.org:/home/quizfreely/api/db/
+        run: rsync -r --delete db/ quizfreely@server.quizfreely.org:/home/quizfreely/api/db/
       - name: SSH into server, update DB, & start systemd service
         run: |
           ssh -i ~/.ssh/id_ed25519 \
