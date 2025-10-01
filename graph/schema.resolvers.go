@@ -537,7 +537,8 @@ func (r *mutationResolver) SetStudysetFeaturedCategory(ctx context.Context, stud
 		return nil, fmt.Errorf("failed to update studyset's featured category: %w", err)
 	}
 
-	return true, nil
+	success := true
+	return &success, nil
 }
 
 // Authed is the resolver for the authed field.
