@@ -141,6 +141,16 @@ CREATE TABLE auth.users (
 
 
 --
+-- Name: featured_categories; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.featured_categories (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    title text
+);
+
+
+--
 -- Name: practice_tests; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -186,7 +196,8 @@ CREATE TABLE public.studysets (
     updated_at timestamp with time zone DEFAULT now(),
     terms_count integer,
     featured boolean DEFAULT false,
-    tsvector_title tsvector GENERATED ALWAYS AS (to_tsvector('english'::regconfig, title)) STORED
+    tsvector_title tsvector GENERATED ALWAYS AS (to_tsvector('english'::regconfig, title)) STORED,
+    featured_category_id uuid
 );
 
 
@@ -300,6 +311,14 @@ ALTER TABLE ONLY public.term_confusion_pairs
 
 
 --
+-- Name: featured_categories featured_categories_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.featured_categories
+    ADD CONSTRAINT featured_categories_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: practice_tests practice_tests_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -395,6 +414,14 @@ ALTER TABLE ONLY public.practice_tests
 
 
 --
+-- Name: studysets studysets_featured_category_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.studysets
+    ADD CONSTRAINT studysets_featured_category_id_fkey FOREIGN KEY (featured_category_id) REFERENCES public.featured_categories(id) ON DELETE SET NULL;
+
+
+--
 -- Name: studysets studysets_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -484,4 +511,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('202508202155'),
     ('202508211445'),
     ('202509021427'),
-    ('202509030947');
+    ('202509030947'),
+    ('202509302346');

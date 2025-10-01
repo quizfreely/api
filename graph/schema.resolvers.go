@@ -776,7 +776,7 @@ WHERE id = $1 AND user_id = $2`,
 
 // FeaturedCategories is the resolver for the featuredCategories field.
 func (r *queryResolver) FeaturedCategories(ctx context.Context) ([]*model.Category, error) {
-	var featuredCategories [model.Category]
+	var featuredCategories []*model.Category
 	err := pgxscan.Select(
 		ctx,
 		r.DB,
