@@ -497,7 +497,7 @@ RETURNING
 }
 
 // CreateFeaturedCategory is the resolver for the createFeaturedCategory field.
-func (r *mutationResolver) CreateFeaturedCategory(ctx context.Context, name *string) (*model.Category, error) {
+func (r *mutationResolver) CreateFeaturedCategory(ctx context.Context, title *string) (*model.Category, error) {
 	authedUser := auth.AuthedUserContext(ctx)
 	if authedUser == nil || !authedUser.ModPerms {
 		return nil, fmt.Errorf("only mods are allowed to create featured categories")
@@ -511,7 +511,7 @@ func (r *mutationResolver) CreateFeaturedCategory(ctx context.Context, name *str
 		`INSERT INTO featured_categories
 (title) VALUES ($1)
 RETURNING id, title`,
-		name
+		title
 	)
 	if err != nil {
 		return nil, fmt.Errorf("database error in CreateFeaturedCategory: %w", err)
