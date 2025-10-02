@@ -73,6 +73,19 @@ CREATE TYPE public.auth_type_enum AS ENUM (
 
 
 --
+-- Name: subject_category; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.subject_category AS ENUM (
+    'LANG',
+    'STEM',
+    'SOCIAL_STUDIES',
+    'LA',
+    'MATH'
+);
+
+
+--
 -- Name: submission_action_type; Type: TYPE; Schema: public; Owner: -
 --
 
@@ -142,16 +155,6 @@ CREATE TABLE auth.users (
 
 
 --
--- Name: featured_categories; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.featured_categories (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    title text
-);
-
-
---
 -- Name: practice_tests; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -197,8 +200,20 @@ CREATE TABLE public.studysets (
     updated_at timestamp with time zone DEFAULT now(),
     terms_count integer,
     featured boolean DEFAULT false,
-    tsvector_title tsvector GENERATED ALWAYS AS (to_tsvector('english'::regconfig, title)) STORED,
-    featured_category_id uuid
+    tsvector_title tsvector GENERATED ALWAYS AS (to_tsvector('english'::regconfig, title)) STORED
+);
+
+
+--
+-- Name: subjects; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.subjects (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    name text,
+    category public.subject_category,
+    keywords text,
+    search_vector tsvector GENERATED ALWAYS AS ((setweight(to_tsvector('simple'::regconfig, COALESCE(name, ''::text)), 'A'::"char") || setweight(to_tsvector('simple'::regconfig, COALESCE(keywords, ''::text)), 'B'::"char"))) STORED
 );
 
 
@@ -312,14 +327,6 @@ ALTER TABLE ONLY public.term_confusion_pairs
 
 
 --
--- Name: featured_categories featured_categories_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.featured_categories
-    ADD CONSTRAINT featured_categories_pkey PRIMARY KEY (id);
-
-
---
 -- Name: practice_tests practice_tests_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -349,6 +356,14 @@ ALTER TABLE ONLY public.search_queries
 
 ALTER TABLE ONLY public.studysets
     ADD CONSTRAINT studysets_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: subjects subjects_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.subjects
+    ADD CONSTRAINT subjects_pkey PRIMARY KEY (id);
 
 
 --
@@ -412,14 +427,6 @@ ALTER TABLE ONLY public.practice_tests
 
 ALTER TABLE ONLY public.practice_tests
     ADD CONSTRAINT practice_tests_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
-
-
---
--- Name: studysets studysets_featured_category_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.studysets
-    ADD CONSTRAINT studysets_featured_category_id_fkey FOREIGN KEY (featured_category_id) REFERENCES public.featured_categories(id) ON DELETE SET NULL;
 
 
 --
@@ -514,4 +521,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('202509021427'),
     ('202509030947'),
     ('202509302346'),
-    ('202510010013');
+    ('202510010013'),
+    ('202510021734');
