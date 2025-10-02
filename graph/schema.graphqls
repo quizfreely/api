@@ -8,6 +8,7 @@ type Query {
     recentStudysets(limit: Int, offset: Int): [Studyset]
     searchStudysets(q: String!, limit: Int, offset: Int): [Studyset]
     myStudysets(limit: Int, offset: Int): [Studyset]
+    myRecentStudysets(limit: Int, offset: Int): [Studyset]
     practiceTest(id: ID!): PracticeTest
     featuredCategories: [Category]
 }
