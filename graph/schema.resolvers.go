@@ -28,16 +28,6 @@ func (r *folderResolver) MyStudysets(ctx context.Context, obj *model.Folder) ([]
 		return nil, nil
 	}
 
-	l := 240
-	if limit != nil && *limit > 0 && *limit < 1000 {
-		l = int(*limit)
-	}
-
-	o := 0
-	if offset != nil && *offset > 0 {
-		o = int(*offset)
-	}
-
 	var studysets []*model.Studyset
 	sql := `
 		SELECT
@@ -51,9 +41,8 @@ func (r *folderResolver) MyStudysets(ctx context.Context, obj *model.Folder) ([]
 		WHERE s.user_id = $1 AND saved_studysets.user_id = $1
 			AND saved_studysets.folder_id = $2
 		ORDER BY saved_studysets.timestamp DESC
-		LIMIT $3 OFFSET $4
 	`
-	err := pgxscan.Select(ctx, r.DB, &studysets, sql, authedUser.ID, *obj.ID, l, o)
+	err := pgxscan.Select(ctx, r.DB, &studysets, sql, authedUser.ID, *obj.ID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch folder's studysets: %w", err)
 	}
@@ -71,16 +60,6 @@ func (r *folderResolver) SavedStudysets(ctx context.Context, obj *model.Folder) 
 		return nil, nil
 	}
 
-	l := 240
-	if limit != nil && *limit > 0 && *limit < 1000 {
-		l = int(*limit)
-	}
-
-	o := 0
-	if offset != nil && *offset > 0 {
-		o = int(*offset)
-	}
-
 	var studysets []*model.Studyset
 	sql := `
 		SELECT
@@ -95,9 +74,8 @@ func (r *folderResolver) SavedStudysets(ctx context.Context, obj *model.Folder) 
 			AND saved_studysets.folder_id = $2
 			AND s.private = false
 		ORDER BY saved_studysets.timestamp DESC
-		LIMIT $3 OFFSET $4
 	`
-	err := pgxscan.Select(ctx, r.DB, &studysets, sql, authedUser.ID, *obj.ID, l, o)
+	err := pgxscan.Select(ctx, r.DB, &studysets, sql, authedUser.ID, *obj.ID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch folder's saved studysets: %w", err)
 	}
@@ -874,11 +852,6 @@ func (r *queryResolver) MyStudysets(ctx context.Context, limit *int32, offset *i
 	}
 
 	return studysets, nil
-}
-
-// MyRecentStudysets is the resolver for the myRecentStudysets field.
-func (r *queryResolver) MyRecentStudysets(ctx context.Context, limit *int32, offset *int32) ([]*model.Studyset, error) {
-	panic(fmt.Errorf("not implemented: MyRecentStudysets - myRecentStudysets"))
 }
 
 // MyFolders is the resolver for the myFolders field.
