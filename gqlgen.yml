@@ -185,6 +185,8 @@ models:
         resolver: true
   Folder:
     fields:
+      studysets:
+        resolver: true
       myStudysets:
         resolver: true
       savedStudysets:
