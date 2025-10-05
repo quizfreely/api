@@ -101,7 +101,7 @@ type ComplexityRoot struct {
 		CreateFeaturedCategory      func(childComplexity int, title *string) int
 		CreateFolder                func(childComplexity int, name string) int
 		CreateStudyset              func(childComplexity int, studyset model.StudysetInput, terms []*model.NewTermInput) int
-		DeleteFolder                func(childComplexity int, id string) int
+		DeleteFolder                func(childComplexity int, id string, unsaveAllStudysets bool) int
 		DeleteStudyset              func(childComplexity int, id string) int
 		RecordConfusedTerms         func(childComplexity int, confusedTerms []*model.TermConfusionPairInput) int
 		RecordPracticeTest          func(childComplexity int, input *model.PracticeTestInput) int
@@ -236,7 +236,7 @@ type MutationResolver interface {
 	UpdatePracticeTest(ctx context.Context, input *model.PracticeTestInput) (*model.PracticeTest, error)
 	CreateFolder(ctx context.Context, name string) (*model.Folder, error)
 	RenameFolder(ctx context.Context, id string, name string) (*model.Folder, error)
-	DeleteFolder(ctx context.Context, id string) (*string, error)
+	DeleteFolder(ctx context.Context, id string, unsaveAllStudysets bool) (*string, error)
 	SaveStudyset(ctx context.Context, studysetID string) (*bool, error)
 	SaveStudysetToFolder(ctx context.Context, studysetID string, folderID string) (*bool, error)
 	UnsaveStudyset(ctx context.Context, studysetID string) (*bool, error)
@@ -536,7 +536,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.DeleteFolder(childComplexity, args["id"].(string)), true
+		return e.complexity.Mutation.DeleteFolder(childComplexity, args["id"].(string), args["unsaveAllStudysets"].(bool)), true
 
 	case "Mutation.deleteStudyset":
 		if e.complexity.Mutation.DeleteStudyset == nil {
@@ -1438,6 +1438,11 @@ func (ec *executionContext) field_Mutation_deleteFolder_args(ctx context.Context
 		return nil, err
 	}
 	args["id"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "unsaveAllStudysets", ec.unmarshalNBoolean2bool)
+	if err != nil {
+		return nil, err
+	}
+	args["unsaveAllStudysets"] = arg1
 	return args, nil
 }
 
@@ -3788,7 +3793,7 @@ func (ec *executionContext) _Mutation_deleteFolder(ctx context.Context, field gr
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().DeleteFolder(rctx, fc.Args["id"].(string))
+		return ec.resolvers.Mutation().DeleteFolder(rctx, fc.Args["id"].(string), fc.Args["unsaveAllStudysets"].(bool))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

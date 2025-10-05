@@ -542,7 +542,7 @@ func (r *mutationResolver) CreateFolder(ctx context.Context, name string) (*mode
 		RETURNING id, user_id, name
 	`
 	var newFolder model.Folder
-	err = pgxscan.Get(ctx, r.DB, &newFolder, sql, authedUser.ID, name)
+	err := pgxscan.Get(ctx, r.DB, &newFolder, sql, authedUser.ID, name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create studyset: %w", err)
 	}
@@ -563,7 +563,7 @@ func (r *mutationResolver) RenameFolder(ctx context.Context, id string, name str
 		RETURNING id, user_id, name
 	`
 	var folder model.Folder
-	err = pgxscan.Get(ctx, r.DB, &folder, sql, name, authedUser.ID, id)
+	err := pgxscan.Get(ctx, r.DB, &folder, sql, name, authedUser.ID, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to rename folder: %w", err)
 	}
@@ -572,29 +572,35 @@ func (r *mutationResolver) RenameFolder(ctx context.Context, id string, name str
 }
 
 // DeleteFolder is the resolver for the deleteFolder field.
-func (r *mutationResolver) DeleteFolder(ctx context.Context, id string) (*string, error) {
-	// authedUser := auth.AuthedUserContext(ctx)
-	// if authedUser == nil {
-	// 	return nil, fmt.Errorf("not authenticated")
-	// }
-	//
-	// _, err := r.DB.Exec(
-	// 	ctx,
-	// 	"DELETE FROM folders SET featured_category_id = $1 WHERE id = $2",
-	// 	categoryID,
-	// 	studysetID,
-	// )
-	// if err != nil {
-	// 	return nil, fmt.Errorf("failed to update studyset's featured category: %w", err)
-	// }
-	//
-	// return &folder, nil
-	panic(fmt.Errorf("not implemented: SaveStudyset - saveStudyset"))
-}
+func (r *mutationResolver) DeleteFolder(ctx context.Context, id string, unsaveAllStudysets bool) (*string, error) {
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil {
+		return nil, fmt.Errorf("not authenticated")
+	}
 
-// SaveStudyset is the resolver for the saveStudyset field.
-func (r *mutationResolver) SaveStudyset(ctx context.Context, studysetID string) (*bool, error) {
-	panic(fmt.Errorf("not implemented: SaveStudyset - saveStudyset"))
+	if unsaveAllStudysets {
+		_, err := r.DB.Exec(
+			ctx,
+			"DELETE FROM saved_studysets WHERE folder_id = $1 AND user_id = $2",
+			id,
+			authedUser.ID,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unsave folder's studysets before deleting it: %w", err)
+		}
+	}
+
+	_, err := r.DB.Exec(
+		ctx,
+		"DELETE FROM folders WHERE id = $1 AND user_id = $2",
+		id,
+		authedUser.ID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to delete folder: %w", err)
+	}
+
+	return id, nil
 }
 
 // SaveStudysetToFolder is the resolver for the saveStudysetToFolder field.
@@ -1160,15 +1166,3 @@ type queryResolver struct{ *Resolver }
 type studysetResolver struct{ *Resolver }
 type termResolver struct{ *Resolver }
 type termConfusionPairResolver struct{ *Resolver }
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//    it when you're done.
-//  - You have helper methods in this file. Move them out to keep these resolver files clean.
-/*
-	func (r *mutationResolver) SaveStudysetInFolder(ctx context.Context, studysetID string, folderID string) (*bool, error) {
-	panic(fmt.Errorf("not implemented: SaveStudysetInFolder - saveStudysetInFolder"))
-}
-*/
