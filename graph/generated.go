@@ -39,6 +39,7 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	Folder() FolderResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
 	Studyset() StudysetResolver
@@ -74,9 +75,10 @@ type ComplexityRoot struct {
 	}
 
 	Folder struct {
-		ID        func(childComplexity int) int
-		Name      func(childComplexity int) int
-		Studysets func(childComplexity int) int
+		ID             func(childComplexity int) int
+		MyStudysets    func(childComplexity int) int
+		Name           func(childComplexity int) int
+		SavedStudysets func(childComplexity int) int
 	}
 
 	MCQ struct {
@@ -216,6 +218,10 @@ type ComplexityRoot struct {
 	}
 }
 
+type FolderResolver interface {
+	MyStudysets(ctx context.Context, obj *model.Folder) ([]*model.Studyset, error)
+	SavedStudysets(ctx context.Context, obj *model.Folder) ([]*model.Studyset, error)
+}
 type MutationResolver interface {
 	CreateStudyset(ctx context.Context, studyset model.StudysetInput, terms []*model.NewTermInput) (*model.Studyset, error)
 	UpdateStudyset(ctx context.Context, id string, studyset *model.StudysetInput, terms []*model.TermInput, newTerms []*model.NewTermInput, deleteTerms []*string) (*model.Studyset, error)
@@ -385,6 +391,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Folder.ID(childComplexity), true
 
+	case "Folder.myStudysets":
+		if e.complexity.Folder.MyStudysets == nil {
+			break
+		}
+
+		return e.complexity.Folder.MyStudysets(childComplexity), true
+
 	case "Folder.name":
 		if e.complexity.Folder.Name == nil {
 			break
@@ -392,12 +405,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Folder.Name(childComplexity), true
 
-	case "Folder.studysets":
-		if e.complexity.Folder.Studysets == nil {
+	case "Folder.savedStudysets":
+		if e.complexity.Folder.SavedStudysets == nil {
 			break
 		}
 
-		return e.complexity.Folder.Studysets(childComplexity), true
+		return e.complexity.Folder.SavedStudysets(childComplexity), true
 
 	case "MCQ.answerWith":
 		if e.complexity.MCQ.AnswerWith == nil {
@@ -2378,8 +2391,8 @@ func (ec *executionContext) fieldContext_Folder_name(_ context.Context, field gr
 	return fc, nil
 }
 
-func (ec *executionContext) _Folder_studysets(ctx context.Context, field graphql.CollectedField, obj *model.Folder) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Folder_studysets(ctx, field)
+func (ec *executionContext) _Folder_myStudysets(ctx context.Context, field graphql.CollectedField, obj *model.Folder) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Folder_myStudysets(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -2392,7 +2405,7 @@ func (ec *executionContext) _Folder_studysets(ctx context.Context, field graphql
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Studysets, nil
+		return ec.resolvers.Folder().MyStudysets(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2406,12 +2419,71 @@ func (ec *executionContext) _Folder_studysets(ctx context.Context, field graphql
 	return ec.marshalOStudyset2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐStudyset(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Folder_studysets(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Folder_myStudysets(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Folder",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Studyset_id(ctx, field)
+			case "title":
+				return ec.fieldContext_Studyset_title(ctx, field)
+			case "private":
+				return ec.fieldContext_Studyset_private(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Studyset_updatedAt(ctx, field)
+			case "user":
+				return ec.fieldContext_Studyset_user(ctx, field)
+			case "terms":
+				return ec.fieldContext_Studyset_terms(ctx, field)
+			case "termsCount":
+				return ec.fieldContext_Studyset_termsCount(ctx, field)
+			case "practiceTests":
+				return ec.fieldContext_Studyset_practiceTests(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Studyset", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Folder_savedStudysets(ctx context.Context, field graphql.CollectedField, obj *model.Folder) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Folder_savedStudysets(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Folder().SavedStudysets(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Studyset)
+	fc.Result = res
+	return ec.marshalOStudyset2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐStudyset(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Folder_savedStudysets(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Folder",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
@@ -4580,8 +4652,10 @@ func (ec *executionContext) fieldContext_Query_myFolders(ctx context.Context, fi
 				return ec.fieldContext_Folder_id(ctx, field)
 			case "name":
 				return ec.fieldContext_Folder_name(ctx, field)
-			case "studysets":
-				return ec.fieldContext_Folder_studysets(ctx, field)
+			case "myStudysets":
+				return ec.fieldContext_Folder_myStudysets(ctx, field)
+			case "savedStudysets":
+				return ec.fieldContext_Folder_savedStudysets(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Folder", field.Name)
 		},
@@ -10173,8 +10247,72 @@ func (ec *executionContext) _Folder(ctx context.Context, sel ast.SelectionSet, o
 			out.Values[i] = ec._Folder_id(ctx, field, obj)
 		case "name":
 			out.Values[i] = ec._Folder_name(ctx, field, obj)
-		case "studysets":
-			out.Values[i] = ec._Folder_studysets(ctx, field, obj)
+		case "myStudysets":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Folder_myStudysets(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "savedStudysets":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Folder_savedStudysets(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

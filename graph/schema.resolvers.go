@@ -18,6 +18,93 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// MyStudysets is the resolver for the myStudysets field.
+func (r *folderResolver) MyStudysets(ctx context.Context, obj *model.Folder) ([]*model.Studyset, error) {
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil {
+		return nil, fmt.Errorf("not authenticated")
+	}
+	if obj == nil || obj.ID == nil {
+		return nil, nil
+	}
+
+	l := 240
+	if limit != nil && *limit > 0 && *limit < 1000 {
+		l = int(*limit)
+	}
+
+	o := 0
+	if offset != nil && *offset > 0 {
+		o = int(*offset)
+	}
+
+	var studysets []*model.Studyset
+	sql := `
+		SELECT
+			s.id,
+			s.user_id,
+			s.title,
+			s.private,
+			to_char(s.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
+		FROM saved_studysets
+		JOIN studysets s ON saved_studysets.studyset_id = s.id
+		WHERE s.user_id = $1 AND saved_studysets.user_id = $1
+			AND saved_studysets.folder_id = $2
+		ORDER BY saved_studysets.timestamp DESC
+		LIMIT $3 OFFSET $4
+	`
+	err := pgxscan.Select(ctx, r.DB, &studysets, sql, authedUser.ID, *obj.ID, l, o)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch folder's studysets: %w", err)
+	}
+
+	return studysets, nil
+}
+
+// SavedStudysets is the resolver for the savedStudysets field.
+func (r *folderResolver) SavedStudysets(ctx context.Context, obj *model.Folder) ([]*model.Studyset, error) {
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil {
+		return nil, fmt.Errorf("not authenticated")
+	}
+	if obj == nil || obj.ID == nil {
+		return nil, nil
+	}
+
+	l := 240
+	if limit != nil && *limit > 0 && *limit < 1000 {
+		l = int(*limit)
+	}
+
+	o := 0
+	if offset != nil && *offset > 0 {
+		o = int(*offset)
+	}
+
+	var studysets []*model.Studyset
+	sql := `
+		SELECT
+			s.id,
+			s.user_id,
+			s.title,
+			s.private,
+			to_char(s.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
+		FROM saved_studysets
+		JOIN studysets s ON saved_studysets.studyset_id = s.id
+		WHERE saved_studysets.user_id = $1
+			AND saved_studysets.folder_id = $2
+			AND s.private = false
+		ORDER BY saved_studysets.timestamp DESC
+		LIMIT $3 OFFSET $4
+	`
+	err := pgxscan.Select(ctx, r.DB, &studysets, sql, authedUser.ID, *obj.ID, l, o)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch folder's saved studysets: %w", err)
+	}
+
+	return studysets, nil
+}
+
 // CreateStudyset is the resolver for the createStudyset field.
 func (r *mutationResolver) CreateStudyset(ctx context.Context, studyset model.StudysetInput, terms []*model.NewTermInput) (*model.Studyset, error) {
 	authedUser := auth.AuthedUserContext(ctx)
@@ -821,7 +908,7 @@ func (r *queryResolver) MyFolders(ctx context.Context, limit *int32, offset *int
 		WHERE user_id = $1
 		LIMIT $2 OFFSET $3
 	`
-	err := pgxscan.Select(ctx, r.DB, &studysets, sql, authedUser.ID, l, o)
+	err := pgxscan.Select(ctx, r.DB, &folders, sql, authedUser.ID, l, o)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch my folders: %w", err)
 	}
@@ -857,7 +944,7 @@ func (r *queryResolver) MySavedStudysets(ctx context.Context, limit *int32, offs
 		FROM saved_studysets
 		JOIN studysets s ON saved_studysets.studyset_id = s.id
 		WHERE saved_studysets.user_id = $1
-			AND saved_studysets.folder IS NULL
+			AND saved_studysets.folder_id IS NULL
 			AND s.private = false
 		ORDER BY saved_studysets.timestamp DESC
 		LIMIT $2 OFFSET $3
@@ -1028,6 +1115,9 @@ func (r *termConfusionPairResolver) ConfusedTerm(ctx context.Context, obj *model
 	return loader.GetTermByID(ctx, *obj.ConfusedTermID)
 }
 
+// Folder returns FolderResolver implementation.
+func (r *Resolver) Folder() FolderResolver { return &folderResolver{r} }
+
 // Mutation returns MutationResolver implementation.
 func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 
@@ -1045,6 +1135,7 @@ func (r *Resolver) TermConfusionPair() TermConfusionPairResolver {
 	return &termConfusionPairResolver{r}
 }
 
+type folderResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
 type studysetResolver struct{ *Resolver }

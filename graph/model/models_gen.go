@@ -32,9 +32,10 @@ type FRQInput struct {
 }
 
 type Folder struct {
-	ID        *string     `json:"id,omitempty"`
-	Name      *string     `json:"name,omitempty"`
-	Studysets []*Studyset `json:"studysets,omitempty"`
+	ID             *string     `json:"id,omitempty"`
+	Name           *string     `json:"name,omitempty"`
+	MyStudysets    []*Studyset `json:"myStudysets,omitempty"`
+	SavedStudysets []*Studyset `json:"savedStudysets,omitempty"`
 }
 
 type Mcq struct {
