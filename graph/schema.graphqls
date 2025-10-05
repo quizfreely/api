@@ -9,6 +9,8 @@ type Query {
     searchStudysets(q: String!, limit: Int, offset: Int): [Studyset]
     myStudysets(limit: Int, offset: Int): [Studyset]
     myRecentStudysets(limit: Int, offset: Int): [Studyset]
+    myFolders(limit: Int, offset: Int): [Folder]
+    mySavedStudysets(limit: Int, offset: Int): [Studyset]
     practiceTest(id: ID!): PracticeTest
     featuredCategories: [Category]
 }
@@ -228,5 +230,10 @@ input FRQInput {
 type Category {
     id: ID
     title: String
+    studysets: [Studyset]
+}
+type Folder {
+    id: ID
+    name: String
     studysets: [Studyset]
 }
