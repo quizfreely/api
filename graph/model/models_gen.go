@@ -31,6 +31,12 @@ type FRQInput struct {
 	AnsweredString    *string     `json:"answeredString,omitempty"`
 }
 
+type Folder struct {
+	ID        *string     `json:"id,omitempty"`
+	Name      *string     `json:"name,omitempty"`
+	Studysets []*Studyset `json:"studysets,omitempty"`
+}
+
 type Mcq struct {
 	Term               *Term       `json:"term,omitempty"`
 	AnswerWith         *AnswerWith `json:"answerWith,omitempty"`

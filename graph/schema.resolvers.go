@@ -789,6 +789,87 @@ func (r *queryResolver) MyStudysets(ctx context.Context, limit *int32, offset *i
 	return studysets, nil
 }
 
+// MyRecentStudysets is the resolver for the myRecentStudysets field.
+func (r *queryResolver) MyRecentStudysets(ctx context.Context, limit *int32, offset *int32) ([]*model.Studyset, error) {
+	panic(fmt.Errorf("not implemented: MyRecentStudysets - myRecentStudysets"))
+}
+
+// MyFolders is the resolver for the myFolders field.
+func (r *queryResolver) MyFolders(ctx context.Context, limit *int32, offset *int32) ([]*model.Folder, error) {
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil {
+		return nil, fmt.Errorf("not authenticated")
+	}
+
+	l := 240
+	if limit != nil && *limit > 0 && *limit < 1000 {
+		l = int(*limit)
+	}
+
+	o := 0
+	if offset != nil && *offset > 0 {
+		o = int(*offset)
+	}
+
+	var folders []*model.Folder
+	sql := `
+		SELECT
+			id,
+			user_id,
+			name
+		FROM folders
+		WHERE user_id = $1
+		LIMIT $2 OFFSET $3
+	`
+	err := pgxscan.Select(ctx, r.DB, &studysets, sql, authedUser.ID, l, o)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch my folders: %w", err)
+	}
+
+	return folders, nil
+}
+
+// MySavedStudysets is the resolver for the mySavedStudysets field.
+func (r *queryResolver) MySavedStudysets(ctx context.Context, limit *int32, offset *int32) ([]*model.Studyset, error) {
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil {
+		return nil, fmt.Errorf("not authenticated")
+	}
+
+	l := 240
+	if limit != nil && *limit > 0 && *limit < 1000 {
+		l = int(*limit)
+	}
+
+	o := 0
+	if offset != nil && *offset > 0 {
+		o = int(*offset)
+	}
+
+	var studysets []*model.Studyset
+	sql := `
+		SELECT
+			s.id,
+			s.user_id,
+			s.title,
+			s.private,
+			to_char(s.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
+		FROM saved_studysets
+		JOIN studysets s ON saved_studysets.studyset_id = s.id
+		WHERE saved_studysets.user_id = $1
+			AND saved_studysets.folder IS NULL
+			AND s.private = false
+		ORDER BY saved_studysets.timestamp DESC
+		LIMIT $2 OFFSET $3
+	`
+	err := pgxscan.Select(ctx, r.DB, &studysets, sql, authedUser.ID, l, o)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch saved studysets: %w", err)
+	}
+
+	return studysets, nil
+}
+
 // PracticeTest is the resolver for the practiceTest field.
 func (r *queryResolver) PracticeTest(ctx context.Context, id string) (*model.PracticeTest, error) {
 	authedUser := auth.AuthedUserContext(ctx)
