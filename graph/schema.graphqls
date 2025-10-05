@@ -25,8 +25,7 @@ type Mutation {
     createFolder(name: String!): Folder
     renameFolder(id: ID!, name: String!): Folder
     deleteFolder(id: ID!, unsaveAllStudysets: Boolean!): ID
-    saveStudyset(studysetId: ID!): Boolean
-    saveStudysetToFolder(studysetId: ID!, folderId: ID!): Boolean
+    saveStudyset(studysetId: ID!, folderId: ID): Boolean
     unsaveStudyset(studysetId: ID!): Boolean
     createFeaturedCategory(title: String): Category
     setStudysetFeaturedCategory(studysetId: ID, categoryId: ID): Boolean
