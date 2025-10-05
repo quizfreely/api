@@ -235,5 +235,6 @@ type Category {
 type Folder {
     id: ID
     name: String
-    studysets: [Studyset]
+    myStudysets: [Studyset]
+    savedStudysets: [Studyset]
 }

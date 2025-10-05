@@ -183,3 +183,9 @@ models:
         resolver: true
       confusedTerm:
         resolver: true
+  Folder:
+    fields:
+      myStudysets:
+        resolver: true
+      savedStudysets:
+        resolver: true
