@@ -600,17 +600,51 @@ func (r *mutationResolver) DeleteFolder(ctx context.Context, id string, unsaveAl
 		return nil, fmt.Errorf("failed to delete folder: %w", err)
 	}
 
-	return id, nil
+	return &id, nil
 }
 
-// SaveStudysetToFolder is the resolver for the saveStudysetToFolder field.
-func (r *mutationResolver) SaveStudysetToFolder(ctx context.Context, studysetID string, folderID string) (*bool, error) {
-	panic(fmt.Errorf("not implemented: SaveStudysetToFolder - saveStudysetToFolder"))
+// SaveStudyset is the resolver for the saveStudyset field.
+func (r *mutationResolver) SaveStudyset(ctx context.Context, studysetID string, folderID *string) (*bool, error) {
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil {
+		return nil, fmt.Errorf("not authenticated")
+	}
+
+	_, err := r.DB.Exec(
+		ctx,
+		`INSERT INTO saved_studysets (user_id, studyset_id, folder_id)
+		VALUES ($1, $2, $3)`,
+		authedUser.ID,
+		studysetID,
+		folderID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to save studyset: %w", err)
+	}
+
+	yay := true
+	return &yay, nil
 }
 
 // UnsaveStudyset is the resolver for the unsaveStudyset field.
 func (r *mutationResolver) UnsaveStudyset(ctx context.Context, studysetID string) (*bool, error) {
-	panic(fmt.Errorf("not implemented: UnsaveStudyset - unsaveStudyset"))
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil {
+		return nil, fmt.Errorf("not authenticated")
+	}
+
+	_, err := r.DB.Exec(
+		ctx,
+		"DELETE FROM saved_studysets WHERE studyset_id = $1 AND user_id = $2",
+		studysetID,
+		authedUser.ID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unsave studyset: %w", err)
+	}
+
+	yay := true
+	return &yay, nil
 }
 
 // CreateFeaturedCategory is the resolver for the createFeaturedCategory field.
