@@ -187,7 +187,3 @@ models:
     fields:
       studysets:
         resolver: true
-      myStudysets:
-        resolver: true
-      savedStudysets:
-        resolver: true
