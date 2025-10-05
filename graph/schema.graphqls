@@ -23,7 +23,11 @@ type Mutation {
     recordPracticeTest(input: PracticeTestInput): PracticeTest
     updatePracticeTest(input: PracticeTestInput): PracticeTest
     createFolder(name: String!): Folder
-    saveStudysetInFolder(studysetId: ID!, folderId: ID!): Boolean
+    renameFolder(id: ID!, name: String!): Folder
+    deleteFolder(id: ID!): ID
+    saveStudyset(studysetId: ID!): Boolean
+    saveStudysetToFolder(studysetId: ID!, folderId: ID!): Boolean
+    unsaveStudyset(studysetId: ID!): Boolean
     createFeaturedCategory(title: String): Category
     setStudysetFeaturedCategory(studysetId: ID, categoryId: ID): Boolean
 }
