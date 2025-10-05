@@ -22,6 +22,8 @@ type Mutation {
     recordConfusedTerms(confusedTerms: [TermConfusionPairInput]): Boolean
     recordPracticeTest(input: PracticeTestInput): PracticeTest
     updatePracticeTest(input: PracticeTestInput): PracticeTest
+    createFolder(name: String!): Folder
+    saveStudysetInFolder(studysetId: ID!, folderId: ID!): Boolean
     createFeaturedCategory(title: String): Category
     setStudysetFeaturedCategory(studysetId: ID, categoryId: ID): Boolean
 }
@@ -234,6 +236,7 @@ type Category {
 type Folder {
     id: ID
     name: String
+    studysets: [Studyset]
     myStudysets: [Studyset]
     savedStudysets: [Studyset]
 }

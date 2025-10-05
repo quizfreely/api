@@ -18,6 +18,39 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// Studysets is the resolver for the studysets field.
+func (r *folderResolver) Studysets(ctx context.Context, obj *model.Folder) ([]*model.Studyset, error) {
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil {
+		return nil, fmt.Errorf("not authenticated")
+	}
+	if obj == nil || obj.ID == nil {
+		return nil, nil
+	}
+
+	var studysets []*model.Studyset
+	sql := `
+		SELECT
+			s.id,
+			s.user_id,
+			s.title,
+			s.private,
+			to_char(s.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
+		FROM saved_studysets
+		JOIN studysets s ON saved_studysets.studyset_id = s.id
+		WHERE saved_studysets.user_id = $1
+			AND saved_studysets.folder_id = $2
+			AND (s.private = false OR s.user_id = $1)
+		ORDER BY saved_studysets.timestamp DESC
+	`
+	err := pgxscan.Select(ctx, r.DB, &studysets, sql, authedUser.ID, *obj.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch folder's studysets: %w", err)
+	}
+
+	return studysets, nil
+}
+
 // MyStudysets is the resolver for the myStudysets field.
 func (r *folderResolver) MyStudysets(ctx context.Context, obj *model.Folder) ([]*model.Studyset, error) {
 	authedUser := auth.AuthedUserContext(ctx)
@@ -559,6 +592,16 @@ RETURNING
 	}
 
 	return &practiceTest, nil
+}
+
+// CreateFolder is the resolver for the createFolder field.
+func (r *mutationResolver) CreateFolder(ctx context.Context, name string) (*model.Folder, error) {
+	panic(fmt.Errorf("not implemented: CreateFolder - createFolder"))
+}
+
+// SaveStudysetInFolder is the resolver for the saveStudysetInFolder field.
+func (r *mutationResolver) SaveStudysetInFolder(ctx context.Context, studysetID string, folderID string) (*bool, error) {
+	panic(fmt.Errorf("not implemented: SaveStudysetInFolder - saveStudysetInFolder"))
 }
 
 // CreateFeaturedCategory is the resolver for the createFeaturedCategory field.
