@@ -24,7 +24,7 @@ type Mutation {
     updatePracticeTest(input: PracticeTestInput): PracticeTest
     createFolder(name: String!): Folder
     renameFolder(id: ID!, name: String!): Folder
-    deleteFolder(id: ID!): ID
+    deleteFolder(id: ID!, unsaveAllStudysets: Boolean!): ID
     saveStudyset(studysetId: ID!): Boolean
     saveStudysetToFolder(studysetId: ID!, folderId: ID!): Boolean
     unsaveStudyset(studysetId: ID!): Boolean

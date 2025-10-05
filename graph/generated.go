@@ -101,11 +101,15 @@ type ComplexityRoot struct {
 		CreateFeaturedCategory      func(childComplexity int, title *string) int
 		CreateFolder                func(childComplexity int, name string) int
 		CreateStudyset              func(childComplexity int, studyset model.StudysetInput, terms []*model.NewTermInput) int
+		DeleteFolder                func(childComplexity int, id string) int
 		DeleteStudyset              func(childComplexity int, id string) int
 		RecordConfusedTerms         func(childComplexity int, confusedTerms []*model.TermConfusionPairInput) int
 		RecordPracticeTest          func(childComplexity int, input *model.PracticeTestInput) int
-		SaveStudysetInFolder        func(childComplexity int, studysetID string, folderID string) int
+		RenameFolder                func(childComplexity int, id string, name string) int
+		SaveStudyset                func(childComplexity int, studysetID string) int
+		SaveStudysetToFolder        func(childComplexity int, studysetID string, folderID string) int
 		SetStudysetFeaturedCategory func(childComplexity int, studysetID *string, categoryID *string) int
+		UnsaveStudyset              func(childComplexity int, studysetID string) int
 		UpdatePracticeTest          func(childComplexity int, input *model.PracticeTestInput) int
 		UpdateStudyset              func(childComplexity int, id string, studyset *model.StudysetInput, terms []*model.TermInput, newTerms []*model.NewTermInput, deleteTerms []*string) int
 		UpdateTermProgress          func(childComplexity int, termProgress []*model.TermProgressInput) int
@@ -231,7 +235,11 @@ type MutationResolver interface {
 	RecordPracticeTest(ctx context.Context, input *model.PracticeTestInput) (*model.PracticeTest, error)
 	UpdatePracticeTest(ctx context.Context, input *model.PracticeTestInput) (*model.PracticeTest, error)
 	CreateFolder(ctx context.Context, name string) (*model.Folder, error)
-	SaveStudysetInFolder(ctx context.Context, studysetID string, folderID string) (*bool, error)
+	RenameFolder(ctx context.Context, id string, name string) (*model.Folder, error)
+	DeleteFolder(ctx context.Context, id string) (*string, error)
+	SaveStudyset(ctx context.Context, studysetID string) (*bool, error)
+	SaveStudysetToFolder(ctx context.Context, studysetID string, folderID string) (*bool, error)
+	UnsaveStudyset(ctx context.Context, studysetID string) (*bool, error)
 	CreateFeaturedCategory(ctx context.Context, title *string) (*model.Category, error)
 	SetStudysetFeaturedCategory(ctx context.Context, studysetID *string, categoryID *string) (*bool, error)
 }
@@ -518,6 +526,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Mutation.CreateStudyset(childComplexity, args["studyset"].(model.StudysetInput), args["terms"].([]*model.NewTermInput)), true
 
+	case "Mutation.deleteFolder":
+		if e.complexity.Mutation.DeleteFolder == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteFolder_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteFolder(childComplexity, args["id"].(string)), true
+
 	case "Mutation.deleteStudyset":
 		if e.complexity.Mutation.DeleteStudyset == nil {
 			break
@@ -554,17 +574,41 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Mutation.RecordPracticeTest(childComplexity, args["input"].(*model.PracticeTestInput)), true
 
-	case "Mutation.saveStudysetInFolder":
-		if e.complexity.Mutation.SaveStudysetInFolder == nil {
+	case "Mutation.renameFolder":
+		if e.complexity.Mutation.RenameFolder == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_saveStudysetInFolder_args(ctx, rawArgs)
+		args, err := ec.field_Mutation_renameFolder_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.SaveStudysetInFolder(childComplexity, args["studysetId"].(string), args["folderId"].(string)), true
+		return e.complexity.Mutation.RenameFolder(childComplexity, args["id"].(string), args["name"].(string)), true
+
+	case "Mutation.saveStudyset":
+		if e.complexity.Mutation.SaveStudyset == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_saveStudyset_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.SaveStudyset(childComplexity, args["studysetId"].(string)), true
+
+	case "Mutation.saveStudysetToFolder":
+		if e.complexity.Mutation.SaveStudysetToFolder == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_saveStudysetToFolder_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.SaveStudysetToFolder(childComplexity, args["studysetId"].(string), args["folderId"].(string)), true
 
 	case "Mutation.setStudysetFeaturedCategory":
 		if e.complexity.Mutation.SetStudysetFeaturedCategory == nil {
@@ -577,6 +621,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.SetStudysetFeaturedCategory(childComplexity, args["studysetId"].(*string), args["categoryId"].(*string)), true
+
+	case "Mutation.unsaveStudyset":
+		if e.complexity.Mutation.UnsaveStudyset == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_unsaveStudyset_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UnsaveStudyset(childComplexity, args["studysetId"].(string)), true
 
 	case "Mutation.updatePracticeTest":
 		if e.complexity.Mutation.UpdatePracticeTest == nil {
@@ -1374,6 +1430,17 @@ func (ec *executionContext) field_Mutation_createStudyset_args(ctx context.Conte
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_deleteFolder_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_deleteStudyset_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -1407,7 +1474,23 @@ func (ec *executionContext) field_Mutation_recordPracticeTest_args(ctx context.C
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_saveStudysetInFolder_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+func (ec *executionContext) field_Mutation_renameFolder_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "name", ec.unmarshalNString2string)
+	if err != nil {
+		return nil, err
+	}
+	args["name"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_saveStudysetToFolder_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "studysetId", ec.unmarshalNID2string)
@@ -1420,6 +1503,17 @@ func (ec *executionContext) field_Mutation_saveStudysetInFolder_args(ctx context
 		return nil, err
 	}
 	args["folderId"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_saveStudyset_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "studysetId", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["studysetId"] = arg0
 	return args, nil
 }
 
@@ -1436,6 +1530,17 @@ func (ec *executionContext) field_Mutation_setStudysetFeaturedCategory_args(ctx 
 		return nil, err
 	}
 	args["categoryId"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_unsaveStudyset_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "studysetId", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["studysetId"] = arg0
 	return args, nil
 }
 
@@ -3609,8 +3714,8 @@ func (ec *executionContext) fieldContext_Mutation_createFolder(ctx context.Conte
 	return fc, nil
 }
 
-func (ec *executionContext) _Mutation_saveStudysetInFolder(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Mutation_saveStudysetInFolder(ctx, field)
+func (ec *executionContext) _Mutation_renameFolder(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_renameFolder(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -3623,7 +3728,119 @@ func (ec *executionContext) _Mutation_saveStudysetInFolder(ctx context.Context, 
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().SaveStudysetInFolder(rctx, fc.Args["studysetId"].(string), fc.Args["folderId"].(string))
+		return ec.resolvers.Mutation().RenameFolder(rctx, fc.Args["id"].(string), fc.Args["name"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.Folder)
+	fc.Result = res
+	return ec.marshalOFolder2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐFolder(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_renameFolder(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Folder_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Folder_name(ctx, field)
+			case "studysets":
+				return ec.fieldContext_Folder_studysets(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Folder", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_renameFolder_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteFolder(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_deleteFolder(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DeleteFolder(rctx, fc.Args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_deleteFolder(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteFolder_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_saveStudyset(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_saveStudyset(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().SaveStudyset(rctx, fc.Args["studysetId"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3637,7 +3854,7 @@ func (ec *executionContext) _Mutation_saveStudysetInFolder(ctx context.Context, 
 	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Mutation_saveStudysetInFolder(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Mutation_saveStudyset(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Mutation",
 		Field:      field,
@@ -3654,7 +3871,111 @@ func (ec *executionContext) fieldContext_Mutation_saveStudysetInFolder(ctx conte
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_saveStudysetInFolder_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Mutation_saveStudyset_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_saveStudysetToFolder(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_saveStudysetToFolder(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().SaveStudysetToFolder(rctx, fc.Args["studysetId"].(string), fc.Args["folderId"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_saveStudysetToFolder(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_saveStudysetToFolder_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_unsaveStudyset(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_unsaveStudyset(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UnsaveStudyset(rctx, fc.Args["studysetId"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_unsaveStudyset(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_unsaveStudyset_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -10445,9 +10766,25 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_createFolder(ctx, field)
 			})
-		case "saveStudysetInFolder":
+		case "renameFolder":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_saveStudysetInFolder(ctx, field)
+				return ec._Mutation_renameFolder(ctx, field)
+			})
+		case "deleteFolder":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteFolder(ctx, field)
+			})
+		case "saveStudyset":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_saveStudyset(ctx, field)
+			})
+		case "saveStudysetToFolder":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_saveStudysetToFolder(ctx, field)
+			})
+		case "unsaveStudyset":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_unsaveStudyset(ctx, field)
 			})
 		case "createFeaturedCategory":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
