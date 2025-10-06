@@ -11,19 +11,24 @@ CREATE TYPE subject_category AS ENUM (
 );
 
 create table subjects (
-    id uuid primary key default gen_random_uuid(),
+    id text primary key,
     name text,
-    category subject_category,
-    keywords text,
-    -- `keywords` is one string of space-seperated keywords
-    search_vector tsvector generated always as (
-        setweight(to_tsvector('simple', coalesce(name, '')), 'A') ||
-        setweight(to_tsvector('simple', coalesce(keywords, '')), 'B')
-    ) stored
+    category subject_category
 );
 grant select on subjects to quizfreely_api;
 grant insert on subjects to quizfreely_api;
 grant update on subjects to quizfreely_api;
 grant delete on subjects to quizfreely_api;
 
+create table subject_keywords (
+    id uuid primary key default gen_random_uuid(),
+    keyword text,
+    subject_id text references subjects (id) on delete cascade
+);
+grant select on subject_keywords to quizfreely_api;
+grant insert on subject_keywords to quizfreely_api;
+grant update on subject_keywords to quizfreely_api;
+grant delete on subject_keywords to quizfreely_api;
+
+create index subject_keywords_trgm_idx on subject_keywords using gin (keyword gin_trgm_ops);
 -- migrate:down

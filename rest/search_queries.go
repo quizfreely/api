@@ -97,11 +97,11 @@ func (rh *RESTHandler) GetSearchQueries(w http.ResponseWriter, r *http.Request) 
 
 	if len(inputQuery) <= 3 {
 		err = pgxscan.Select(r.Context(), rh.DB, &searchQueries,
-			"SELECT query, subject FROM public.search_queries WHERE query ILIKE $1 ORDER BY query LIMIT $2 OFFSET $3",
-			inputQuery+"%", l, o)
+			"SELECT keyword FROM subject_keywords WHERE keyword ILIKE $1 || '%' ORDER BY similarity(keyword, $1) DESC LIMIT $2 OFFSET $3",
+			inputQuery, l, o)
 	} else {
 		err = pgxscan.Select(r.Context(), rh.DB, &searchQueries,
-			"SELECT query, subject FROM public.search_queries WHERE similarity(query, $1) > 0.15 ORDER BY similarity(query, $1) DESC LIMIT $2 OFFSET $3",
+			"SELECT keyword FROM subject_keywords WHERE similarity(keyword, $1) > 0.15 ORDER BY similarity(keyword, $1) DESC LIMIT $2 OFFSET $3",
 			inputQuery, l, o)
 	}
 
