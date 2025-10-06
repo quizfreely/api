@@ -1103,7 +1103,7 @@ func (r *queryResolver) SubjectsByKeyword(ctx context.Context, keyword *string) 
 	err := pgxscan.Select(
 		ctx,
 		r.DB,
-		subjects,
+		&subjects,
 		`SELECT s.id, s.name, s.category
 FROM subjects s
 JOIN subject_keywords sk ON sk.subject_id = s.id

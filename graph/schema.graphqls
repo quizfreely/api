@@ -243,8 +243,16 @@ type Folder {
     name: String
     studysets: [Studyset]
 }
+enum SubjectCategory {
+    LANG
+    STEM
+    SOCIAL_STUDIES
+    LA
+    MATH
+}
 type Subject {
     id: String
     name: String
+    category: SubjectCategory
     studysets(limit: Int, offset: Int): [Studyset]
 }
