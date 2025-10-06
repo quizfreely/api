@@ -1079,6 +1079,16 @@ GROUP BY fc.id, fc.title`,
 	return featuredCategories, nil
 }
 
+// Subject is the resolver for the subject field.
+func (r *queryResolver) Subject(ctx context.Context, id string) (*model.Subject, error) {
+	panic(fmt.Errorf("not implemented: Subject - subject"))
+}
+
+// SubjectByKeyword is the resolver for the subjectByKeyword field.
+func (r *queryResolver) SubjectByKeyword(ctx context.Context, keyword *string) (*model.Subject, error) {
+	panic(fmt.Errorf("not implemented: SubjectByKeyword - subjectByKeyword"))
+}
+
 // User is the resolver for the user field.
 func (r *studysetResolver) User(ctx context.Context, obj *model.Studyset) (*model.User, error) {
 	if obj.UserID == nil {

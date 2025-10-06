@@ -113,6 +113,12 @@ type StudysetInput struct {
 	Private bool   `json:"private"`
 }
 
+type Subject struct {
+	ID        *string     `json:"id,omitempty"`
+	Name      *string     `json:"name,omitempty"`
+	Studysets []*Studyset `json:"studysets,omitempty"`
+}
+
 type TermConfusionPairInput struct {
 	TermID                *string     `json:"termId,omitempty"`
 	ConfusedTermID        *string     `json:"confusedTermId,omitempty"`
