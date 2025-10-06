@@ -13,7 +13,7 @@ type Query {
     practiceTest(id: ID!): PracticeTest
     featuredCategories: [Category]
     subject(id: String!): Subject
-    subjectsByKeyword(keyword: String): [Subject]
+    subjectsByMatchingKeyword(keyword: String): [Subject]
 }
 type Mutation {
     createStudyset(studyset: StudysetInput!, terms: [NewTermInput]): Studyset
