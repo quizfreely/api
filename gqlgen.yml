@@ -187,3 +187,7 @@ models:
     fields:
       studysets:
         resolver: true
+  Subject:
+    fields:
+      studysets:
+        resolver: true
