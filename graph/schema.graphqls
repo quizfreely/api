@@ -12,6 +12,8 @@ type Query {
     mySavedStudysets(limit: Int, offset: Int): [Studyset]
     practiceTest(id: ID!): PracticeTest
     featuredCategories: [Category]
+    subject(id: String!): Subject
+    subjectByKeyword(keyword: String): Subject
 }
 type Mutation {
     createStudyset(studyset: StudysetInput!, terms: [NewTermInput]): Studyset
@@ -240,4 +242,9 @@ type Folder {
     id: ID
     name: String
     studysets: [Studyset]
+}
+type Subject {
+    id: String
+    name: String
+    studysets(limit: Int, offset: Int): [Studyset]
 }
