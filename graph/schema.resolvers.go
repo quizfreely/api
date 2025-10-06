@@ -1081,12 +1081,40 @@ GROUP BY fc.id, fc.title`,
 
 // Subject is the resolver for the subject field.
 func (r *queryResolver) Subject(ctx context.Context, id string) (*model.Subject, error) {
-	panic(fmt.Errorf("not implemented: Subject - subject"))
+	var subject *model.Subject
+	err := pgxscan.Select(
+		ctx,
+		r.DB,
+		subject,
+		`SELECT id, name, category
+FROM subjects WHERE id = $1`,
+		id,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get subject by id: %w", err)
+	}
+
+	return subject, nil
 }
 
 // SubjectByKeyword is the resolver for the subjectByKeyword field.
 func (r *queryResolver) SubjectByKeyword(ctx context.Context, keyword *string) (*model.Subject, error) {
-	panic(fmt.Errorf("not implemented: SubjectByKeyword - subjectByKeyword"))
+	var subject *model.Subject
+	err := pgxscan.Select(
+		ctx,
+		r.DB,
+		subject,
+		`SELECT s.id, s.name, s.category
+FROM subjects s
+JOIN subject_keywords sk ON sk.subject_id = s.id
+WHERE k.keyword, `,
+		id,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get subject by id: %w", err)
+	}
+
+	return subject, nil
 }
 
 // User is the resolver for the user field.
@@ -1124,6 +1152,11 @@ func (r *studysetResolver) PracticeTests(ctx context.Context, obj *model.Studyse
 	}
 
 	return loader.GetPracticeTestsByStudysetID(ctx, *obj.ID)
+}
+
+// Studysets is the resolver for the studysets field.
+func (r *subjectResolver) Studysets(ctx context.Context, obj *model.Subject, limit *int32, offset *int32) ([]*model.Studyset, error) {
+	panic(fmt.Errorf("not implemented: Studysets - studysets"))
 }
 
 // Progress is the resolver for the progress field.
@@ -1196,6 +1229,9 @@ func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 // Studyset returns StudysetResolver implementation.
 func (r *Resolver) Studyset() StudysetResolver { return &studysetResolver{r} }
 
+// Subject returns SubjectResolver implementation.
+func (r *Resolver) Subject() SubjectResolver { return &subjectResolver{r} }
+
 // Term returns TermResolver implementation.
 func (r *Resolver) Term() TermResolver { return &termResolver{r} }
 
@@ -1208,5 +1244,6 @@ type folderResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
 type studysetResolver struct{ *Resolver }
+type subjectResolver struct{ *Resolver }
 type termResolver struct{ *Resolver }
 type termConfusionPairResolver struct{ *Resolver }

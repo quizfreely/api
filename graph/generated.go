@@ -43,6 +43,7 @@ type ResolverRoot interface {
 	Mutation() MutationResolver
 	Query() QueryResolver
 	Studyset() StudysetResolver
+	Subject() SubjectResolver
 	Term() TermResolver
 	TermConfusionPair() TermConfusionPairResolver
 }
@@ -271,6 +272,9 @@ type StudysetResolver interface {
 	Terms(ctx context.Context, obj *model.Studyset) ([]*model.Term, error)
 	TermsCount(ctx context.Context, obj *model.Studyset) (*int32, error)
 	PracticeTests(ctx context.Context, obj *model.Studyset) ([]*model.PracticeTest, error)
+}
+type SubjectResolver interface {
+	Studysets(ctx context.Context, obj *model.Subject, limit *int32, offset *int32) ([]*model.Studyset, error)
 }
 type TermResolver interface {
 	Progress(ctx context.Context, obj *model.Term) (*model.TermProgress, error)
@@ -6177,7 +6181,7 @@ func (ec *executionContext) _Subject_studysets(ctx context.Context, field graphq
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Studysets, nil
+		return ec.resolvers.Subject().Studysets(rctx, obj, fc.Args["limit"].(*int32), fc.Args["offset"].(*int32))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6195,8 +6199,8 @@ func (ec *executionContext) fieldContext_Subject_studysets(ctx context.Context, 
 	fc = &graphql.FieldContext{
 		Object:     "Subject",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
@@ -11726,7 +11730,38 @@ func (ec *executionContext) _Subject(ctx context.Context, sel ast.SelectionSet, 
 		case "name":
 			out.Values[i] = ec._Subject_name(ctx, field, obj)
 		case "studysets":
-			out.Values[i] = ec._Subject_studysets(ctx, field, obj)
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Subject_studysets(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
