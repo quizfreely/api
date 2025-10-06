@@ -1082,7 +1082,7 @@ GROUP BY fc.id, fc.title`,
 // Subject is the resolver for the subject field.
 func (r *queryResolver) Subject(ctx context.Context, id string) (*model.Subject, error) {
 	var subject *model.Subject
-	err := pgxscan.Select(
+	err := pgxscan.Get(
 		ctx,
 		r.DB,
 		subject,
@@ -1097,13 +1097,13 @@ FROM subjects WHERE id = $1`,
 	return subject, nil
 }
 
-// SubjectByKeyword is the resolver for the subjectByKeyword field.
-func (r *queryResolver) SubjectByKeyword(ctx context.Context, keyword *string) (*model.Subject, error) {
-	var subject *model.Subject
+// SubjectsByKeyword is the resolver for the subjectsByKeyword field.
+func (r *queryResolver) SubjectsByMatchingKeyword(ctx context.Context, keyword *string) ([]*model.Subject, error) {
+	var subjects []*model.Subject
 	err := pgxscan.Select(
 		ctx,
 		r.DB,
-		subject,
+		subjects,
 		`SELECT s.id, s.name, s.category
 FROM subjects s
 JOIN subject_keywords sk ON sk.subject_id = s.id
@@ -1114,7 +1114,7 @@ WHERE k.keyword, `,
 		return nil, fmt.Errorf("failed to get subject by id: %w", err)
 	}
 
-	return subject, nil
+	return subjects, nil
 }
 
 // User is the resolver for the user field.
@@ -1247,3 +1247,14 @@ type studysetResolver struct{ *Resolver }
 type subjectResolver struct{ *Resolver }
 type termResolver struct{ *Resolver }
 type termConfusionPairResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//    it when you're done.
+//  - You have helper methods in this file. Move them out to keep these resolver files clean.
+/*
+	func (r *queryResolver) SubjectByKeyword(ctx context.Context, keyword *string) (*model.Subject, error) {
+}
+*/

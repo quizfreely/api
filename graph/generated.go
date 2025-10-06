@@ -138,7 +138,7 @@ type ComplexityRoot struct {
 		SearchStudysets    func(childComplexity int, q string, limit *int32, offset *int32) int
 		Studyset           func(childComplexity int, id string) int
 		Subject            func(childComplexity int, id string) int
-		SubjectByKeyword   func(childComplexity int, keyword *string) int
+		SubjectsByKeyword  func(childComplexity int, keyword *string) int
 		Term               func(childComplexity int, id string) int
 		User               func(childComplexity int, id string) int
 	}
@@ -265,7 +265,7 @@ type QueryResolver interface {
 	PracticeTest(ctx context.Context, id string) (*model.PracticeTest, error)
 	FeaturedCategories(ctx context.Context) ([]*model.Category, error)
 	Subject(ctx context.Context, id string) (*model.Subject, error)
-	SubjectByKeyword(ctx context.Context, keyword *string) (*model.Subject, error)
+	SubjectsByKeyword(ctx context.Context, keyword *string) ([]*model.Subject, error)
 }
 type StudysetResolver interface {
 	User(ctx context.Context, obj *model.Studyset) (*model.User, error)
@@ -853,17 +853,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Query.Subject(childComplexity, args["id"].(string)), true
 
-	case "Query.subjectByKeyword":
-		if e.complexity.Query.SubjectByKeyword == nil {
+	case "Query.subjectsByKeyword":
+		if e.complexity.Query.SubjectsByKeyword == nil {
 			break
 		}
 
-		args, err := ec.field_Query_subjectByKeyword_args(ctx, rawArgs)
+		args, err := ec.field_Query_subjectsByKeyword_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.SubjectByKeyword(childComplexity, args["keyword"].(*string)), true
+		return e.complexity.Query.SubjectsByKeyword(childComplexity, args["keyword"].(*string)), true
 
 	case "Query.term":
 		if e.complexity.Query.Term == nil {
@@ -1786,17 +1786,6 @@ func (ec *executionContext) field_Query_studyset_args(ctx context.Context, rawAr
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_subjectByKeyword_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
-	var err error
-	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "keyword", ec.unmarshalOString2ᚖstring)
-	if err != nil {
-		return nil, err
-	}
-	args["keyword"] = arg0
-	return args, nil
-}
-
 func (ec *executionContext) field_Query_subject_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -1805,6 +1794,17 @@ func (ec *executionContext) field_Query_subject_args(ctx context.Context, rawArg
 		return nil, err
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_subjectsByKeyword_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "keyword", ec.unmarshalOString2ᚖstring)
+	if err != nil {
+		return nil, err
+	}
+	args["keyword"] = arg0
 	return args, nil
 }
 
@@ -5267,8 +5267,8 @@ func (ec *executionContext) fieldContext_Query_subject(ctx context.Context, fiel
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_subjectByKeyword(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_subjectByKeyword(ctx, field)
+func (ec *executionContext) _Query_subjectsByKeyword(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_subjectsByKeyword(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -5281,7 +5281,7 @@ func (ec *executionContext) _Query_subjectByKeyword(ctx context.Context, field g
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().SubjectByKeyword(rctx, fc.Args["keyword"].(*string))
+		return ec.resolvers.Query().SubjectsByKeyword(rctx, fc.Args["keyword"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5290,12 +5290,12 @@ func (ec *executionContext) _Query_subjectByKeyword(ctx context.Context, field g
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.Subject)
+	res := resTmp.([]*model.Subject)
 	fc.Result = res
-	return ec.marshalOSubject2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐSubject(ctx, field.Selections, res)
+	return ec.marshalOSubject2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐSubject(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_subjectByKeyword(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_subjectsByKeyword(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -5320,7 +5320,7 @@ func (ec *executionContext) fieldContext_Query_subjectByKeyword(ctx context.Cont
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_subjectByKeyword_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Query_subjectsByKeyword_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -11446,7 +11446,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "subjectByKeyword":
+		case "subjectsByKeyword":
 			field := field
 
 			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
@@ -11455,7 +11455,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_subjectByKeyword(ctx, field)
+				res = ec._Query_subjectsByKeyword(ctx, field)
 				return res
 			}
 
@@ -13458,6 +13458,47 @@ func (ec *executionContext) unmarshalOStudysetInput2ᚖquizfreelyᚋapiᚋgraph�
 	}
 	res, err := ec.unmarshalInputStudysetInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOSubject2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐSubject(ctx context.Context, sel ast.SelectionSet, v []*model.Subject) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOSubject2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐSubject(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
 }
 
 func (ec *executionContext) marshalOSubject2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐSubject(ctx context.Context, sel ast.SelectionSet, v *model.Subject) graphql.Marshaler {
