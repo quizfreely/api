@@ -99,21 +99,19 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		CreateFeaturedCategory      func(childComplexity int, title *string) int
-		CreateFolder                func(childComplexity int, name string) int
-		CreateStudyset              func(childComplexity int, studyset model.StudysetInput, terms []*model.NewTermInput) int
-		DeleteFolder                func(childComplexity int, id string, unsaveAllStudysets bool) int
-		DeleteStudyset              func(childComplexity int, id string) int
-		RecordConfusedTerms         func(childComplexity int, confusedTerms []*model.TermConfusionPairInput) int
-		RecordPracticeTest          func(childComplexity int, input *model.PracticeTestInput) int
-		RenameFolder                func(childComplexity int, id string, name string) int
-		SaveStudyset                func(childComplexity int, studysetID string, folderID *string) int
-		SetStudysetFeaturedCategory func(childComplexity int, studysetID *string, categoryID *string) int
-		UnsaveStudyset              func(childComplexity int, studysetID string) int
-		UpdatePracticeTest          func(childComplexity int, input *model.PracticeTestInput) int
-		UpdateStudyset              func(childComplexity int, id string, studyset *model.StudysetInput, terms []*model.TermInput, newTerms []*model.NewTermInput, deleteTerms []*string) int
-		UpdateTermProgress          func(childComplexity int, termProgress []*model.TermProgressInput) int
-		UpdateUser                  func(childComplexity int, displayName *string) int
+		CreateFolder        func(childComplexity int, name string) int
+		CreateStudyset      func(childComplexity int, studyset model.StudysetInput, terms []*model.NewTermInput) int
+		DeleteFolder        func(childComplexity int, id string, unsaveAllStudysets bool) int
+		DeleteStudyset      func(childComplexity int, id string) int
+		RecordConfusedTerms func(childComplexity int, confusedTerms []*model.TermConfusionPairInput) int
+		RecordPracticeTest  func(childComplexity int, input *model.PracticeTestInput) int
+		RenameFolder        func(childComplexity int, id string, name string) int
+		SaveStudyset        func(childComplexity int, studysetID string, folderID *string) int
+		UnsaveStudyset      func(childComplexity int, studysetID string) int
+		UpdatePracticeTest  func(childComplexity int, input *model.PracticeTestInput) int
+		UpdateStudyset      func(childComplexity int, id string, studyset *model.StudysetInput, terms []*model.TermInput, newTerms []*model.NewTermInput, deleteTerms []*string) int
+		UpdateTermProgress  func(childComplexity int, termProgress []*model.TermProgressInput) int
+		UpdateUser          func(childComplexity int, displayName *string) int
 	}
 
 	PracticeTest struct {
@@ -126,21 +124,19 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Authed             func(childComplexity int) int
-		AuthedUser         func(childComplexity int) int
-		FeaturedCategories func(childComplexity int) int
-		FeaturedStudysets  func(childComplexity int, limit *int32, offset *int32) int
-		MyFolders          func(childComplexity int, limit *int32, offset *int32) int
-		MySavedStudysets   func(childComplexity int, limit *int32, offset *int32) int
-		MyStudysets        func(childComplexity int, limit *int32, offset *int32) int
-		PracticeTest       func(childComplexity int, id string) int
-		RecentStudysets    func(childComplexity int, limit *int32, offset *int32) int
-		SearchStudysets    func(childComplexity int, q string, limit *int32, offset *int32) int
-		Studyset           func(childComplexity int, id string) int
-		Subject            func(childComplexity int, id string) int
-		SubjectsByKeyword  func(childComplexity int, keyword *string) int
-		Term               func(childComplexity int, id string) int
-		User               func(childComplexity int, id string) int
+		Authed            func(childComplexity int) int
+		AuthedUser        func(childComplexity int) int
+		MyFolders         func(childComplexity int, limit *int32, offset *int32) int
+		MySavedStudysets  func(childComplexity int, limit *int32, offset *int32) int
+		MyStudysets       func(childComplexity int, limit *int32, offset *int32) int
+		PracticeTest      func(childComplexity int, id string) int
+		RecentStudysets   func(childComplexity int, limit *int32, offset *int32) int
+		SearchStudysets   func(childComplexity int, q string, limit *int32, offset *int32) int
+		Studyset          func(childComplexity int, id string) int
+		Subject           func(childComplexity int, id string) int
+		SubjectsByKeyword func(childComplexity int, keyword *string) int
+		Term              func(childComplexity int, id string) int
+		User              func(childComplexity int, id string) int
 	}
 
 	Question struct {
@@ -249,8 +245,6 @@ type MutationResolver interface {
 	DeleteFolder(ctx context.Context, id string, unsaveAllStudysets bool) (*string, error)
 	SaveStudyset(ctx context.Context, studysetID string, folderID *string) (*bool, error)
 	UnsaveStudyset(ctx context.Context, studysetID string) (*bool, error)
-	CreateFeaturedCategory(ctx context.Context, title *string) (*model.Category, error)
-	SetStudysetFeaturedCategory(ctx context.Context, studysetID *string, categoryID *string) (*bool, error)
 }
 type QueryResolver interface {
 	Authed(ctx context.Context) (*bool, error)
@@ -258,20 +252,16 @@ type QueryResolver interface {
 	Studyset(ctx context.Context, id string) (*model.Studyset, error)
 	User(ctx context.Context, id string) (*model.User, error)
 	Term(ctx context.Context, id string) (*model.Term, error)
-	FeaturedStudysets(ctx context.Context, limit *int32, offset *int32) ([]*model.Studyset, error)
 	RecentStudysets(ctx context.Context, limit *int32, offset *int32) ([]*model.Studyset, error)
 	SearchStudysets(ctx context.Context, q string, limit *int32, offset *int32) ([]*model.Studyset, error)
 	MyStudysets(ctx context.Context, limit *int32, offset *int32) ([]*model.Studyset, error)
 	MyFolders(ctx context.Context, limit *int32, offset *int32) ([]*model.Folder, error)
 	MySavedStudysets(ctx context.Context, limit *int32, offset *int32) ([]*model.Studyset, error)
 	PracticeTest(ctx context.Context, id string) (*model.PracticeTest, error)
-	FeaturedCategories(ctx context.Context) ([]*model.Category, error)
 	Subject(ctx context.Context, id string) (*model.Subject, error)
 	SubjectsByKeyword(ctx context.Context, keyword *string) ([]*model.Subject, error)
 }
 type StudysetResolver interface {
-	SubjectID(ctx context.Context, obj *model.Studyset) (*string, error)
-
 	User(ctx context.Context, obj *model.Studyset) (*model.User, error)
 	Terms(ctx context.Context, obj *model.Studyset) ([]*model.Term, error)
 	TermsCount(ctx context.Context, obj *model.Studyset) (*int32, error)
@@ -506,18 +496,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.MatchQuestion.Term(childComplexity), true
 
-	case "Mutation.createFeaturedCategory":
-		if e.complexity.Mutation.CreateFeaturedCategory == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_createFeaturedCategory_args(ctx, rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.CreateFeaturedCategory(childComplexity, args["title"].(*string)), true
-
 	case "Mutation.createFolder":
 		if e.complexity.Mutation.CreateFolder == nil {
 			break
@@ -613,18 +591,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.SaveStudyset(childComplexity, args["studysetId"].(string), args["folderId"].(*string)), true
-
-	case "Mutation.setStudysetFeaturedCategory":
-		if e.complexity.Mutation.SetStudysetFeaturedCategory == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_setStudysetFeaturedCategory_args(ctx, rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.SetStudysetFeaturedCategory(childComplexity, args["studysetId"].(*string), args["categoryId"].(*string)), true
 
 	case "Mutation.unsaveStudyset":
 		if e.complexity.Mutation.UnsaveStudyset == nil {
@@ -741,25 +707,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.AuthedUser(childComplexity), true
-
-	case "Query.featuredCategories":
-		if e.complexity.Query.FeaturedCategories == nil {
-			break
-		}
-
-		return e.complexity.Query.FeaturedCategories(childComplexity), true
-
-	case "Query.featuredStudysets":
-		if e.complexity.Query.FeaturedStudysets == nil {
-			break
-		}
-
-		args, err := ec.field_Query_featuredStudysets_args(ctx, rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.FeaturedStudysets(childComplexity, args["limit"].(*int32), args["offset"].(*int32)), true
 
 	case "Query.myFolders":
 		if e.complexity.Query.MyFolders == nil {
@@ -1460,17 +1407,6 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
 // region    ***************************** args.gotpl *****************************
 
-func (ec *executionContext) field_Mutation_createFeaturedCategory_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
-	var err error
-	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "title", ec.unmarshalOString2ᚖstring)
-	if err != nil {
-		return nil, err
-	}
-	args["title"] = arg0
-	return args, nil
-}
-
 func (ec *executionContext) field_Mutation_createFolder_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -1579,22 +1515,6 @@ func (ec *executionContext) field_Mutation_saveStudyset_args(ctx context.Context
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_setStudysetFeaturedCategory_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
-	var err error
-	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "studysetId", ec.unmarshalOID2ᚖstring)
-	if err != nil {
-		return nil, err
-	}
-	args["studysetId"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "categoryId", ec.unmarshalOID2ᚖstring)
-	if err != nil {
-		return nil, err
-	}
-	args["categoryId"] = arg1
-	return args, nil
-}
-
 func (ec *executionContext) field_Mutation_unsaveStudyset_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -1678,22 +1598,6 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 		return nil, err
 	}
 	args["name"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Query_featuredStudysets_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
-	var err error
-	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalOInt2ᚖint32)
-	if err != nil {
-		return nil, err
-	}
-	args["limit"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "offset", ec.unmarshalOInt2ᚖint32)
-	if err != nil {
-		return nil, err
-	}
-	args["offset"] = arg1
 	return args, nil
 }
 
@@ -4038,118 +3942,6 @@ func (ec *executionContext) fieldContext_Mutation_unsaveStudyset(ctx context.Con
 	return fc, nil
 }
 
-func (ec *executionContext) _Mutation_createFeaturedCategory(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Mutation_createFeaturedCategory(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateFeaturedCategory(rctx, fc.Args["title"].(*string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model.Category)
-	fc.Result = res
-	return ec.marshalOCategory2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐCategory(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Mutation_createFeaturedCategory(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Category_id(ctx, field)
-			case "title":
-				return ec.fieldContext_Category_title(ctx, field)
-			case "studysets":
-				return ec.fieldContext_Category_studysets(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Category", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_createFeaturedCategory_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Mutation_setStudysetFeaturedCategory(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Mutation_setStudysetFeaturedCategory(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().SetStudysetFeaturedCategory(rctx, fc.Args["studysetId"].(*string), fc.Args["categoryId"].(*string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*bool)
-	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Mutation_setStudysetFeaturedCategory(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_setStudysetFeaturedCategory_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _PracticeTest_id(ctx context.Context, field graphql.CollectedField, obj *model.PracticeTest) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_PracticeTest_id(ctx, field)
 	if err != nil {
@@ -4710,78 +4502,6 @@ func (ec *executionContext) fieldContext_Query_term(ctx context.Context, field g
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_featuredStudysets(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_featuredStudysets(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().FeaturedStudysets(rctx, fc.Args["limit"].(*int32), fc.Args["offset"].(*int32))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*model.Studyset)
-	fc.Result = res
-	return ec.marshalOStudyset2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐStudyset(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Query_featuredStudysets(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Studyset_id(ctx, field)
-			case "title":
-				return ec.fieldContext_Studyset_title(ctx, field)
-			case "private":
-				return ec.fieldContext_Studyset_private(ctx, field)
-			case "subjectId":
-				return ec.fieldContext_Studyset_subjectId(ctx, field)
-			case "updatedAt":
-				return ec.fieldContext_Studyset_updatedAt(ctx, field)
-			case "user":
-				return ec.fieldContext_Studyset_user(ctx, field)
-			case "terms":
-				return ec.fieldContext_Studyset_terms(ctx, field)
-			case "termsCount":
-				return ec.fieldContext_Studyset_termsCount(ctx, field)
-			case "practiceTests":
-				return ec.fieldContext_Studyset_practiceTests(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Studyset", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_featuredStudysets_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Query_recentStudysets(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_recentStudysets(ctx, field)
 	if err != nil {
@@ -5192,55 +4912,6 @@ func (ec *executionContext) fieldContext_Query_practiceTest(ctx context.Context,
 	if fc.Args, err = ec.field_Query_practiceTest_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Query_featuredCategories(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_featuredCategories(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().FeaturedCategories(rctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*model.Category)
-	fc.Result = res
-	return ec.marshalOCategory2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐCategory(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Query_featuredCategories(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Category_id(ctx, field)
-			case "title":
-				return ec.fieldContext_Category_title(ctx, field)
-			case "studysets":
-				return ec.fieldContext_Category_studysets(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Category", field.Name)
-		},
 	}
 	return fc, nil
 }
@@ -5892,7 +5563,7 @@ func (ec *executionContext) _Studyset_subjectId(ctx context.Context, field graph
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Studyset().SubjectID(rctx, obj)
+		return obj.SubjectID, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5910,8 +5581,8 @@ func (ec *executionContext) fieldContext_Studyset_subjectId(_ context.Context, f
 	fc = &graphql.FieldContext{
 		Object:     "Studyset",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type ID does not have child fields")
 		},
@@ -11217,14 +10888,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_unsaveStudyset(ctx, field)
 			})
-		case "createFeaturedCategory":
-			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_createFeaturedCategory(ctx, field)
-			})
-		case "setStudysetFeaturedCategory":
-			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_setStudysetFeaturedCategory(ctx, field)
-			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -11408,25 +11071,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "featuredStudysets":
-			field := field
-
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_featuredStudysets(ctx, field)
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx,
-					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "recentStudysets":
 			field := field
 
@@ -11532,25 +11176,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_practiceTest(ctx, field)
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx,
-					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "featuredCategories":
-			field := field
-
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_featuredCategories(ctx, field)
 				return res
 			}
 
@@ -11691,38 +11316,7 @@ func (ec *executionContext) _Studyset(ctx context.Context, sel ast.SelectionSet,
 		case "private":
 			out.Values[i] = ec._Studyset_private(ctx, field, obj)
 		case "subjectId":
-			field := field
-
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Studyset_subjectId(ctx, field, obj)
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			out.Values[i] = ec._Studyset_subjectId(ctx, field, obj)
 		case "updatedAt":
 			out.Values[i] = ec._Studyset_updatedAt(ctx, field, obj)
 		case "user":
@@ -13173,54 +12767,6 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	_ = ctx
 	res := graphql.MarshalBoolean(*v)
 	return res
-}
-
-func (ec *executionContext) marshalOCategory2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐCategory(ctx context.Context, sel ast.SelectionSet, v []*model.Category) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOCategory2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐCategory(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	return ret
-}
-
-func (ec *executionContext) marshalOCategory2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐCategory(ctx context.Context, sel ast.SelectionSet, v *model.Category) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._Category(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOFRQ2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐFrq(ctx context.Context, sel ast.SelectionSet, v *model.Frq) graphql.Marshaler {
