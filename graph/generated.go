@@ -163,6 +163,7 @@ type ComplexityRoot struct {
 	}
 
 	Subject struct {
+		Category  func(childComplexity int) int
 		ID        func(childComplexity int) int
 		Name      func(childComplexity int) int
 		Studysets func(childComplexity int, limit *int32, offset *int32) int
@@ -979,6 +980,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Studyset.User(childComplexity), true
+
+	case "Subject.category":
+		if e.complexity.Subject.Category == nil {
+			break
+		}
+
+		return e.complexity.Subject.Category(childComplexity), true
 
 	case "Subject.id":
 		if e.complexity.Subject.ID == nil {
@@ -5247,6 +5255,8 @@ func (ec *executionContext) fieldContext_Query_subject(ctx context.Context, fiel
 				return ec.fieldContext_Subject_id(ctx, field)
 			case "name":
 				return ec.fieldContext_Subject_name(ctx, field)
+			case "category":
+				return ec.fieldContext_Subject_category(ctx, field)
 			case "studysets":
 				return ec.fieldContext_Subject_studysets(ctx, field)
 			}
@@ -5307,6 +5317,8 @@ func (ec *executionContext) fieldContext_Query_subjectsByKeyword(ctx context.Con
 				return ec.fieldContext_Subject_id(ctx, field)
 			case "name":
 				return ec.fieldContext_Subject_name(ctx, field)
+			case "category":
+				return ec.fieldContext_Subject_category(ctx, field)
 			case "studysets":
 				return ec.fieldContext_Subject_studysets(ctx, field)
 			}
@@ -6162,6 +6174,47 @@ func (ec *executionContext) fieldContext_Subject_name(_ context.Context, field g
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Subject_category(ctx context.Context, field graphql.CollectedField, obj *model.Subject) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Subject_category(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Category, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.SubjectCategory)
+	fc.Result = res
+	return ec.marshalOSubjectCategory2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐSubjectCategory(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Subject_category(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Subject",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type SubjectCategory does not have child fields")
 		},
 	}
 	return fc, nil
@@ -11729,6 +11782,8 @@ func (ec *executionContext) _Subject(ctx context.Context, sel ast.SelectionSet, 
 			out.Values[i] = ec._Subject_id(ctx, field, obj)
 		case "name":
 			out.Values[i] = ec._Subject_name(ctx, field, obj)
+		case "category":
+			out.Values[i] = ec._Subject_category(ctx, field, obj)
 		case "studysets":
 			field := field
 
@@ -13506,6 +13561,22 @@ func (ec *executionContext) marshalOSubject2ᚖquizfreelyᚋapiᚋgraphᚋmodel�
 		return graphql.Null
 	}
 	return ec._Subject(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOSubjectCategory2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐSubjectCategory(ctx context.Context, v any) (*model.SubjectCategory, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(model.SubjectCategory)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOSubjectCategory2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐSubjectCategory(ctx context.Context, sel ast.SelectionSet, v *model.SubjectCategory) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) marshalOTerm2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTerm(ctx context.Context, sel ast.SelectionSet, v []*model.Term) graphql.Marshaler {
