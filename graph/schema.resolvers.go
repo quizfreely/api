@@ -540,7 +540,7 @@ func (r *mutationResolver) CreateFolder(ctx context.Context, name string) (*mode
 	sql := `
 		INSERT INTO folders (user_id, name)
 		VALUES ($1, $2)
-		RETURNING id, user_id, name
+		RETURNING id, name
 	`
 	var newFolder model.Folder
 	err := pgxscan.Get(ctx, r.DB, &newFolder, sql, authedUser.ID, name)
@@ -561,7 +561,7 @@ func (r *mutationResolver) RenameFolder(ctx context.Context, id string, name str
 	sql := `
 		UPDATE folders SET name = $1
 		WHERE user_id = $2 AND id = $3
-		RETURNING id, user_id, name
+		RETURNING id, name
 	`
 	var folder model.Folder
 	err := pgxscan.Get(ctx, r.DB, &folder, sql, name, authedUser.ID, id)
@@ -888,7 +888,6 @@ func (r *queryResolver) MyFolders(ctx context.Context, limit *int32, offset *int
 	sql := `
 		SELECT
 			id,
-			user_id,
 			name
 		FROM folders
 		WHERE user_id = $1
