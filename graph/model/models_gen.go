@@ -109,8 +109,9 @@ type QuestionInput struct {
 }
 
 type StudysetInput struct {
-	Title   string `json:"title"`
-	Private bool   `json:"private"`
+	Title     string  `json:"title"`
+	Private   bool    `json:"private"`
+	SubjectID *string `json:"subjectId,omitempty"`
 }
 
 type Subject struct {
