@@ -1117,6 +1117,11 @@ WHERE sk.keyword = $1`,
 	return subjects, nil
 }
 
+// SubjectID is the resolver for the subjectId field.
+func (r *studysetResolver) SubjectID(ctx context.Context, obj *model.Studyset) (*string, error) {
+	panic(fmt.Errorf("not implemented: SubjectID - subjectId"))
+}
+
 // User is the resolver for the user field.
 func (r *studysetResolver) User(ctx context.Context, obj *model.Studyset) (*model.User, error) {
 	if obj.UserID == nil {
