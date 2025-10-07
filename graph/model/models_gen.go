@@ -114,9 +114,10 @@ type StudysetInput struct {
 }
 
 type Subject struct {
-	ID        *string     `json:"id,omitempty"`
-	Name      *string     `json:"name,omitempty"`
-	Studysets []*Studyset `json:"studysets,omitempty"`
+	ID        *string          `json:"id,omitempty"`
+	Name      *string          `json:"name,omitempty"`
+	Category  *SubjectCategory `json:"category,omitempty"`
+	Studysets []*Studyset      `json:"studysets,omitempty"`
 }
 
 type TermConfusionPairInput struct {
@@ -348,6 +349,67 @@ func (e *QuestionType) UnmarshalJSON(b []byte) error {
 }
 
 func (e QuestionType) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type SubjectCategory string
+
+const (
+	SubjectCategoryLang          SubjectCategory = "LANG"
+	SubjectCategoryStem          SubjectCategory = "STEM"
+	SubjectCategorySocialStudies SubjectCategory = "SOCIAL_STUDIES"
+	SubjectCategoryLa            SubjectCategory = "LA"
+	SubjectCategoryMath          SubjectCategory = "MATH"
+)
+
+var AllSubjectCategory = []SubjectCategory{
+	SubjectCategoryLang,
+	SubjectCategoryStem,
+	SubjectCategorySocialStudies,
+	SubjectCategoryLa,
+	SubjectCategoryMath,
+}
+
+func (e SubjectCategory) IsValid() bool {
+	switch e {
+	case SubjectCategoryLang, SubjectCategoryStem, SubjectCategorySocialStudies, SubjectCategoryLa, SubjectCategoryMath:
+		return true
+	}
+	return false
+}
+
+func (e SubjectCategory) String() string {
+	return string(e)
+}
+
+func (e *SubjectCategory) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = SubjectCategory(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid SubjectCategory", str)
+	}
+	return nil
+}
+
+func (e SubjectCategory) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *SubjectCategory) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e SubjectCategory) MarshalJSON() ([]byte, error) {
 	var buf bytes.Buffer
 	e.MarshalGQL(&buf)
 	return buf.Bytes(), nil
