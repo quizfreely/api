@@ -974,11 +974,11 @@ WHERE id = $1 AND user_id = $2`,
 
 // Subject is the resolver for the subject field.
 func (r *queryResolver) Subject(ctx context.Context, id string) (*model.Subject, error) {
-	var subject *model.Subject
+	var subject model.Subject
 	err := pgxscan.Get(
 		ctx,
 		r.DB,
-		subject,
+		&subject,
 		`SELECT id, name, category
 FROM subjects WHERE id = $1`,
 		id,
@@ -987,7 +987,7 @@ FROM subjects WHERE id = $1`,
 		return nil, fmt.Errorf("failed to get subject by id: %w", err)
 	}
 
-	return subject, nil
+	return &subject, nil
 }
 
 // SubjectsByKeyword is the resolver for the subjectsByKeyword field.
@@ -1058,16 +1058,16 @@ func (r *studysetResolver) Saved(ctx context.Context, obj *model.Studyset) (*boo
 		return nil, nil
 	}
 
-	var result *bool
+	var result bool
 	sql := `SELECT EXISTS (
 		SELECT 1 FROM saved_studysets WHERE studyset_id = $1 AND user_id = $2
 	)`
-	err := pgxscan.Get(ctx, r.DB, result, sql, *obj.ID, authedUser.ID)
+	err := pgxscan.Get(ctx, r.DB, &result, sql, *obj.ID, authedUser.ID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check studyset saved field: %w", err)
 	}
 
-	return result, nil
+	return &result, nil
 }
 
 // Folder is the resolver for the folder field.
@@ -1081,18 +1081,18 @@ func (r *studysetResolver) Folder(ctx context.Context, obj *model.Studyset) (*mo
 		return nil, nil
 	}
 
-	var folder *model.Folder
+	var folder model.Folder
 	sql := `
 		SELECT f.id, f.name FROM folders f
 	    JOIN saved_studysets s ON s.folder_id = f.id
 	    WHERE s.studyset_id = $1 AND user_id = $2
 	`
-	err := pgxscan.Get(ctx, r.DB, folder, sql, *obj.ID, authedUser.ID)
+	err := pgxscan.Get(ctx, r.DB, &folder, sql, *obj.ID, authedUser.ID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check studyset folder field: %w", err)
 	}
 
-	return folder, nil
+	return &folder, nil
 }
 
 // Studysets is the resolver for the studysets field.
