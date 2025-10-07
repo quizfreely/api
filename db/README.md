@@ -43,6 +43,10 @@ If dbmate is trying to run migrations you don't need, or throwing errors because
 INSERT INTO schema_migrations (version) VALUES ('202508140123');
 ```
 
-## search-queries.sql
+## subjects.sql and subject_keywords.sql
 
-optionally, to populate `search_queries`, you can manually run `db/search-queries.sql`.
+to populate `subjects` and `subject_keywords`, used in search/explore, you can manually run `db/subjects.sql` and `db/subject_keywords.sql`.
+
+### search-queries.sql
+
+There used to be a seperate `search_queries` table, but now that has been replaced with subjects and subject keywords. Every search suggestion/autocomplete option is just a subject or keyword that matches a subject.
