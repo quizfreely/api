@@ -55,6 +55,8 @@ type Studyset {
     terms: [Term]
     termsCount: Int
     practiceTests: [PracticeTest]
+    saved: Boolean
+    folder: Folder
 }
 type Term {
     id: ID

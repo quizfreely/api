@@ -167,6 +167,10 @@ models:
         resolver: true
       practiceTests:
         resolver: true
+      saved:
+        resolver: true
+      folder:
+        resolver: true
   Term:
     fields:
       progress:
