@@ -614,7 +614,9 @@ func (r *mutationResolver) SaveStudyset(ctx context.Context, studysetID string, 
 	_, err := r.DB.Exec(
 		ctx,
 		`INSERT INTO saved_studysets (user_id, studyset_id, folder_id)
-		VALUES ($1, $2, $3)`,
+		VALUES ($1, $2, $3)
+		ON CONFLICT (user_id, studyset_id) DO UPDATE
+		SET folder_id = $3`,
 		authedUser.ID,
 		studysetID,
 		folderID,
