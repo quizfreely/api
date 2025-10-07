@@ -148,9 +148,11 @@ type ComplexityRoot struct {
 	}
 
 	Studyset struct {
+		Folder        func(childComplexity int) int
 		ID            func(childComplexity int) int
 		PracticeTests func(childComplexity int) int
 		Private       func(childComplexity int) int
+		Saved         func(childComplexity int) int
 		SubjectID     func(childComplexity int) int
 		Terms         func(childComplexity int) int
 		TermsCount    func(childComplexity int) int
@@ -266,6 +268,8 @@ type StudysetResolver interface {
 	Terms(ctx context.Context, obj *model.Studyset) ([]*model.Term, error)
 	TermsCount(ctx context.Context, obj *model.Studyset) (*int32, error)
 	PracticeTests(ctx context.Context, obj *model.Studyset) ([]*model.PracticeTest, error)
+	Saved(ctx context.Context, obj *model.Studyset) (*bool, error)
+	Folder(ctx context.Context, obj *model.Studyset) (*model.Folder, error)
 }
 type SubjectResolver interface {
 	Studysets(ctx context.Context, obj *model.Subject, limit *int32, offset *int32) ([]*model.Studyset, error)
@@ -875,6 +879,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Question.TrueFalseQuestion(childComplexity), true
 
+	case "Studyset.folder":
+		if e.complexity.Studyset.Folder == nil {
+			break
+		}
+
+		return e.complexity.Studyset.Folder(childComplexity), true
+
 	case "Studyset.id":
 		if e.complexity.Studyset.ID == nil {
 			break
@@ -895,6 +906,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Studyset.Private(childComplexity), true
+
+	case "Studyset.saved":
+		if e.complexity.Studyset.Saved == nil {
+			break
+		}
+
+		return e.complexity.Studyset.Saved(childComplexity), true
 
 	case "Studyset.subjectId":
 		if e.complexity.Studyset.SubjectID == nil {
@@ -2202,6 +2220,10 @@ func (ec *executionContext) fieldContext_Category_studysets(_ context.Context, f
 				return ec.fieldContext_Studyset_termsCount(ctx, field)
 			case "practiceTests":
 				return ec.fieldContext_Studyset_practiceTests(ctx, field)
+			case "saved":
+				return ec.fieldContext_Studyset_saved(ctx, field)
+			case "folder":
+				return ec.fieldContext_Studyset_folder(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Studyset", field.Name)
 		},
@@ -2572,6 +2594,10 @@ func (ec *executionContext) fieldContext_Folder_studysets(_ context.Context, fie
 				return ec.fieldContext_Studyset_termsCount(ctx, field)
 			case "practiceTests":
 				return ec.fieldContext_Studyset_practiceTests(ctx, field)
+			case "saved":
+				return ec.fieldContext_Studyset_saved(ctx, field)
+			case "folder":
+				return ec.fieldContext_Studyset_folder(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Studyset", field.Name)
 		},
@@ -3194,6 +3220,10 @@ func (ec *executionContext) fieldContext_Mutation_createStudyset(ctx context.Con
 				return ec.fieldContext_Studyset_termsCount(ctx, field)
 			case "practiceTests":
 				return ec.fieldContext_Studyset_practiceTests(ctx, field)
+			case "saved":
+				return ec.fieldContext_Studyset_saved(ctx, field)
+			case "folder":
+				return ec.fieldContext_Studyset_folder(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Studyset", field.Name)
 		},
@@ -3266,6 +3296,10 @@ func (ec *executionContext) fieldContext_Mutation_updateStudyset(ctx context.Con
 				return ec.fieldContext_Studyset_termsCount(ctx, field)
 			case "practiceTests":
 				return ec.fieldContext_Studyset_practiceTests(ctx, field)
+			case "saved":
+				return ec.fieldContext_Studyset_saved(ctx, field)
+			case "folder":
+				return ec.fieldContext_Studyset_folder(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Studyset", field.Name)
 		},
@@ -4350,6 +4384,10 @@ func (ec *executionContext) fieldContext_Query_studyset(ctx context.Context, fie
 				return ec.fieldContext_Studyset_termsCount(ctx, field)
 			case "practiceTests":
 				return ec.fieldContext_Studyset_practiceTests(ctx, field)
+			case "saved":
+				return ec.fieldContext_Studyset_saved(ctx, field)
+			case "folder":
+				return ec.fieldContext_Studyset_folder(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Studyset", field.Name)
 		},
@@ -4556,6 +4594,10 @@ func (ec *executionContext) fieldContext_Query_recentStudysets(ctx context.Conte
 				return ec.fieldContext_Studyset_termsCount(ctx, field)
 			case "practiceTests":
 				return ec.fieldContext_Studyset_practiceTests(ctx, field)
+			case "saved":
+				return ec.fieldContext_Studyset_saved(ctx, field)
+			case "folder":
+				return ec.fieldContext_Studyset_folder(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Studyset", field.Name)
 		},
@@ -4628,6 +4670,10 @@ func (ec *executionContext) fieldContext_Query_searchStudysets(ctx context.Conte
 				return ec.fieldContext_Studyset_termsCount(ctx, field)
 			case "practiceTests":
 				return ec.fieldContext_Studyset_practiceTests(ctx, field)
+			case "saved":
+				return ec.fieldContext_Studyset_saved(ctx, field)
+			case "folder":
+				return ec.fieldContext_Studyset_folder(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Studyset", field.Name)
 		},
@@ -4700,6 +4746,10 @@ func (ec *executionContext) fieldContext_Query_myStudysets(ctx context.Context, 
 				return ec.fieldContext_Studyset_termsCount(ctx, field)
 			case "practiceTests":
 				return ec.fieldContext_Studyset_practiceTests(ctx, field)
+			case "saved":
+				return ec.fieldContext_Studyset_saved(ctx, field)
+			case "folder":
+				return ec.fieldContext_Studyset_folder(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Studyset", field.Name)
 		},
@@ -4832,6 +4882,10 @@ func (ec *executionContext) fieldContext_Query_mySavedStudysets(ctx context.Cont
 				return ec.fieldContext_Studyset_termsCount(ctx, field)
 			case "practiceTests":
 				return ec.fieldContext_Studyset_practiceTests(ctx, field)
+			case "saved":
+				return ec.fieldContext_Studyset_saved(ctx, field)
+			case "folder":
+				return ec.fieldContext_Studyset_folder(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Studyset", field.Name)
 		},
@@ -5839,6 +5893,96 @@ func (ec *executionContext) fieldContext_Studyset_practiceTests(_ context.Contex
 	return fc, nil
 }
 
+func (ec *executionContext) _Studyset_saved(ctx context.Context, field graphql.CollectedField, obj *model.Studyset) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Studyset_saved(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Studyset().Saved(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Studyset_saved(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Studyset",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Studyset_folder(ctx context.Context, field graphql.CollectedField, obj *model.Studyset) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Studyset_folder(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Studyset().Folder(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.Folder)
+	fc.Result = res
+	return ec.marshalOFolder2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐFolder(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Studyset_folder(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Studyset",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Folder_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Folder_name(ctx, field)
+			case "studysets":
+				return ec.fieldContext_Folder_studysets(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Folder", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Subject_id(ctx context.Context, field graphql.CollectedField, obj *model.Subject) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Subject_id(ctx, field)
 	if err != nil {
@@ -6016,6 +6160,10 @@ func (ec *executionContext) fieldContext_Subject_studysets(ctx context.Context, 
 				return ec.fieldContext_Studyset_termsCount(ctx, field)
 			case "practiceTests":
 				return ec.fieldContext_Studyset_practiceTests(ctx, field)
+			case "saved":
+				return ec.fieldContext_Studyset_saved(ctx, field)
+			case "folder":
+				return ec.fieldContext_Studyset_folder(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Studyset", field.Name)
 		},
@@ -11428,6 +11576,72 @@ func (ec *executionContext) _Studyset(ctx context.Context, sel ast.SelectionSet,
 					}
 				}()
 				res = ec._Studyset_practiceTests(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "saved":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Studyset_saved(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "folder":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Studyset_folder(ctx, field, obj)
 				return res
 			}
 

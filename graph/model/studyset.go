@@ -10,4 +10,6 @@ type Studyset struct {
 	User      *User   `json:"user,omitempty"`
 	Terms     []*Term `json:"terms,omitempty"`
 	TermsCount     []*Term `json:"termsCount,omitempty"`
+	Saved      *bool   `json:"saved,omitempty"`
+	Folder      *Folder   `json:"folder,omitempty"`
 }
