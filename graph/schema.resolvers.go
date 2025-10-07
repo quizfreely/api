@@ -1047,6 +1047,54 @@ func (r *studysetResolver) PracticeTests(ctx context.Context, obj *model.Studyse
 	return loader.GetPracticeTestsByStudysetID(ctx, *obj.ID)
 }
 
+// Saved is the resolver for the saved field.
+func (r *studysetResolver) Saved(ctx context.Context, obj *model.Studyset) (*bool, error) {
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil {
+		return nil, fmt.Errorf("not authenticated")
+	}
+
+	if obj == nil || obj.ID == nil {
+		return nil, nil
+	}
+
+	var result *bool
+	sql := `SELECT EXISTS (
+		SELECT 1 FROM saved_studysets WHERE studyset_id = $1 AND user_id = $2
+	)`
+	err := pgxscan.Get(ctx, r.DB, result, sql, *obj.ID, authedUser.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check studyset saved field: %w", err)
+	}
+
+	return result, nil
+}
+
+// Folder is the resolver for the folder field.
+func (r *studysetResolver) Folder(ctx context.Context, obj *model.Studyset) (*model.Folder, error) {
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil {
+		return nil, fmt.Errorf("not authenticated")
+	}
+
+	if obj == nil || obj.ID == nil {
+		return nil, nil
+	}
+
+	var folder *model.Folder
+	sql := `
+		SELECT f.id, f.name FROM folders f
+	    JOIN saved_studysets s ON s.folder_id = f.id
+	    WHERE s.studyset_id = $1 AND user_id = $2
+	`
+	err := pgxscan.Get(ctx, r.DB, folder, sql, *obj.ID, authedUser.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check studyset folder field: %w", err)
+	}
+
+	return folder, nil
+}
+
 // Studysets is the resolver for the studysets field.
 func (r *subjectResolver) Studysets(ctx context.Context, obj *model.Subject, limit *int32, offset *int32) ([]*model.Studyset, error) {
 	if obj == nil || obj.ID == nil {
