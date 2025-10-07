@@ -648,51 +648,6 @@ func (r *mutationResolver) UnsaveStudyset(ctx context.Context, studysetID string
 	return &yay, nil
 }
 
-// CreateFeaturedCategory is the resolver for the createFeaturedCategory field.
-func (r *mutationResolver) CreateFeaturedCategory(ctx context.Context, title *string) (*model.Category, error) {
-	authedUser := auth.AuthedUserContext(ctx)
-	if authedUser == nil || *authedUser.ModPerms != true {
-		return nil, fmt.Errorf("only mods are allowed to create featured categories")
-	}
-
-	var category model.Category
-	err := pgxscan.Get(
-		ctx,
-		r.DB,
-		&category,
-		`INSERT INTO featured_categories
-(title) VALUES ($1)
-RETURNING id, title`,
-		title,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("database error in CreateFeaturedCategory: %w", err)
-	}
-
-	return &category, nil
-}
-
-// SetStudysetFeaturedCategory is the resolver for the setStudysetFeaturedCategory field.
-func (r *mutationResolver) SetStudysetFeaturedCategory(ctx context.Context, studysetID *string, categoryID *string) (*bool, error) {
-	authedUser := auth.AuthedUserContext(ctx)
-	if authedUser == nil || *authedUser.ModPerms != true {
-		return nil, fmt.Errorf("only mods are allowed to set featured categories")
-	}
-
-	_, err := r.DB.Exec(
-		ctx,
-		"UPDATE studysets SET featured_category_id = $1 WHERE id = $2",
-		categoryID,
-		studysetID,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update studyset's featured category: %w", err)
-	}
-
-	success := true
-	return &success, nil
-}
-
 // Authed is the resolver for the authed field.
 func (r *queryResolver) Authed(ctx context.Context) (*bool, error) {
 	authed := auth.AuthedUserContext(ctx) != nil
@@ -801,41 +756,6 @@ WHERE terms.id = $1 AND studysets.private = FALSE`,
 	}
 
 	return &term, nil
-}
-
-// FeaturedStudysets is the resolver for the featuredStudysets field.
-func (r *queryResolver) FeaturedStudysets(ctx context.Context, limit *int32, offset *int32) ([]*model.Studyset, error) {
-	l := 24
-	if limit != nil && *limit > 0 && *limit < 1000 {
-		l = int(*limit)
-	}
-
-	o := 0
-	if offset != nil && *offset > 0 {
-		o = int(*offset)
-	}
-
-	var studysets []*model.Studyset
-	sql := `
-		SELECT
-			id,
-			user_id,
-			title,
-			private,
-			subject_id,
-			to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
-		FROM public.studysets
-		WHERE private = false
-			AND featured = true
-		ORDER BY terms_count DESC
-		LIMIT $1 OFFSET $2
-	`
-	err := pgxscan.Select(ctx, r.DB, &studysets, sql, l, o)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch featured studysets: %w", err)
-	}
-
-	return studysets, nil
 }
 
 // RecentStudysets is the resolver for the recentStudysets field.
@@ -1052,39 +972,6 @@ WHERE id = $1 AND user_id = $2`,
 	return &practiceTest, nil
 }
 
-// FeaturedCategories is the resolver for the featuredCategories field.
-func (r *queryResolver) FeaturedCategories(ctx context.Context) ([]*model.Category, error) {
-	var featuredCategories []*model.Category
-	err := pgxscan.Select(
-		ctx,
-		r.DB,
-		&featuredCategories,
-		`SELECT 
-    fc.id,
-    fc.title,
-    COALESCE(
-        json_agg(
-            json_build_object(
-                'id', s.id,
-                'title', s.title,
-                'private', s.private,
-                'updatedAt', s.updated_at
-            )
-        ) FILTER (WHERE s.id IS NOT NULL), 
-        '[]'
-    ) AS studysets
-FROM featured_categories fc
-LEFT JOIN studysets s 
-    ON s.featured_category_id = fc.id
-GROUP BY fc.id, fc.title`,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get featured categories: %w", err)
-	}
-
-	return featuredCategories, nil
-}
-
 // Subject is the resolver for the subject field.
 func (r *queryResolver) Subject(ctx context.Context, id string) (*model.Subject, error) {
 	var subject *model.Subject
@@ -1121,11 +1008,6 @@ WHERE sk.keyword = $1`,
 	}
 
 	return subjects, nil
-}
-
-// SubjectID is the resolver for the subjectId field.
-func (r *studysetResolver) SubjectID(ctx context.Context, obj *model.Studyset) (*string, error) {
-	panic(fmt.Errorf("not implemented: SubjectID - subjectId"))
 }
 
 // User is the resolver for the user field.
