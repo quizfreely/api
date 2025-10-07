@@ -4,14 +4,12 @@ type Query {
     studyset(id: ID!): Studyset
     user(id: ID!): User
     term(id: ID!): Term
-    featuredStudysets(limit: Int, offset: Int): [Studyset]
     recentStudysets(limit: Int, offset: Int): [Studyset]
     searchStudysets(q: String!, limit: Int, offset: Int): [Studyset]
     myStudysets(limit: Int, offset: Int): [Studyset]
     myFolders(limit: Int, offset: Int): [Folder]
     mySavedStudysets(limit: Int, offset: Int): [Studyset]
     practiceTest(id: ID!): PracticeTest
-    featuredCategories: [Category]
     subject(id: String!): Subject
     subjectsByKeyword(keyword: String): [Subject]
 }
@@ -29,8 +27,6 @@ type Mutation {
     deleteFolder(id: ID!, unsaveAllStudysets: Boolean!): ID
     saveStudyset(studysetId: ID!, folderId: ID): Boolean
     unsaveStudyset(studysetId: ID!): Boolean
-    createFeaturedCategory(title: String): Category
-    setStudysetFeaturedCategory(studysetId: ID, categoryId: ID): Boolean
 }
 type User {
     id: ID
