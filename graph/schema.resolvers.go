@@ -1156,7 +1156,30 @@ func (r *studysetResolver) PracticeTests(ctx context.Context, obj *model.Studyse
 
 // Studysets is the resolver for the studysets field.
 func (r *subjectResolver) Studysets(ctx context.Context, obj *model.Subject, limit *int32, offset *int32) ([]*model.Studyset, error) {
-	panic(fmt.Errorf("not implemented: Studysets - studysets"))
+	if obj == nil || obj.ID == nil {
+		return nil, nil
+	}
+
+	var studysets []*model.Studyset
+	sql := `
+		SELECT
+			s.id,
+			s.user_id,
+			s.title,
+			s.private,
+			to_char(s.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
+		FROM studysets s
+		JOIN subjects ON s.subject_id = subjects.id
+		WHERE subjects.id = $1
+			AND s.private = false
+		ORDER BY s.updated_at DESC
+	`
+	err := pgxscan.Select(ctx, r.DB, &studysets, sql, *obj.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch subject's studysets: %w", err)
+	}
+
+	return studysets, nil
 }
 
 // Progress is the resolver for the progress field.
