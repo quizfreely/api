@@ -592,28 +592,7 @@ func (r *mutationResolver) DeleteFolder(ctx context.Context, id string) (*string
 	return &id, nil
 }
 
-// SaveStudyset is the resolver for the saveStudyset field.
-func (r *mutationResolver) SaveStudyset(ctx context.Context, studysetID string) (*bool, error) {
-	authedUser := auth.AuthedUserContext(ctx)
-	if authedUser == nil {
-		return nil, fmt.Errorf("not authenticated")
-	}
-
-	_, err := r.DB.Exec(
-		ctx,
-		`INSERT INTO saved_studysets (user_id, studyset_id)
-		VALUES ($1, $2)`,
-		authedUser.ID,
-		studysetID,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to save studyset: %w", err)
-	}
-
-	yay := true
-	return &yay, nil
-}
-
+// SetStudysetFolder is the resolver for the setStudysetFolder field.
 func (r *mutationResolver) SetStudysetFolder(ctx context.Context, studysetID string, folderID string) (*bool, error) {
 	authedUser := auth.AuthedUserContext(ctx)
 	if authedUser == nil {
@@ -638,6 +617,7 @@ func (r *mutationResolver) SetStudysetFolder(ctx context.Context, studysetID str
 	return &yay, nil
 }
 
+// RemoveStudysetFromFolder is the resolver for the removeStudysetFromFolder field.
 func (r *mutationResolver) RemoveStudysetFromFolder(ctx context.Context, studysetID string) (*bool, error) {
 	authedUser := auth.AuthedUserContext(ctx)
 	if authedUser == nil {
@@ -652,6 +632,28 @@ func (r *mutationResolver) RemoveStudysetFromFolder(ctx context.Context, studyse
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unsave studyset: %w", err)
+	}
+
+	yay := true
+	return &yay, nil
+}
+
+// SaveStudyset is the resolver for the saveStudyset field.
+func (r *mutationResolver) SaveStudyset(ctx context.Context, studysetID string) (*bool, error) {
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil {
+		return nil, fmt.Errorf("not authenticated")
+	}
+
+	_, err := r.DB.Exec(
+		ctx,
+		`INSERT INTO saved_studysets (user_id, studyset_id)
+		VALUES ($1, $2)`,
+		authedUser.ID,
+		studysetID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to save studyset: %w", err)
 	}
 
 	yay := true
