@@ -4,7 +4,7 @@ create table folder_studysets (
     studyset_id uuid not null references studysets (id) on delete cascade,
     user_id uuid not null references auth.users (id) on delete cascade,
     folder_id uuid not null references folders (id) on delete cascade,
-    timestamp timestamptz not null default now()
+    timestamp timestamptz not null default now(),
     unique (studyset_id, user_id)
 );
 
