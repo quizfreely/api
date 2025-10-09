@@ -37,12 +37,12 @@ func (r *folderResolver) Studysets(ctx context.Context, obj *model.Folder) ([]*m
 			s.private,
 			s.subject_id,
 			to_char(s.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
-		FROM saved_studysets
-		JOIN studysets s ON saved_studysets.studyset_id = s.id
-		WHERE saved_studysets.user_id = $1
-			AND saved_studysets.folder_id = $2
+		FROM folder_studysets f
+		JOIN studysets s ON f.studyset_id = s.id
+		WHERE f.user_id = $1
+			AND f.folder_id = $2
 			AND (s.private = false OR s.user_id = $1)
-		ORDER BY saved_studysets.timestamp DESC
+		ORDER BY f.timestamp DESC
 	`
 	err := pgxscan.Select(ctx, r.DB, &studysets, sql, authedUser.ID, *obj.ID)
 	if err != nil {
@@ -961,7 +961,6 @@ func (r *queryResolver) MySavedStudysets(ctx context.Context, limit *int32, offs
 		FROM saved_studysets
 		JOIN studysets s ON saved_studysets.studyset_id = s.id
 		WHERE saved_studysets.user_id = $1
-			AND saved_studysets.folder_id IS NULL
 			AND s.private = false
 		ORDER BY saved_studysets.timestamp DESC
 		LIMIT $2 OFFSET $3
@@ -1116,8 +1115,8 @@ func (r *studysetResolver) Folder(ctx context.Context, obj *model.Studyset) (*mo
 	var folder model.Folder
 	sql := `
 		SELECT f.id, f.name FROM folders f
-	    JOIN saved_studysets s ON s.folder_id = f.id
-	    WHERE s.studyset_id = $1 AND user_id = $2
+	    JOIN folder_studysets fs ON fs.folder_id = f.id
+	    WHERE fs.studyset_id = $1 AND fs.user_id = $2 AND f.user_id = $2
 	`
 	err := pgxscan.Get(ctx, r.DB, &folder, sql, *obj.ID, authedUser.ID)
 	if err != nil {
