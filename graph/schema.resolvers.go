@@ -573,22 +573,10 @@ func (r *mutationResolver) RenameFolder(ctx context.Context, id string, name str
 }
 
 // DeleteFolder is the resolver for the deleteFolder field.
-func (r *mutationResolver) DeleteFolder(ctx context.Context, id string, unsaveAllStudysets bool) (*string, error) {
+func (r *mutationResolver) DeleteFolder(ctx context.Context, id string) (*string, error) {
 	authedUser := auth.AuthedUserContext(ctx)
 	if authedUser == nil {
 		return nil, fmt.Errorf("not authenticated")
-	}
-
-	if unsaveAllStudysets {
-		_, err := r.DB.Exec(
-			ctx,
-			"DELETE FROM saved_studysets WHERE folder_id = $1 AND user_id = $2",
-			id,
-			authedUser.ID,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to unsave folder's studysets before deleting it: %w", err)
-		}
 	}
 
 	_, err := r.DB.Exec(
@@ -605,7 +593,7 @@ func (r *mutationResolver) DeleteFolder(ctx context.Context, id string, unsaveAl
 }
 
 // SaveStudyset is the resolver for the saveStudyset field.
-func (r *mutationResolver) SaveStudyset(ctx context.Context, studysetID string, folderID *string) (*bool, error) {
+func (r *mutationResolver) SaveStudyset(ctx context.Context, studysetID string) (*bool, error) {
 	authedUser := auth.AuthedUserContext(ctx)
 	if authedUser == nil {
 		return nil, fmt.Errorf("not authenticated")
@@ -613,7 +601,28 @@ func (r *mutationResolver) SaveStudyset(ctx context.Context, studysetID string, 
 
 	_, err := r.DB.Exec(
 		ctx,
-		`INSERT INTO saved_studysets (user_id, studyset_id, folder_id)
+		`INSERT INTO saved_studysets (user_id, studyset_id)
+		VALUES ($1, $2)`,
+		authedUser.ID,
+		studysetID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to save studyset: %w", err)
+	}
+
+	yay := true
+	return &yay, nil
+}
+
+func (r *mutationResolver) SetStudysetFolder(ctx context.Context, studysetID string, folderID string) (*bool, error) {
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil {
+		return nil, fmt.Errorf("not authenticated")
+	}
+
+	_, err := r.DB.Exec(
+		ctx,
+		`INSERT INTO folder_studysets (user_id, studyset_id, folder_id)
 		VALUES ($1, $2, $3)
 		ON CONFLICT (user_id, studyset_id) DO UPDATE
 		SET folder_id = $3`,
@@ -622,7 +631,27 @@ func (r *mutationResolver) SaveStudyset(ctx context.Context, studysetID string, 
 		folderID,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to save studyset: %w", err)
+		return nil, fmt.Errorf("failed to add/move studyset to folder: %w", err)
+	}
+
+	yay := true
+	return &yay, nil
+}
+
+func (r *mutationResolver) RemoveStudysetFromFolder(ctx context.Context, studysetID string) (*bool, error) {
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil {
+		return nil, fmt.Errorf("not authenticated")
+	}
+
+	_, err := r.DB.Exec(
+		ctx,
+		"DELETE FROM folder_studysets WHERE studyset_id = $1 AND user_id = $2",
+		studysetID,
+		authedUser.ID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unsave studyset: %w", err)
 	}
 
 	yay := true
