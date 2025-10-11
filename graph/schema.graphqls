@@ -12,6 +12,7 @@ type Query {
     practiceTest(id: ID!): PracticeTest
     subject(id: String!): Subject
     subjectsByKeyword(keyword: String): [Subject]
+    folder(id: ID!): Folder
 }
 type Mutation {
     createStudyset(studyset: StudysetInput!, terms: [NewTermInput]): Studyset

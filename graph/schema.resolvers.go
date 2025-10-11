@@ -1120,6 +1120,10 @@ func (r *studysetResolver) Folder(ctx context.Context, obj *model.Studyset) (*mo
 	`
 	err := pgxscan.Get(ctx, r.DB, &folder, sql, *obj.ID, authedUser.ID)
 	if err != nil {
+		if pgxscan.NotFound(err) {
+			return nil, nil
+		}
+
 		return nil, fmt.Errorf("failed to check studyset folder field: %w", err)
 	}
 
