@@ -128,6 +128,7 @@ type ComplexityRoot struct {
 	Query struct {
 		Authed            func(childComplexity int) int
 		AuthedUser        func(childComplexity int) int
+		Folder            func(childComplexity int, id string) int
 		MyFolders         func(childComplexity int, limit *int32, offset *int32) int
 		MySavedStudysets  func(childComplexity int, limit *int32, offset *int32) int
 		MyStudysets       func(childComplexity int, limit *int32, offset *int32) int
@@ -266,6 +267,7 @@ type QueryResolver interface {
 	PracticeTest(ctx context.Context, id string) (*model.PracticeTest, error)
 	Subject(ctx context.Context, id string) (*model.Subject, error)
 	SubjectsByKeyword(ctx context.Context, keyword *string) ([]*model.Subject, error)
+	Folder(ctx context.Context, id string) (*model.Folder, error)
 }
 type StudysetResolver interface {
 	User(ctx context.Context, obj *model.Studyset) (*model.User, error)
@@ -739,6 +741,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.AuthedUser(childComplexity), true
+
+	case "Query.folder":
+		if e.complexity.Query.Folder == nil {
+			break
+		}
+
+		args, err := ec.field_Query_folder_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Folder(childComplexity, args["id"].(string)), true
 
 	case "Query.myFolders":
 		if e.complexity.Query.MyFolders == nil {
@@ -1661,6 +1675,17 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 		return nil, err
 	}
 	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_folder_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -5237,6 +5262,66 @@ func (ec *executionContext) fieldContext_Query_subjectsByKeyword(ctx context.Con
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_subjectsByKeyword_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_folder(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_folder(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Folder(rctx, fc.Args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.Folder)
+	fc.Result = res
+	return ec.marshalOFolder2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐFolder(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_folder(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Folder_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Folder_name(ctx, field)
+			case "studysets":
+				return ec.fieldContext_Folder_studysets(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Folder", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_folder_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -11519,6 +11604,25 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_subjectsByKeyword(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "folder":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_folder(ctx, field)
 				return res
 			}
 
