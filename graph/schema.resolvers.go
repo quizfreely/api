@@ -1041,6 +1041,32 @@ WHERE sk.keyword = $1`,
 	return subjects, nil
 }
 
+// Folder is the resolver for the folder field.
+func (r *queryResolver) Folder(ctx context.Context, id string) (*model.Folder, error) {
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil {
+		return nil, fmt.Errorf("not authenticated")
+	}
+
+	var folder model.Folder
+	sql := `
+		SELECT
+			id,
+			name
+		FROM folders
+		WHERE id = $1 AND user_id = $2
+	`
+	err := pgxscan.Get(ctx, r.DB, &folder, sql, id, authedUser.ID)
+	if err != nil {
+		if pgxscan.NotFound(err) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to get folder: %w", err)
+	}
+
+	return &folder, nil
+}
+
 // User is the resolver for the user field.
 func (r *studysetResolver) User(ctx context.Context, obj *model.Studyset) (*model.User, error) {
 	if obj.UserID == nil {
