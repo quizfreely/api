@@ -103,7 +103,7 @@ func (r *mutationResolver) CreateStudyset(ctx context.Context, studyset model.St
 	}
 
 	if folderID != nil {
-		setStudysetFolder(ctx, newStudyset.ID, folderID)
+		r.SetStudysetFolder(ctx, *newStudyset.ID, *folderID)
 	}
 
 	return &newStudyset, nil
