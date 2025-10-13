@@ -122,7 +122,7 @@ check your environment variables`,
 		h.SetQueryCache(lru.New[*ast.QueryDocument](1000))
 
 		h.Use(extension.Introspection{})
-		h.Use(extension.FixedComplexityLimit(100))
+		h.Use(extension.FixedComplexityLimit(50))
 
 		srv := loader.Middleware(dbPool, h)
 
