@@ -100,7 +100,7 @@ type ComplexityRoot struct {
 
 	Mutation struct {
 		CreateFolder             func(childComplexity int, name string) int
-		CreateStudyset           func(childComplexity int, studyset model.StudysetInput, terms []*model.NewTermInput) int
+		CreateStudyset           func(childComplexity int, studyset model.StudysetInput, terms []*model.NewTermInput, folderID *string) int
 		DeleteFolder             func(childComplexity int, id string) int
 		DeleteStudyset           func(childComplexity int, id string) int
 		RecordConfusedTerms      func(childComplexity int, confusedTerms []*model.TermConfusionPairInput) int
@@ -237,7 +237,7 @@ type FolderResolver interface {
 	Studysets(ctx context.Context, obj *model.Folder) ([]*model.Studyset, error)
 }
 type MutationResolver interface {
-	CreateStudyset(ctx context.Context, studyset model.StudysetInput, terms []*model.NewTermInput) (*model.Studyset, error)
+	CreateStudyset(ctx context.Context, studyset model.StudysetInput, terms []*model.NewTermInput, folderID *string) (*model.Studyset, error)
 	UpdateStudyset(ctx context.Context, id string, studyset *model.StudysetInput, terms []*model.TermInput, newTerms []*model.NewTermInput, deleteTerms []*string) (*model.Studyset, error)
 	DeleteStudyset(ctx context.Context, id string) (*string, error)
 	UpdateUser(ctx context.Context, displayName *string) (*model.AuthedUser, error)
@@ -528,7 +528,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreateStudyset(childComplexity, args["studyset"].(model.StudysetInput), args["terms"].([]*model.NewTermInput)), true
+		return e.complexity.Mutation.CreateStudyset(childComplexity, args["studyset"].(model.StudysetInput), args["terms"].([]*model.NewTermInput), args["folderId"].(*string)), true
 
 	case "Mutation.deleteFolder":
 		if e.complexity.Mutation.DeleteFolder == nil {
@@ -1491,6 +1491,11 @@ func (ec *executionContext) field_Mutation_createStudyset_args(ctx context.Conte
 		return nil, err
 	}
 	args["terms"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "folderId", ec.unmarshalOID2ᚖstring)
+	if err != nil {
+		return nil, err
+	}
+	args["folderId"] = arg2
 	return args, nil
 }
 
@@ -3250,7 +3255,7 @@ func (ec *executionContext) _Mutation_createStudyset(ctx context.Context, field 
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateStudyset(rctx, fc.Args["studyset"].(model.StudysetInput), fc.Args["terms"].([]*model.NewTermInput))
+		return ec.resolvers.Mutation().CreateStudyset(rctx, fc.Args["studyset"].(model.StudysetInput), fc.Args["terms"].([]*model.NewTermInput), fc.Args["folderId"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

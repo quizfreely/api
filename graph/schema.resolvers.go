@@ -53,7 +53,7 @@ func (r *folderResolver) Studysets(ctx context.Context, obj *model.Folder) ([]*m
 }
 
 // CreateStudyset is the resolver for the createStudyset field.
-func (r *mutationResolver) CreateStudyset(ctx context.Context, studyset model.StudysetInput, terms []*model.NewTermInput) (*model.Studyset, error) {
+func (r *mutationResolver) CreateStudyset(ctx context.Context, studyset model.StudysetInput, terms []*model.NewTermInput, folderID *string) (*model.Studyset, error) {
 	authedUser := auth.AuthedUserContext(ctx)
 	if authedUser == nil {
 		return nil, fmt.Errorf("not authenticated")
@@ -100,6 +100,10 @@ func (r *mutationResolver) CreateStudyset(ctx context.Context, studyset model.St
 
 	if err := tx.Commit(ctx); err != nil {
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	if folderID != nil {
+		setStudysetFolder(ctx, newStudyset.ID, folderID)
 	}
 
 	return &newStudyset, nil
