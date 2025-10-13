@@ -69,6 +69,17 @@ func (ah *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if len(reqBody.NewPassword) < 8 {
+		render.Status(r, 400)
+		render.JSON(w, r, map[string]interface{}{
+			"error": map[string]interface{}{
+				"statusCode": 400,
+				"message":    "Your password needs to be 8 characters or longer",
+			},
+		})
+		return
+	}
+
 	var isUsernameTaken bool = false
 	err = pgxscan.Get(
 		r.Context(),
