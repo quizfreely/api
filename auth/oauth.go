@@ -127,9 +127,9 @@ func (ah *AuthHandler) OAuthGoogleCallback(w http.ResponseWriter, r *http.Reques
 		r.Context(),
 		ah.DB,
 		&qzfrUserID,
-		`INSERT INTO auth.users (oauth_google_sub, auth_type, oauth_google_email, display_name)
-VALUES ($1, 'OAUTH_GOOGLE', $2, $3) ON CONFLICT (oauth_google_sub) DO UPDATE
-SET oauth_google_email = $3 RETURNING id`,
+		`INSERT INTO auth.users (oauth_google_sub, auth_type, oauth_google_email, oauth_google_name, display_name)
+VALUES ($1, 'OAUTH_GOOGLE', $2, $3, $3) ON CONFLICT (oauth_google_sub) DO UPDATE
+SET oauth_google_email = $2, oauth_google_name = $3 RETURNING id`,
 		userInfo.Sub,
 		userInfo.Email,
 		userInfo.Name,
