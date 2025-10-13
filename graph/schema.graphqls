@@ -15,7 +15,7 @@ type Query {
     folder(id: ID!): Folder
 }
 type Mutation {
-    createStudyset(studyset: StudysetInput!, terms: [NewTermInput]): Studyset
+    createStudyset(studyset: StudysetInput!, terms: [NewTermInput], folderId: ID): Studyset
     updateStudyset(id: ID!, studyset: StudysetInput, terms: [TermInput], newTerms: [NewTermInput], deleteTerms: [ID]): Studyset
     deleteStudyset(id: ID!): ID
     updateUser(displayName: String): AuthedUser
