@@ -131,7 +131,7 @@ type ComplexityRoot struct {
 		Folder            func(childComplexity int, id string) int
 		MyFolders         func(childComplexity int, limit *int32, offset *int32) int
 		MySavedStudysets  func(childComplexity int, limit *int32, offset *int32) int
-		MyStudysets       func(childComplexity int, limit *int32, offset *int32) int
+		MyStudysets       func(childComplexity int, limit *int32, offset *int32, hideFoldered *bool) int
 		PracticeTest      func(childComplexity int, id string) int
 		RecentStudysets   func(childComplexity int, limit *int32, offset *int32) int
 		SearchStudysets   func(childComplexity int, q string, limit *int32, offset *int32) int
@@ -261,7 +261,7 @@ type QueryResolver interface {
 	Term(ctx context.Context, id string) (*model.Term, error)
 	RecentStudysets(ctx context.Context, limit *int32, offset *int32) ([]*model.Studyset, error)
 	SearchStudysets(ctx context.Context, q string, limit *int32, offset *int32) ([]*model.Studyset, error)
-	MyStudysets(ctx context.Context, limit *int32, offset *int32) ([]*model.Studyset, error)
+	MyStudysets(ctx context.Context, limit *int32, offset *int32, hideFoldered *bool) ([]*model.Studyset, error)
 	MyFolders(ctx context.Context, limit *int32, offset *int32) ([]*model.Folder, error)
 	MySavedStudysets(ctx context.Context, limit *int32, offset *int32) ([]*model.Studyset, error)
 	PracticeTest(ctx context.Context, id string) (*model.PracticeTest, error)
@@ -788,7 +788,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.MyStudysets(childComplexity, args["limit"].(*int32), args["offset"].(*int32)), true
+		return e.complexity.Query.MyStudysets(childComplexity, args["limit"].(*int32), args["offset"].(*int32), args["hideFoldered"].(*bool)), true
 
 	case "Query.practiceTest":
 		if e.complexity.Query.PracticeTest == nil {
@@ -1739,6 +1739,11 @@ func (ec *executionContext) field_Query_myStudysets_args(ctx context.Context, ra
 		return nil, err
 	}
 	args["offset"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "hideFoldered", ec.unmarshalOBoolean2ᚖbool)
+	if err != nil {
+		return nil, err
+	}
+	args["hideFoldered"] = arg2
 	return args, nil
 }
 
@@ -4885,7 +4890,7 @@ func (ec *executionContext) _Query_myStudysets(ctx context.Context, field graphq
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().MyStudysets(rctx, fc.Args["limit"].(*int32), fc.Args["offset"].(*int32))
+		return ec.resolvers.Query().MyStudysets(rctx, fc.Args["limit"].(*int32), fc.Args["offset"].(*int32), fc.Args["hideFoldered"].(*bool))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
