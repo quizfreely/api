@@ -864,7 +864,7 @@ func (r *queryResolver) SearchStudysets(ctx context.Context, q string, limit *in
 }
 
 // MyStudysets is the resolver for the myStudysets field.
-func (r *queryResolver) MyStudysets(ctx context.Context, limit *int32, offset *int32) ([]*model.Studyset, error) {
+func (r *queryResolver) MyStudysets(ctx context.Context, limit *int32, offset *int32, hideFoldered *bool) ([]*model.Studyset, error) {
 	authedUser := auth.AuthedUserContext(ctx)
 	if authedUser == nil {
 		return nil, fmt.Errorf("not authenticated")
@@ -881,19 +881,39 @@ func (r *queryResolver) MyStudysets(ctx context.Context, limit *int32, offset *i
 	}
 
 	var studysets []*model.Studyset
-	sql := `
-		SELECT
-			id,
-			user_id,
-			title,
-			private,
-			subject_id,
-			to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
-		FROM public.studysets
-		WHERE user_id = $1
-		ORDER BY updated_at DESC
-		LIMIT $2 OFFSET $3
-	`
+	var sql string
+	if hideFoldered != nil && *hideFoldered {
+		sql = `
+			SELECT
+				id,
+				user_id,
+				title,
+				private,
+				subject_id,
+				to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
+			FROM public.studysets
+			WHERE user_id = $1 AND NOT EXISTS (
+				SELECT 1 FROM public.folders_studysets
+				WHERE user_id = $1 AND studyset_id = studysets.id
+			)
+			ORDER BY updated_at DESC
+			LIMIT $2 OFFSET $3
+		`
+	} else {
+		sql = `
+			SELECT
+				id,
+				user_id,
+				title,
+				private,
+				subject_id,
+				to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
+			FROM public.studysets
+			WHERE user_id = $1
+			ORDER BY updated_at DESC
+			LIMIT $2 OFFSET $3
+		`
+	}
 	err := pgxscan.Select(ctx, r.DB, &studysets, sql, authedUser.ID, l, o)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch my studysets: %w", err)
