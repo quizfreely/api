@@ -891,10 +891,11 @@ func (r *queryResolver) MyStudysets(ctx context.Context, limit *int32, offset *i
 				private,
 				subject_id,
 				to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
-			FROM public.studysets
-			WHERE user_id = $1 AND NOT EXISTS (
-				SELECT 1 FROM public.folders_studysets
-				WHERE user_id = $1 AND studyset_id = studysets.id
+			FROM public.studysets s
+			WHERE s.user_id = $1 AND s.id NOT IN (
+    			SELECT fs.studyset_id
+    			FROM folder_studysets fs
+    			WHERE fs.user_id = $1
 			)
 			ORDER BY updated_at DESC
 			LIMIT $2 OFFSET $3
