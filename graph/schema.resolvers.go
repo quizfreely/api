@@ -135,7 +135,7 @@ func (r *mutationResolver) UpdateStudyset(ctx context.Context, id string, studys
 
 		sql := `
 			UPDATE public.studysets
-			SET title = $1, private = $2, subject_id = $3 updated_at = now()
+			SET title = $1, private = $2, subject_id = $3, updated_at = now()
 			WHERE id = $4 AND user_id = $5
 			RETURNING id, user_id, title, private, subject_id,
 				to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
