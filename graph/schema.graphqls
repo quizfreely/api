@@ -12,6 +12,8 @@ type Query {
     practiceTest(id: ID!): PracticeTest
     subject(id: String!): Subject
     subjectsByKeyword(keyword: String): [Subject]
+    subjectsByCategory(category: SubjectCategory): [Subject]
+    allSubjects: [Subject]
     folder(id: ID!): Folder
 }
 type Mutation {
