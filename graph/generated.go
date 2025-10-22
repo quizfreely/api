@@ -126,20 +126,22 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Authed            func(childComplexity int) int
-		AuthedUser        func(childComplexity int) int
-		Folder            func(childComplexity int, id string) int
-		MyFolders         func(childComplexity int, limit *int32, offset *int32) int
-		MySavedStudysets  func(childComplexity int, limit *int32, offset *int32) int
-		MyStudysets       func(childComplexity int, limit *int32, offset *int32, hideFoldered *bool) int
-		PracticeTest      func(childComplexity int, id string) int
-		RecentStudysets   func(childComplexity int, limit *int32, offset *int32) int
-		SearchStudysets   func(childComplexity int, q string, limit *int32, offset *int32) int
-		Studyset          func(childComplexity int, id string) int
-		Subject           func(childComplexity int, id string) int
-		SubjectsByKeyword func(childComplexity int, keyword *string) int
-		Term              func(childComplexity int, id string) int
-		User              func(childComplexity int, id string) int
+		AllSubjects        func(childComplexity int) int
+		Authed             func(childComplexity int) int
+		AuthedUser         func(childComplexity int) int
+		Folder             func(childComplexity int, id string) int
+		MyFolders          func(childComplexity int, limit *int32, offset *int32) int
+		MySavedStudysets   func(childComplexity int, limit *int32, offset *int32) int
+		MyStudysets        func(childComplexity int, limit *int32, offset *int32, hideFoldered *bool) int
+		PracticeTest       func(childComplexity int, id string) int
+		RecentStudysets    func(childComplexity int, limit *int32, offset *int32) int
+		SearchStudysets    func(childComplexity int, q string, limit *int32, offset *int32) int
+		Studyset           func(childComplexity int, id string) int
+		Subject            func(childComplexity int, id string) int
+		SubjectsByCategory func(childComplexity int, category *model.SubjectCategory) int
+		SubjectsByKeyword  func(childComplexity int, keyword *string) int
+		Term               func(childComplexity int, id string) int
+		User               func(childComplexity int, id string) int
 	}
 
 	Question struct {
@@ -267,6 +269,8 @@ type QueryResolver interface {
 	PracticeTest(ctx context.Context, id string) (*model.PracticeTest, error)
 	Subject(ctx context.Context, id string) (*model.Subject, error)
 	SubjectsByKeyword(ctx context.Context, keyword *string) ([]*model.Subject, error)
+	SubjectsByCategory(ctx context.Context, category *model.SubjectCategory) ([]*model.Subject, error)
+	AllSubjects(ctx context.Context) ([]*model.Subject, error)
 	Folder(ctx context.Context, id string) (*model.Folder, error)
 }
 type StudysetResolver interface {
@@ -728,6 +732,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.PracticeTest.Timestamp(childComplexity), true
 
+	case "Query.allSubjects":
+		if e.complexity.Query.AllSubjects == nil {
+			break
+		}
+
+		return e.complexity.Query.AllSubjects(childComplexity), true
+
 	case "Query.authed":
 		if e.complexity.Query.Authed == nil {
 			break
@@ -849,6 +860,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.Subject(childComplexity, args["id"].(string)), true
+
+	case "Query.subjectsByCategory":
+		if e.complexity.Query.SubjectsByCategory == nil {
+			break
+		}
+
+		args, err := ec.field_Query_subjectsByCategory_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.SubjectsByCategory(childComplexity, args["category"].(*model.SubjectCategory)), true
 
 	case "Query.subjectsByKeyword":
 		if e.complexity.Query.SubjectsByKeyword == nil {
@@ -1814,6 +1837,17 @@ func (ec *executionContext) field_Query_subject_args(ctx context.Context, rawArg
 		return nil, err
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_subjectsByCategory_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "category", ec.unmarshalOSubjectCategory2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐSubjectCategory)
+	if err != nil {
+		return nil, err
+	}
+	args["category"] = arg0
 	return args, nil
 }
 
@@ -5274,6 +5308,119 @@ func (ec *executionContext) fieldContext_Query_subjectsByKeyword(ctx context.Con
 	if fc.Args, err = ec.field_Query_subjectsByKeyword_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_subjectsByCategory(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_subjectsByCategory(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().SubjectsByCategory(rctx, fc.Args["category"].(*model.SubjectCategory))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Subject)
+	fc.Result = res
+	return ec.marshalOSubject2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐSubject(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_subjectsByCategory(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Subject_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Subject_name(ctx, field)
+			case "category":
+				return ec.fieldContext_Subject_category(ctx, field)
+			case "studysets":
+				return ec.fieldContext_Subject_studysets(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Subject", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_subjectsByCategory_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_allSubjects(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_allSubjects(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().AllSubjects(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Subject)
+	fc.Result = res
+	return ec.marshalOSubject2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐSubject(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_allSubjects(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Subject_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Subject_name(ctx, field)
+			case "category":
+				return ec.fieldContext_Subject_category(ctx, field)
+			case "studysets":
+				return ec.fieldContext_Subject_studysets(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Subject", field.Name)
+		},
 	}
 	return fc, nil
 }
@@ -11614,6 +11761,44 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_subjectsByKeyword(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "subjectsByCategory":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_subjectsByCategory(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "allSubjects":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_allSubjects(ctx, field)
 				return res
 			}
 

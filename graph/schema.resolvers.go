@@ -1066,6 +1066,42 @@ WHERE sk.keyword = $1`,
 	return subjects, nil
 }
 
+// SubjectsByCategory is the resolver for the subjectsByCategory field.
+func (r *queryResolver) SubjectsByCategory(ctx context.Context, category *model.SubjectCategory) ([]*model.Subject, error) {
+	var subjects []*model.Subject
+	err := pgxscan.Select(
+		ctx,
+		r.DB,
+		&subjects,
+		`SELECT id, name, category
+FROM subjects
+WHERE category = $1`,
+		category,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get subjects by category: %w", err)
+	}
+
+	return subjects, nil
+}
+
+// AllSubjects is the resolver for the allSubjects field.
+func (r *queryResolver) AllSubjects(ctx context.Context) ([]*model.Subject, error) {
+	var subjects []*model.Subject
+	err := pgxscan.Select(
+		ctx,
+		r.DB,
+		&subjects,
+		`SELECT id, name, category FROM subjects`,
+		category,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get all subjects: %w", err)
+	}
+
+	return subjects, nil
+}
+
 // Folder is the resolver for the folder field.
 func (r *queryResolver) Folder(ctx context.Context, id string) (*model.Folder, error) {
 	authedUser := auth.AuthedUserContext(ctx)
