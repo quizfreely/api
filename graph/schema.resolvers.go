@@ -1093,7 +1093,6 @@ func (r *queryResolver) AllSubjects(ctx context.Context) ([]*model.Subject, erro
 		r.DB,
 		&subjects,
 		`SELECT id, name, category FROM subjects`,
-		category,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all subjects: %w", err)
