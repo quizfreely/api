@@ -1127,6 +1127,11 @@ func (r *queryResolver) Folder(ctx context.Context, id string) (*model.Folder, e
 	return &folder, nil
 }
 
+// Subject is the resolver for the subject field.
+func (r *studysetResolver) Subject(ctx context.Context, obj *model.Studyset) (*model.Subject, error) {
+	panic(fmt.Errorf("not implemented: Subject - subject"))
+}
+
 // User is the resolver for the user field.
 func (r *studysetResolver) User(ctx context.Context, obj *model.Studyset) (*model.User, error) {
 	if obj.UserID == nil {
