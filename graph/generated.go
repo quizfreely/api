@@ -158,7 +158,7 @@ type ComplexityRoot struct {
 		PracticeTests func(childComplexity int) int
 		Private       func(childComplexity int) int
 		Saved         func(childComplexity int) int
-		SubjectID     func(childComplexity int) int
+		Subject       func(childComplexity int) int
 		Terms         func(childComplexity int) int
 		TermsCount    func(childComplexity int) int
 		Title         func(childComplexity int) int
@@ -274,6 +274,8 @@ type QueryResolver interface {
 	Folder(ctx context.Context, id string) (*model.Folder, error)
 }
 type StudysetResolver interface {
+	Subject(ctx context.Context, obj *model.Studyset) (*model.Subject, error)
+
 	User(ctx context.Context, obj *model.Studyset) (*model.User, error)
 	Terms(ctx context.Context, obj *model.Studyset) ([]*model.Term, error)
 	TermsCount(ctx context.Context, obj *model.Studyset) (*int32, error)
@@ -979,12 +981,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Studyset.Saved(childComplexity), true
 
-	case "Studyset.subjectId":
-		if e.complexity.Studyset.SubjectID == nil {
+	case "Studyset.subject":
+		if e.complexity.Studyset.Subject == nil {
 			break
 		}
 
-		return e.complexity.Studyset.SubjectID(childComplexity), true
+		return e.complexity.Studyset.Subject(childComplexity), true
 
 	case "Studyset.terms":
 		if e.complexity.Studyset.Terms == nil {
@@ -2322,8 +2324,8 @@ func (ec *executionContext) fieldContext_Category_studysets(_ context.Context, f
 				return ec.fieldContext_Studyset_title(ctx, field)
 			case "private":
 				return ec.fieldContext_Studyset_private(ctx, field)
-			case "subjectId":
-				return ec.fieldContext_Studyset_subjectId(ctx, field)
+			case "subject":
+				return ec.fieldContext_Studyset_subject(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_Studyset_updatedAt(ctx, field)
 			case "user":
@@ -2696,8 +2698,8 @@ func (ec *executionContext) fieldContext_Folder_studysets(_ context.Context, fie
 				return ec.fieldContext_Studyset_title(ctx, field)
 			case "private":
 				return ec.fieldContext_Studyset_private(ctx, field)
-			case "subjectId":
-				return ec.fieldContext_Studyset_subjectId(ctx, field)
+			case "subject":
+				return ec.fieldContext_Studyset_subject(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_Studyset_updatedAt(ctx, field)
 			case "user":
@@ -3322,8 +3324,8 @@ func (ec *executionContext) fieldContext_Mutation_createStudyset(ctx context.Con
 				return ec.fieldContext_Studyset_title(ctx, field)
 			case "private":
 				return ec.fieldContext_Studyset_private(ctx, field)
-			case "subjectId":
-				return ec.fieldContext_Studyset_subjectId(ctx, field)
+			case "subject":
+				return ec.fieldContext_Studyset_subject(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_Studyset_updatedAt(ctx, field)
 			case "user":
@@ -3398,8 +3400,8 @@ func (ec *executionContext) fieldContext_Mutation_updateStudyset(ctx context.Con
 				return ec.fieldContext_Studyset_title(ctx, field)
 			case "private":
 				return ec.fieldContext_Studyset_private(ctx, field)
-			case "subjectId":
-				return ec.fieldContext_Studyset_subjectId(ctx, field)
+			case "subject":
+				return ec.fieldContext_Studyset_subject(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_Studyset_updatedAt(ctx, field)
 			case "user":
@@ -4590,8 +4592,8 @@ func (ec *executionContext) fieldContext_Query_studyset(ctx context.Context, fie
 				return ec.fieldContext_Studyset_title(ctx, field)
 			case "private":
 				return ec.fieldContext_Studyset_private(ctx, field)
-			case "subjectId":
-				return ec.fieldContext_Studyset_subjectId(ctx, field)
+			case "subject":
+				return ec.fieldContext_Studyset_subject(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_Studyset_updatedAt(ctx, field)
 			case "user":
@@ -4800,8 +4802,8 @@ func (ec *executionContext) fieldContext_Query_recentStudysets(ctx context.Conte
 				return ec.fieldContext_Studyset_title(ctx, field)
 			case "private":
 				return ec.fieldContext_Studyset_private(ctx, field)
-			case "subjectId":
-				return ec.fieldContext_Studyset_subjectId(ctx, field)
+			case "subject":
+				return ec.fieldContext_Studyset_subject(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_Studyset_updatedAt(ctx, field)
 			case "user":
@@ -4876,8 +4878,8 @@ func (ec *executionContext) fieldContext_Query_searchStudysets(ctx context.Conte
 				return ec.fieldContext_Studyset_title(ctx, field)
 			case "private":
 				return ec.fieldContext_Studyset_private(ctx, field)
-			case "subjectId":
-				return ec.fieldContext_Studyset_subjectId(ctx, field)
+			case "subject":
+				return ec.fieldContext_Studyset_subject(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_Studyset_updatedAt(ctx, field)
 			case "user":
@@ -4952,8 +4954,8 @@ func (ec *executionContext) fieldContext_Query_myStudysets(ctx context.Context, 
 				return ec.fieldContext_Studyset_title(ctx, field)
 			case "private":
 				return ec.fieldContext_Studyset_private(ctx, field)
-			case "subjectId":
-				return ec.fieldContext_Studyset_subjectId(ctx, field)
+			case "subject":
+				return ec.fieldContext_Studyset_subject(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_Studyset_updatedAt(ctx, field)
 			case "user":
@@ -5088,8 +5090,8 @@ func (ec *executionContext) fieldContext_Query_mySavedStudysets(ctx context.Cont
 				return ec.fieldContext_Studyset_title(ctx, field)
 			case "private":
 				return ec.fieldContext_Studyset_private(ctx, field)
-			case "subjectId":
-				return ec.fieldContext_Studyset_subjectId(ctx, field)
+			case "subject":
+				return ec.fieldContext_Studyset_subject(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_Studyset_updatedAt(ctx, field)
 			case "user":
@@ -5994,8 +5996,8 @@ func (ec *executionContext) fieldContext_Studyset_private(_ context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) _Studyset_subjectId(ctx context.Context, field graphql.CollectedField, obj *model.Studyset) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Studyset_subjectId(ctx, field)
+func (ec *executionContext) _Studyset_subject(ctx context.Context, field graphql.CollectedField, obj *model.Studyset) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Studyset_subject(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -6008,7 +6010,7 @@ func (ec *executionContext) _Studyset_subjectId(ctx context.Context, field graph
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.SubjectID, nil
+		return ec.resolvers.Studyset().Subject(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6017,19 +6019,29 @@ func (ec *executionContext) _Studyset_subjectId(ctx context.Context, field graph
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*model.Subject)
 	fc.Result = res
-	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOSubject2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐSubject(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Studyset_subjectId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Studyset_subject(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Studyset",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Subject_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Subject_name(ctx, field)
+			case "category":
+				return ec.fieldContext_Subject_category(ctx, field)
+			case "studysets":
+				return ec.fieldContext_Subject_studysets(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Subject", field.Name)
 		},
 	}
 	return fc, nil
@@ -6539,8 +6551,8 @@ func (ec *executionContext) fieldContext_Subject_studysets(ctx context.Context, 
 				return ec.fieldContext_Studyset_title(ctx, field)
 			case "private":
 				return ec.fieldContext_Studyset_private(ctx, field)
-			case "subjectId":
-				return ec.fieldContext_Studyset_subjectId(ctx, field)
+			case "subject":
+				return ec.fieldContext_Studyset_subject(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_Studyset_updatedAt(ctx, field)
 			case "user":
@@ -11919,8 +11931,39 @@ func (ec *executionContext) _Studyset(ctx context.Context, sel ast.SelectionSet,
 			out.Values[i] = ec._Studyset_title(ctx, field, obj)
 		case "private":
 			out.Values[i] = ec._Studyset_private(ctx, field, obj)
-		case "subjectId":
-			out.Values[i] = ec._Studyset_subjectId(ctx, field, obj)
+		case "subject":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Studyset_subject(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "updatedAt":
 			out.Values[i] = ec._Studyset_updatedAt(ctx, field, obj)
 		case "user":
