@@ -1129,7 +1129,26 @@ func (r *queryResolver) Folder(ctx context.Context, id string) (*model.Folder, e
 
 // Subject is the resolver for the subject field.
 func (r *studysetResolver) Subject(ctx context.Context, obj *model.Studyset) (*model.Subject, error) {
-	panic(fmt.Errorf("not implemented: Subject - subject"))
+	if obj.SubjectID == nil {
+		return nil, nil
+	}
+
+	var subject model.Subject
+	err := pgxscan.Get(
+		ctx,
+		r.DB,
+		&subject,
+		`SELECT id, name, category FROM subjects WHERE id = $1`,
+		*obj.SubjectID
+	)
+	if err != nil {
+		if pgxscan.NotFound(err) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to get subject from studyset: %w", err)
+	}
+
+	return &subject, nil
 }
 
 // User is the resolver for the user field.
