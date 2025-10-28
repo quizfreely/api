@@ -1139,7 +1139,7 @@ func (r *studysetResolver) Subject(ctx context.Context, obj *model.Studyset) (*m
 		r.DB,
 		&subject,
 		`SELECT id, name, category FROM subjects WHERE id = $1`,
-		*obj.SubjectID
+		*obj.SubjectID,
 	)
 	if err != nil {
 		if pgxscan.NotFound(err) {
