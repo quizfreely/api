@@ -1,3 +1,4 @@
+-- make sure you insert all subjects from subjects.sql first
 insert into subject_keywords (subject_id, keyword) values
 ('spanish',        'spanish'),
 ('spanish',        'español'),
