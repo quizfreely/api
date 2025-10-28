@@ -171,6 +171,8 @@ models:
         resolver: true
       folder:
         resolver: true
+      subject:
+        resolver: true
   Term:
     fields:
       progress:
