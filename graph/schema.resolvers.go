@@ -136,11 +136,11 @@ func (r *mutationResolver) UpdateStudyset(ctx context.Context, id string, studys
 		sql := `
 			UPDATE public.studysets
 			SET title = $1, private = $2, subject_id = $3, updated_at = now()
-			WHERE id = $4 AND user_id = $5
+			WHERE id = $4 AND (user_id = $5 OR COALESCE($6, false) = true)
 			RETURNING id, user_id, title, private, subject_id,
 				to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 		`
-		err = pgxscan.Get(ctx, tx, &updatedStudyset, sql, title, studyset.Private, studyset.SubjectID, id, authedUser.ID)
+		err = pgxscan.Get(ctx, tx, &updatedStudyset, sql, title, studyset.Private, studyset.SubjectID, id, authedUser.ID, authedUser.ModPerms)
 		if err != nil {
 			if pgxscan.NotFound(err) {
 				return nil, fmt.Errorf("studyset not found")
@@ -151,11 +151,11 @@ func (r *mutationResolver) UpdateStudyset(ctx context.Context, id string, studys
 		sql := `
 			UPDATE public.studysets
 			SET updated_at = now()
-			WHERE id = $1 AND user_id = $2
+			WHERE id = $1 AND (user_id = $2 OR COALESCE($3, false) = true)
 			RETURNING id, user_id, title, private, subject_id,
 				to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 		`
-		err = pgxscan.Get(ctx, tx, &updatedStudyset, sql, id, authedUser.ID)
+		err = pgxscan.Get(ctx, tx, &updatedStudyset, sql, id, authedUser.ID, authedUser.ModPerms)
 		if err != nil {
 			if pgxscan.NotFound(err) {
 				return nil, fmt.Errorf("studyset not found")
