@@ -2,10 +2,10 @@ package rest
 
 import (
 	"net/http"
+	"quizfreely/api/graph/model"
 	"regexp"
 	"strconv"
 	"strings"
-	"quizfreely/api/graph/model"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/go-chi/render"
