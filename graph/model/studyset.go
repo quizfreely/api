@@ -6,6 +6,7 @@ type Studyset struct {
 	Private   *bool   `json:"private,omitempty"`
 	SubjectID *string  `json:"subjectId,omitempty"`
 	Subject *Subject  `json:"subject,omitempty"`
+	CreatedAt *string `json:"createdAt,omitempty"`
 	UpdatedAt *string `json:"updatedAt,omitempty"`
 	UserID      *string   `json:"userId,omitempty"`
 	User      *User   `json:"user,omitempty"`
