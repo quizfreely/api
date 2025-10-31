@@ -801,8 +801,43 @@ WHERE terms.id = $1 AND studysets.private = FALSE`,
 	return &term, nil
 }
 
-// RecentStudysets is the resolver for the recentStudysets field.
-func (r *queryResolver) RecentStudysets(ctx context.Context, limit *int32, offset *int32) ([]*model.Studyset, error) {
+// RecentlyCreatedStudysets is the resolver for the recentlyCreatedStudysets field.
+func (r *queryResolver) RecentlyCreatedStudysets(ctx context.Context, limit *int32, offset *int32) ([]*model.Studyset, error) {
+	l := 24
+	if limit != nil && *limit > 0 && *limit < 1000 {
+		l = int(*limit)
+	}
+
+	o := 0
+	if offset != nil && *offset > 0 {
+		o = int(*offset)
+	}
+
+	var studysets []*model.Studyset
+	sql := `
+		SELECT
+			id,
+			user_id,
+			title,
+			private,
+			subject_id,
+			to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
+			to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
+		FROM public.studysets
+		WHERE private = false
+		ORDER BY created_at DESC
+		LIMIT $1 OFFSET $2
+	`
+	err := pgxscan.Select(ctx, r.DB, &studysets, sql, l, o)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch recently created studysets: %w", err)
+	}
+
+	return studysets, nil
+}
+
+// RecentlyUpdatedStudysets is the resolver for the recentlyUpdatedStudysets field.
+func (r *queryResolver) RecentlyUpdatedStudysets(ctx context.Context, limit *int32, offset *int32) ([]*model.Studyset, error) {
 	l := 24
 	if limit != nil && *limit > 0 && *limit < 1000 {
 		l = int(*limit)
@@ -830,7 +865,7 @@ func (r *queryResolver) RecentStudysets(ctx context.Context, limit *int32, offse
 	`
 	err := pgxscan.Select(ctx, r.DB, &studysets, sql, l, o)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch recent studysets: %w", err)
+		return nil, fmt.Errorf("failed to fetch recently updated studysets: %w", err)
 	}
 
 	return studysets, nil
@@ -1369,3 +1404,14 @@ type studysetResolver struct{ *Resolver }
 type subjectResolver struct{ *Resolver }
 type termResolver struct{ *Resolver }
 type termConfusionPairResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//    it when you're done.
+//  - You have helper methods in this file. Move them out to keep these resolver files clean.
+/*
+	func (r *queryResolver) RecentStudysets(ctx context.Context, limit *int32, offset *int32) ([]*model.Studyset, error) {
+}
+*/
