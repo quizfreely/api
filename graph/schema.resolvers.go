@@ -36,6 +36,7 @@ func (r *folderResolver) Studysets(ctx context.Context, obj *model.Folder) ([]*m
 			s.title,
 			s.private,
 			s.subject_id,
+			to_char(s.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 			to_char(s.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 		FROM folder_studysets f
 		JOIN studysets s ON f.studyset_id = s.id
@@ -74,6 +75,7 @@ func (r *mutationResolver) CreateStudyset(ctx context.Context, studyset model.St
 		INSERT INTO public.studysets (user_id, title, private, subject_id)
 		VALUES ($1, $2, $3, $4)
 		RETURNING id, user_id, title, private,
+			to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 			to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 	`
 	var newStudyset model.Studyset
@@ -138,6 +140,7 @@ func (r *mutationResolver) UpdateStudyset(ctx context.Context, id string, studys
 			SET title = $1, private = $2, subject_id = $3, updated_at = now()
 			WHERE id = $4 AND (user_id = $5 OR COALESCE($6, false) = true)
 			RETURNING id, user_id, title, private, subject_id,
+				to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 				to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 		`
 		err = pgxscan.Get(ctx, tx, &updatedStudyset, sql, title, studyset.Private, studyset.SubjectID, id, authedUser.ID, authedUser.ModPerms)
@@ -153,6 +156,7 @@ func (r *mutationResolver) UpdateStudyset(ctx context.Context, id string, studys
 			SET updated_at = now()
 			WHERE id = $1 AND (user_id = $2 OR COALESCE($3, false) = true)
 			RETURNING id, user_id, title, private, subject_id,
+				to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 				to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 		`
 		err = pgxscan.Get(ctx, tx, &updatedStudyset, sql, id, authedUser.ID, authedUser.ModPerms)
@@ -705,6 +709,7 @@ func (r *queryResolver) Studyset(ctx context.Context, id string) (*model.Studyse
 	if authedUser != nil {
 		sql := `
 			SELECT id, user_id, title, private, subject_id,
+				to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 				to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 			FROM public.studysets
 			WHERE id = $1 AND (private = false OR (private = true AND user_id = $2))`
@@ -712,6 +717,7 @@ func (r *queryResolver) Studyset(ctx context.Context, id string) (*model.Studyse
 	} else {
 		sql := `
 			SELECT id, user_id, title, private,
+				to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 				to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 			FROM public.studysets
 			WHERE id = $1 AND private = false`
@@ -815,6 +821,7 @@ func (r *queryResolver) RecentStudysets(ctx context.Context, limit *int32, offse
 			title,
 			private,
 			subject_id,
+			to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 			to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 		FROM public.studysets
 		WHERE private = false
@@ -849,6 +856,7 @@ func (r *queryResolver) SearchStudysets(ctx context.Context, q string, limit *in
 			title,
 			private,
 			subject_id,
+			to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 			to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 		FROM public.studysets
 		WHERE tsvector_title @@ websearch_to_tsquery('english', $1) AND private = false
@@ -890,6 +898,7 @@ func (r *queryResolver) MyStudysets(ctx context.Context, limit *int32, offset *i
 				title,
 				private,
 				subject_id,
+				to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 				to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 			FROM public.studysets s
 			WHERE s.user_id = $1 AND s.id NOT IN (
@@ -908,6 +917,7 @@ func (r *queryResolver) MyStudysets(ctx context.Context, limit *int32, offset *i
 				title,
 				private,
 				subject_id,
+				to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 				to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 			FROM public.studysets
 			WHERE user_id = $1
@@ -982,6 +992,7 @@ func (r *queryResolver) MySavedStudysets(ctx context.Context, limit *int32, offs
 			s.title,
 			s.private,
 			s.subject_id,
+			to_char(s.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 			to_char(s.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 		FROM saved_studysets
 		JOIN studysets s ON saved_studysets.studyset_id = s.id
@@ -1254,6 +1265,7 @@ func (r *subjectResolver) Studysets(ctx context.Context, obj *model.Subject, lim
 			s.title,
 			s.private,
 			s.subject_id,
+			to_char(s.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 			to_char(s.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 		FROM studysets s
 		JOIN subjects ON s.subject_id = subjects.id

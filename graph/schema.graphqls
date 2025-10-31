@@ -55,6 +55,7 @@ type Studyset {
     title: String
     private: Boolean
     subject: Subject
+    createdAt: String
     updatedAt: String
     user: User
     terms: [Term]
