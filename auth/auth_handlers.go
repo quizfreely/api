@@ -437,7 +437,7 @@ func (ah *AuthHandler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Delete user based on auth type
+	// Delete user, with password confirmation depending on auth type
 	if authedUser.AuthType != nil && *authedUser.AuthType == model.AuthTypeOauthGoogle {
 		_, err = tx.Exec(r.Context(), "delete from auth.users where id = $1", authedUser.ID)
 		if err != nil {
