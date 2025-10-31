@@ -4,13 +4,13 @@ package loader
 import (
 	"context"
 	"net/http"
-	"time"
 	"quizfreely/api/auth"
 	"quizfreely/api/graph/model"
+	"time"
 
-	"github.com/vikstrous/dataloadgen"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/georgysavva/scany/v2/pgxscan"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/vikstrous/dataloadgen"
 )
 
 type ctxKey string
@@ -87,63 +87,63 @@ ORDER BY t.studyset_id, t.sort_order`,
 		return nil, []error{err}
 	}
 
-    // Group terms by studyset_id
-    grouped := make(map[string][]*model.Term)
-    for _, t := range terms {
+	// Group terms by studyset_id
+	grouped := make(map[string][]*model.Term)
+	for _, t := range terms {
 		if t.StudysetID != nil {
-        	grouped[*t.StudysetID] = append(grouped[*t.StudysetID], t)
+			grouped[*t.StudysetID] = append(grouped[*t.StudysetID], t)
 		}
-    }
+	}
 
-    // Reassemble in the same order as studysetIDs
-    orderedTerms := make([][]*model.Term, len(studysetIDs))
-    for i, id := range studysetIDs {
-        orderedTerms[i] = grouped[id]
-    }
+	// Reassemble in the same order as studysetIDs
+	orderedTerms := make([][]*model.Term, len(studysetIDs))
+	for i, id := range studysetIDs {
+		orderedTerms[i] = grouped[id]
+	}
 
 	return orderedTerms, nil
 }
 
 func (dr *dataReader) getTermsCountByStudysetIDs(ctx context.Context, studysetIDs []string) ([]*int32, []error) {
-    type countResult struct {
-        StudysetID string `db:"studyset_id"`
-        Count      int32  `db:"term_count"`
-    }
+	type countResult struct {
+		StudysetID string `db:"studyset_id"`
+		Count      int32  `db:"term_count"`
+	}
 
-    var results []countResult
+	var results []countResult
 
-    err := pgxscan.Select(
-        ctx,
-        dr.db,
-        &results,
-        `SELECT studyset_id, COUNT(*) AS term_count
+	err := pgxscan.Select(
+		ctx,
+		dr.db,
+		&results,
+		`SELECT studyset_id, COUNT(*) AS term_count
          FROM terms
          WHERE studyset_id = ANY($1::uuid[])
          GROUP BY studyset_id`,
-        studysetIDs,
-    )
-    if err != nil {
-        return nil, []error{err}
-    }
+		studysetIDs,
+	)
+	if err != nil {
+		return nil, []error{err}
+	}
 
-    // Map studysetID -> count for quick lookup
-    countsMap := make(map[string]int32, len(results))
-    for _, r := range results {
-        countsMap[r.StudysetID] = r.Count
-    }
+	// Map studysetID -> count for quick lookup
+	countsMap := make(map[string]int32, len(results))
+	for _, r := range results {
+		countsMap[r.StudysetID] = r.Count
+	}
 
-    // Assemble slice in the same order as studysetIDs
-    orderedCounts := make([]*int32, len(studysetIDs))
-    for i, id := range studysetIDs {
-        if c, ok := countsMap[id]; ok {
-            orderedCounts[i] = &c
-        } else {
-            zero := int32(0)
-            orderedCounts[i] = &zero
-        }
-    }
+	// Assemble slice in the same order as studysetIDs
+	orderedCounts := make([]*int32, len(studysetIDs))
+	for i, id := range studysetIDs {
+		if c, ok := countsMap[id]; ok {
+			orderedCounts[i] = &c
+		} else {
+			zero := int32(0)
+			orderedCounts[i] = &zero
+		}
+	}
 
-    return orderedCounts, nil
+	return orderedCounts, nil
 }
 
 func (dr *dataReader) getTermsProgress(ctx context.Context, termIDs []string) ([]*model.TermProgress, []error) {
@@ -208,17 +208,17 @@ ORDER BY input.og_order ASC, tph.timestamp DESC`,
 		return nil, []error{err}
 	}
 
-    grouped := make(map[string][]*model.TermProgressHistory)
-    for _, tph := range termProgressHistory {
-        if tph.TermID != nil {
+	grouped := make(map[string][]*model.TermProgressHistory)
+	for _, tph := range termProgressHistory {
+		if tph.TermID != nil {
 			grouped[*tph.TermID] = append(grouped[*tph.TermID], tph)
 		}
-    }
+	}
 
-    orderedProgressHistory := make([][]*model.TermProgressHistory, len(termIDs))
-    for i, id := range termIDs {
-        orderedProgressHistory[i] = grouped[id]
-    }
+	orderedProgressHistory := make([][]*model.TermProgressHistory, len(termIDs))
+	for i, id := range termIDs {
+		orderedProgressHistory[i] = grouped[id]
+	}
 
 	return orderedProgressHistory, nil
 }
@@ -258,17 +258,17 @@ ORDER BY term_id, confused_count DESC`,
 		return nil, []error{err}
 	}
 
-    grouped := make(map[string][]*model.TermConfusionPair)
-    for _, c := range confusionPairs {
-        if c.TermID != nil {
+	grouped := make(map[string][]*model.TermConfusionPair)
+	for _, c := range confusionPairs {
+		if c.TermID != nil {
 			grouped[*c.TermID] = append(grouped[*c.TermID], c)
 		}
-    }
+	}
 
-    orderedConfusionPairs := make([][]*model.TermConfusionPair, len(termIDs))
-    for i, id := range termIDs {
-        orderedConfusionPairs[i] = grouped[id]
-    }
+	orderedConfusionPairs := make([][]*model.TermConfusionPair, len(termIDs))
+	for i, id := range termIDs {
+		orderedConfusionPairs[i] = grouped[id]
+	}
 
 	return orderedConfusionPairs, nil
 }
@@ -308,17 +308,17 @@ ORDER BY confused_term_id, confused_count DESC`,
 		return nil, []error{err}
 	}
 
-    grouped := make(map[string][]*model.TermConfusionPair)
-    for _, c := range confusionPairs {
-        if c.ConfusedTermID != nil {
+	grouped := make(map[string][]*model.TermConfusionPair)
+	for _, c := range confusionPairs {
+		if c.ConfusedTermID != nil {
 			grouped[*c.ConfusedTermID] = append(grouped[*c.ConfusedTermID], c)
 		}
-    }
+	}
 
-    orderedConfusionPairs := make([][]*model.TermConfusionPair, len(termIDs))
-    for i, id := range termIDs {
-        orderedConfusionPairs[i] = grouped[id]
-    }
+	orderedConfusionPairs := make([][]*model.TermConfusionPair, len(termIDs))
+	for i, id := range termIDs {
+		orderedConfusionPairs[i] = grouped[id]
+	}
 
 	return orderedConfusionPairs, nil
 }
@@ -350,32 +350,32 @@ ORDER BY input.og_order ASC, pt.timestamp DESC`,
 		return nil, []error{err}
 	}
 
-    grouped := make(map[string][]*model.PracticeTest)
-    for _, pt := range practiceTests {
-        if pt.StudysetID != nil {
+	grouped := make(map[string][]*model.PracticeTest)
+	for _, pt := range practiceTests {
+		if pt.StudysetID != nil {
 			grouped[*pt.StudysetID] = append(grouped[*pt.StudysetID], pt)
 		}
-    }
+	}
 
-    orderedPracticeTests := make([][]*model.PracticeTest, len(studysetIDs))
-    for i, id := range studysetIDs {
-        orderedPracticeTests[i] = grouped[id]
-    }
+	orderedPracticeTests := make([][]*model.PracticeTest, len(studysetIDs))
+	for i, id := range studysetIDs {
+		orderedPracticeTests[i] = grouped[id]
+	}
 
 	return orderedPracticeTests, nil
 }
 
 // Loaders wrap your data loaders to inject via middleware
 type Loaders struct {
-	UserLoader *dataloadgen.Loader[string, *model.User]
-	TermByIDLoader *dataloadgen.Loader[string, *model.Term]
-	TermByStudysetIDLoader *dataloadgen.Loader[string, []*model.Term]
-	TermsCountByStudysetIDLoader *dataloadgen.Loader[string, *int32]
-	TermProgressLoader *dataloadgen.Loader[string, *model.TermProgress]
-	TermProgressHistoryLoader *dataloadgen.Loader[string, []*model.TermProgressHistory]
-	TermTopConfusionPairsLoader *dataloadgen.Loader[string, []*model.TermConfusionPair]
+	UserLoader                         *dataloadgen.Loader[string, *model.User]
+	TermByIDLoader                     *dataloadgen.Loader[string, *model.Term]
+	TermByStudysetIDLoader             *dataloadgen.Loader[string, []*model.Term]
+	TermsCountByStudysetIDLoader       *dataloadgen.Loader[string, *int32]
+	TermProgressLoader                 *dataloadgen.Loader[string, *model.TermProgress]
+	TermProgressHistoryLoader          *dataloadgen.Loader[string, []*model.TermProgressHistory]
+	TermTopConfusionPairsLoader        *dataloadgen.Loader[string, []*model.TermConfusionPair]
 	TermTopReverseConfusionPairsLoader *dataloadgen.Loader[string, []*model.TermConfusionPair]
-	PracticeTestByStudysetIDLoader *dataloadgen.Loader[string, []*model.PracticeTest]
+	PracticeTestByStudysetIDLoader     *dataloadgen.Loader[string, []*model.PracticeTest]
 }
 
 // NewLoaders instantiates data loaders for the middleware
@@ -383,15 +383,15 @@ func NewLoaders(db *pgxpool.Pool) *Loaders {
 	// define the data loader
 	dr := &dataReader{db: db}
 	return &Loaders{
-		UserLoader: dataloadgen.NewLoader(dr.getUsers, dataloadgen.WithWait(time.Millisecond)),
-		TermByIDLoader: dataloadgen.NewLoader(dr.getTermsByIDs, dataloadgen.WithWait(time.Millisecond)),
-		TermByStudysetIDLoader: dataloadgen.NewLoader(dr.getTermsByStudysetIDs, dataloadgen.WithWait(time.Millisecond)),
-		TermsCountByStudysetIDLoader: dataloadgen.NewLoader(dr.getTermsCountByStudysetIDs, dataloadgen.WithWait(time.Millisecond)),
-		TermProgressLoader: dataloadgen.NewLoader(dr.getTermsProgress, dataloadgen.WithWait(time.Millisecond)),
-		TermProgressHistoryLoader: dataloadgen.NewLoader(dr.getTermsProgressHistory, dataloadgen.WithWait(time.Millisecond)),
-		TermTopConfusionPairsLoader: dataloadgen.NewLoader(dr.getTermsTopConfusionPairs, dataloadgen.WithWait(time.Millisecond)),
+		UserLoader:                         dataloadgen.NewLoader(dr.getUsers, dataloadgen.WithWait(time.Millisecond)),
+		TermByIDLoader:                     dataloadgen.NewLoader(dr.getTermsByIDs, dataloadgen.WithWait(time.Millisecond)),
+		TermByStudysetIDLoader:             dataloadgen.NewLoader(dr.getTermsByStudysetIDs, dataloadgen.WithWait(time.Millisecond)),
+		TermsCountByStudysetIDLoader:       dataloadgen.NewLoader(dr.getTermsCountByStudysetIDs, dataloadgen.WithWait(time.Millisecond)),
+		TermProgressLoader:                 dataloadgen.NewLoader(dr.getTermsProgress, dataloadgen.WithWait(time.Millisecond)),
+		TermProgressHistoryLoader:          dataloadgen.NewLoader(dr.getTermsProgressHistory, dataloadgen.WithWait(time.Millisecond)),
+		TermTopConfusionPairsLoader:        dataloadgen.NewLoader(dr.getTermsTopConfusionPairs, dataloadgen.WithWait(time.Millisecond)),
 		TermTopReverseConfusionPairsLoader: dataloadgen.NewLoader(dr.getTermsTopReverseConfusionPairs, dataloadgen.WithWait(time.Millisecond)),
-		PracticeTestByStudysetIDLoader: dataloadgen.NewLoader(dr.getPracticeTestsByStudysetIDs, dataloadgen.WithWait(time.Millisecond)),
+		PracticeTestByStudysetIDLoader:     dataloadgen.NewLoader(dr.getPracticeTestsByStudysetIDs, dataloadgen.WithWait(time.Millisecond)),
 	}
 }
 

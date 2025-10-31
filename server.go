@@ -1,25 +1,25 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	"os"
-	"context"
 	"quizfreely/api/auth"
 	"quizfreely/api/graph"
 	"quizfreely/api/graph/loader"
 	"quizfreely/api/rest"
 
-	"github.com/joho/godotenv"
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/extension"
 	"github.com/99designs/gqlgen/graphql/handler/lru"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
-	"github.com/vektah/gqlparser/v2/ast"
 	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/joho/godotenv"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
+	"github.com/vektah/gqlparser/v2/ast"
 )
 
 const defaultPort = "8008"
@@ -105,7 +105,7 @@ check your environment variables`,
 	that's great cause we want to default to "" (blank)
 	cause BASE_PATH is prepended/before relative paths */
 
-	if len(basePath) > 0 && basePath[len(basePath) - 1] == '/' {
+	if len(basePath) > 0 && basePath[len(basePath)-1] == '/' {
 		/* if BASE_PATH ends with "/", remove it */
 		basePath = basePath[:(len(basePath) - 1)]
 	}
@@ -130,7 +130,7 @@ check your environment variables`,
 			"/graphiql",
 			playground.Handler(
 				"Quizfreely API GraphiQL",
-				basePath + "/graphql",
+				basePath+"/graphql",
 			),
 		)
 		r.Handle("/graphql", srv)

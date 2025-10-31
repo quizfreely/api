@@ -24,13 +24,19 @@ type SignUpReqBody struct {
 	NewPassword string `json:"password"`
 }
 
-/* usernames can have letters and numbers from any alphabet, but no uppercase
+/*
+	usernames can have letters and numbers from any alphabet, but no uppercase
+
 underscores, dots, or dashes,
-and must be less than 100 characters */
+and must be less than 100 characters
+*/
 var usernameRegex = regexp.MustCompile(`^[\p{L}\p{M}\p{N}._-]+$`)
 
-/* keep regexp.MustCompile outside of functions/handlers,
-cause it's resource-expensive, we only want it to run once */
+/*
+	keep regexp.MustCompile outside of functions/handlers,
+
+cause it's resource-expensive, we only want it to run once
+*/
 func IsUsernameValid(s string) bool {
 	if len(s) == 0 || len(s) >= 100 {
 		return false
@@ -351,8 +357,7 @@ func (ah *AuthHandler) SignOut(w http.ResponseWriter, r *http.Request) {
 	}
 	render.JSON(w, r, map[string]interface{}{
 		"error": false,
-		"data": map[string]interface{}{
-		},
+		"data":  map[string]interface{}{},
 	})
 }
 
