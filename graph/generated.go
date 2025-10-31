@@ -126,22 +126,23 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		AllSubjects        func(childComplexity int) int
-		Authed             func(childComplexity int) int
-		AuthedUser         func(childComplexity int) int
-		Folder             func(childComplexity int, id string) int
-		MyFolders          func(childComplexity int, limit *int32, offset *int32) int
-		MySavedStudysets   func(childComplexity int, limit *int32, offset *int32) int
-		MyStudysets        func(childComplexity int, limit *int32, offset *int32, hideFoldered *bool) int
-		PracticeTest       func(childComplexity int, id string) int
-		RecentStudysets    func(childComplexity int, limit *int32, offset *int32) int
-		SearchStudysets    func(childComplexity int, q string, limit *int32, offset *int32) int
-		Studyset           func(childComplexity int, id string) int
-		Subject            func(childComplexity int, id string) int
-		SubjectsByCategory func(childComplexity int, category *model.SubjectCategory) int
-		SubjectsByKeyword  func(childComplexity int, keyword *string) int
-		Term               func(childComplexity int, id string) int
-		User               func(childComplexity int, id string) int
+		AllSubjects              func(childComplexity int) int
+		Authed                   func(childComplexity int) int
+		AuthedUser               func(childComplexity int) int
+		Folder                   func(childComplexity int, id string) int
+		MyFolders                func(childComplexity int, limit *int32, offset *int32) int
+		MySavedStudysets         func(childComplexity int, limit *int32, offset *int32) int
+		MyStudysets              func(childComplexity int, limit *int32, offset *int32, hideFoldered *bool) int
+		PracticeTest             func(childComplexity int, id string) int
+		RecentlyCreatedStudysets func(childComplexity int, limit *int32, offset *int32) int
+		RecentlyUpdatedStudysets func(childComplexity int, limit *int32, offset *int32) int
+		SearchStudysets          func(childComplexity int, q string, limit *int32, offset *int32) int
+		Studyset                 func(childComplexity int, id string) int
+		Subject                  func(childComplexity int, id string) int
+		SubjectsByCategory       func(childComplexity int, category *model.SubjectCategory) int
+		SubjectsByKeyword        func(childComplexity int, keyword *string) int
+		Term                     func(childComplexity int, id string) int
+		User                     func(childComplexity int, id string) int
 	}
 
 	Question struct {
@@ -153,6 +154,7 @@ type ComplexityRoot struct {
 	}
 
 	Studyset struct {
+		CreatedAt     func(childComplexity int) int
 		Folder        func(childComplexity int) int
 		ID            func(childComplexity int) int
 		PracticeTests func(childComplexity int) int
@@ -261,7 +263,8 @@ type QueryResolver interface {
 	Studyset(ctx context.Context, id string) (*model.Studyset, error)
 	User(ctx context.Context, id string) (*model.User, error)
 	Term(ctx context.Context, id string) (*model.Term, error)
-	RecentStudysets(ctx context.Context, limit *int32, offset *int32) ([]*model.Studyset, error)
+	RecentlyCreatedStudysets(ctx context.Context, limit *int32, offset *int32) ([]*model.Studyset, error)
+	RecentlyUpdatedStudysets(ctx context.Context, limit *int32, offset *int32) ([]*model.Studyset, error)
 	SearchStudysets(ctx context.Context, q string, limit *int32, offset *int32) ([]*model.Studyset, error)
 	MyStudysets(ctx context.Context, limit *int32, offset *int32, hideFoldered *bool) ([]*model.Studyset, error)
 	MyFolders(ctx context.Context, limit *int32, offset *int32) ([]*model.Folder, error)
@@ -815,17 +818,29 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Query.PracticeTest(childComplexity, args["id"].(string)), true
 
-	case "Query.recentStudysets":
-		if e.complexity.Query.RecentStudysets == nil {
+	case "Query.recentlyCreatedStudysets":
+		if e.complexity.Query.RecentlyCreatedStudysets == nil {
 			break
 		}
 
-		args, err := ec.field_Query_recentStudysets_args(ctx, rawArgs)
+		args, err := ec.field_Query_recentlyCreatedStudysets_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.RecentStudysets(childComplexity, args["limit"].(*int32), args["offset"].(*int32)), true
+		return e.complexity.Query.RecentlyCreatedStudysets(childComplexity, args["limit"].(*int32), args["offset"].(*int32)), true
+
+	case "Query.recentlyUpdatedStudysets":
+		if e.complexity.Query.RecentlyUpdatedStudysets == nil {
+			break
+		}
+
+		args, err := ec.field_Query_recentlyUpdatedStudysets_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.RecentlyUpdatedStudysets(childComplexity, args["limit"].(*int32), args["offset"].(*int32)), true
 
 	case "Query.searchStudysets":
 		if e.complexity.Query.SearchStudysets == nil {
@@ -945,6 +960,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Question.TrueFalseQuestion(childComplexity), true
+
+	case "Studyset.createdAt":
+		if e.complexity.Studyset.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Studyset.CreatedAt(childComplexity), true
 
 	case "Studyset.folder":
 		if e.complexity.Studyset.Folder == nil {
@@ -1783,7 +1805,23 @@ func (ec *executionContext) field_Query_practiceTest_args(ctx context.Context, r
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_recentStudysets_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+func (ec *executionContext) field_Query_recentlyCreatedStudysets_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalOInt2ᚖint32)
+	if err != nil {
+		return nil, err
+	}
+	args["limit"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "offset", ec.unmarshalOInt2ᚖint32)
+	if err != nil {
+		return nil, err
+	}
+	args["offset"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_recentlyUpdatedStudysets_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalOInt2ᚖint32)
@@ -2326,6 +2364,8 @@ func (ec *executionContext) fieldContext_Category_studysets(_ context.Context, f
 				return ec.fieldContext_Studyset_private(ctx, field)
 			case "subject":
 				return ec.fieldContext_Studyset_subject(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Studyset_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_Studyset_updatedAt(ctx, field)
 			case "user":
@@ -2700,6 +2740,8 @@ func (ec *executionContext) fieldContext_Folder_studysets(_ context.Context, fie
 				return ec.fieldContext_Studyset_private(ctx, field)
 			case "subject":
 				return ec.fieldContext_Studyset_subject(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Studyset_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_Studyset_updatedAt(ctx, field)
 			case "user":
@@ -3326,6 +3368,8 @@ func (ec *executionContext) fieldContext_Mutation_createStudyset(ctx context.Con
 				return ec.fieldContext_Studyset_private(ctx, field)
 			case "subject":
 				return ec.fieldContext_Studyset_subject(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Studyset_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_Studyset_updatedAt(ctx, field)
 			case "user":
@@ -3402,6 +3446,8 @@ func (ec *executionContext) fieldContext_Mutation_updateStudyset(ctx context.Con
 				return ec.fieldContext_Studyset_private(ctx, field)
 			case "subject":
 				return ec.fieldContext_Studyset_subject(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Studyset_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_Studyset_updatedAt(ctx, field)
 			case "user":
@@ -4594,6 +4640,8 @@ func (ec *executionContext) fieldContext_Query_studyset(ctx context.Context, fie
 				return ec.fieldContext_Studyset_private(ctx, field)
 			case "subject":
 				return ec.fieldContext_Studyset_subject(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Studyset_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_Studyset_updatedAt(ctx, field)
 			case "user":
@@ -4760,8 +4808,8 @@ func (ec *executionContext) fieldContext_Query_term(ctx context.Context, field g
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_recentStudysets(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_recentStudysets(ctx, field)
+func (ec *executionContext) _Query_recentlyCreatedStudysets(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_recentlyCreatedStudysets(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -4774,7 +4822,7 @@ func (ec *executionContext) _Query_recentStudysets(ctx context.Context, field gr
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().RecentStudysets(rctx, fc.Args["limit"].(*int32), fc.Args["offset"].(*int32))
+		return ec.resolvers.Query().RecentlyCreatedStudysets(rctx, fc.Args["limit"].(*int32), fc.Args["offset"].(*int32))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4788,7 +4836,7 @@ func (ec *executionContext) _Query_recentStudysets(ctx context.Context, field gr
 	return ec.marshalOStudyset2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐStudyset(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_recentStudysets(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_recentlyCreatedStudysets(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -4804,6 +4852,8 @@ func (ec *executionContext) fieldContext_Query_recentStudysets(ctx context.Conte
 				return ec.fieldContext_Studyset_private(ctx, field)
 			case "subject":
 				return ec.fieldContext_Studyset_subject(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Studyset_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_Studyset_updatedAt(ctx, field)
 			case "user":
@@ -4829,7 +4879,85 @@ func (ec *executionContext) fieldContext_Query_recentStudysets(ctx context.Conte
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_recentStudysets_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Query_recentlyCreatedStudysets_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_recentlyUpdatedStudysets(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_recentlyUpdatedStudysets(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().RecentlyUpdatedStudysets(rctx, fc.Args["limit"].(*int32), fc.Args["offset"].(*int32))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Studyset)
+	fc.Result = res
+	return ec.marshalOStudyset2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐStudyset(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_recentlyUpdatedStudysets(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Studyset_id(ctx, field)
+			case "title":
+				return ec.fieldContext_Studyset_title(ctx, field)
+			case "private":
+				return ec.fieldContext_Studyset_private(ctx, field)
+			case "subject":
+				return ec.fieldContext_Studyset_subject(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Studyset_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Studyset_updatedAt(ctx, field)
+			case "user":
+				return ec.fieldContext_Studyset_user(ctx, field)
+			case "terms":
+				return ec.fieldContext_Studyset_terms(ctx, field)
+			case "termsCount":
+				return ec.fieldContext_Studyset_termsCount(ctx, field)
+			case "practiceTests":
+				return ec.fieldContext_Studyset_practiceTests(ctx, field)
+			case "saved":
+				return ec.fieldContext_Studyset_saved(ctx, field)
+			case "folder":
+				return ec.fieldContext_Studyset_folder(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Studyset", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_recentlyUpdatedStudysets_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -4880,6 +5008,8 @@ func (ec *executionContext) fieldContext_Query_searchStudysets(ctx context.Conte
 				return ec.fieldContext_Studyset_private(ctx, field)
 			case "subject":
 				return ec.fieldContext_Studyset_subject(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Studyset_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_Studyset_updatedAt(ctx, field)
 			case "user":
@@ -4956,6 +5086,8 @@ func (ec *executionContext) fieldContext_Query_myStudysets(ctx context.Context, 
 				return ec.fieldContext_Studyset_private(ctx, field)
 			case "subject":
 				return ec.fieldContext_Studyset_subject(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Studyset_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_Studyset_updatedAt(ctx, field)
 			case "user":
@@ -5092,6 +5224,8 @@ func (ec *executionContext) fieldContext_Query_mySavedStudysets(ctx context.Cont
 				return ec.fieldContext_Studyset_private(ctx, field)
 			case "subject":
 				return ec.fieldContext_Studyset_subject(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Studyset_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_Studyset_updatedAt(ctx, field)
 			case "user":
@@ -6047,6 +6181,47 @@ func (ec *executionContext) fieldContext_Studyset_subject(_ context.Context, fie
 	return fc, nil
 }
 
+func (ec *executionContext) _Studyset_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.Studyset) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Studyset_createdAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Studyset_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Studyset",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Studyset_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.Studyset) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Studyset_updatedAt(ctx, field)
 	if err != nil {
@@ -6553,6 +6728,8 @@ func (ec *executionContext) fieldContext_Subject_studysets(ctx context.Context, 
 				return ec.fieldContext_Studyset_private(ctx, field)
 			case "subject":
 				return ec.fieldContext_Studyset_subject(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Studyset_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_Studyset_updatedAt(ctx, field)
 			case "user":
@@ -11630,7 +11807,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "recentStudysets":
+		case "recentlyCreatedStudysets":
 			field := field
 
 			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
@@ -11639,7 +11816,26 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_recentStudysets(ctx, field)
+				res = ec._Query_recentlyCreatedStudysets(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "recentlyUpdatedStudysets":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_recentlyUpdatedStudysets(ctx, field)
 				return res
 			}
 
@@ -11964,6 +12160,8 @@ func (ec *executionContext) _Studyset(ctx context.Context, sel ast.SelectionSet,
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "createdAt":
+			out.Values[i] = ec._Studyset_createdAt(ctx, field, obj)
 		case "updatedAt":
 			out.Values[i] = ec._Studyset_updatedAt(ctx, field, obj)
 		case "user":
