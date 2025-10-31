@@ -25,16 +25,14 @@ type SignUpReqBody struct {
 }
 
 /*
-	usernames can have letters and numbers from any alphabet, but no uppercase
-
+usernames can have letters and numbers from any alphabet (but no uppercase),
 underscores, dots, or dashes,
 and must be less than 100 characters
 */
 var usernameRegex = regexp.MustCompile(`^[\p{L}\p{M}\p{N}._-]+$`)
 
 /*
-	keep regexp.MustCompile outside of functions/handlers,
-
+keep regexp.MustCompile outside of functions/handlers,
 cause it's resource-expensive, we only want it to run once
 */
 func IsUsernameValid(s string) bool {
