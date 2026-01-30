@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Clone from GitHub
-        run: git clone--branch "${{ inputs.branch }}" --single-branch https://github.com/quizfreely/api.git
+        run: git clone --branch "${{ inputs.branch }}" --single-branch https://github.com/quizfreely/api.git
       - name: Push to Codeberg
         run: |
           cd api
