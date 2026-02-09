@@ -81,6 +81,17 @@ type ComplexityRoot struct {
 		Studysets func(childComplexity int) int
 	}
 
+	FolderConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	FolderEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
 	MCQ struct {
 		AnswerWith         func(childComplexity int) int
 		AnsweredTerm       func(childComplexity int) int
@@ -116,6 +127,13 @@ type ComplexityRoot struct {
 		UpdateUser               func(childComplexity int, displayName *string) int
 	}
 
+	PageInfo struct {
+		EndCursor       func(childComplexity int) int
+		HasNextPage     func(childComplexity int) int
+		HasPreviousPage func(childComplexity int) int
+		StartCursor     func(childComplexity int) int
+	}
+
 	PracticeTest struct {
 		ID               func(childComplexity int) int
 		Questions        func(childComplexity int) int
@@ -130,13 +148,13 @@ type ComplexityRoot struct {
 		Authed                   func(childComplexity int) int
 		AuthedUser               func(childComplexity int) int
 		Folder                   func(childComplexity int, id string) int
-		MyFolders                func(childComplexity int, limit *int32, offset *int32) int
-		MySavedStudysets         func(childComplexity int, limit *int32, offset *int32) int
-		MyStudysets              func(childComplexity int, limit *int32, offset *int32, hideFoldered *bool) int
+		MyFolders                func(childComplexity int, first *int32, after *string) int
+		MySavedStudysets         func(childComplexity int, first *int32, after *string) int
+		MyStudysets              func(childComplexity int, first *int32, after *string, hideFoldered *bool) int
 		PracticeTest             func(childComplexity int, id string) int
-		RecentlyCreatedStudysets func(childComplexity int, limit *int32, offset *int32) int
-		RecentlyUpdatedStudysets func(childComplexity int, limit *int32, offset *int32) int
-		SearchStudysets          func(childComplexity int, q string, limit *int32, offset *int32) int
+		RecentlyCreatedStudysets func(childComplexity int, first *int32, after *string) int
+		RecentlyUpdatedStudysets func(childComplexity int, first *int32, after *string) int
+		SearchStudysets          func(childComplexity int, q string, first *int32, after *string) int
 		Studyset                 func(childComplexity int, id string) int
 		Subject                  func(childComplexity int, id string) int
 		SubjectsByCategory       func(childComplexity int, category *model.SubjectCategory) int
@@ -168,11 +186,22 @@ type ComplexityRoot struct {
 		User          func(childComplexity int) int
 	}
 
+	StudysetConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	StudysetEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
 	Subject struct {
 		Category  func(childComplexity int) int
 		ID        func(childComplexity int) int
 		Name      func(childComplexity int) int
-		Studysets func(childComplexity int, limit *int32, offset *int32) int
+		Studysets func(childComplexity int, first *int32, after *string) int
 	}
 
 	Term struct {
@@ -263,12 +292,12 @@ type QueryResolver interface {
 	Studyset(ctx context.Context, id string) (*model.Studyset, error)
 	User(ctx context.Context, id string) (*model.User, error)
 	Term(ctx context.Context, id string) (*model.Term, error)
-	RecentlyCreatedStudysets(ctx context.Context, limit *int32, offset *int32) ([]*model.Studyset, error)
-	RecentlyUpdatedStudysets(ctx context.Context, limit *int32, offset *int32) ([]*model.Studyset, error)
-	SearchStudysets(ctx context.Context, q string, limit *int32, offset *int32) ([]*model.Studyset, error)
-	MyStudysets(ctx context.Context, limit *int32, offset *int32, hideFoldered *bool) ([]*model.Studyset, error)
-	MyFolders(ctx context.Context, limit *int32, offset *int32) ([]*model.Folder, error)
-	MySavedStudysets(ctx context.Context, limit *int32, offset *int32) ([]*model.Studyset, error)
+	RecentlyCreatedStudysets(ctx context.Context, first *int32, after *string) (*model.StudysetConnection, error)
+	RecentlyUpdatedStudysets(ctx context.Context, first *int32, after *string) (*model.StudysetConnection, error)
+	SearchStudysets(ctx context.Context, q string, first *int32, after *string) (*model.StudysetConnection, error)
+	MyStudysets(ctx context.Context, first *int32, after *string, hideFoldered *bool) (*model.StudysetConnection, error)
+	MyFolders(ctx context.Context, first *int32, after *string) (*model.FolderConnection, error)
+	MySavedStudysets(ctx context.Context, first *int32, after *string) (*model.StudysetConnection, error)
 	PracticeTest(ctx context.Context, id string) (*model.PracticeTest, error)
 	Subject(ctx context.Context, id string) (*model.Subject, error)
 	SubjectsByKeyword(ctx context.Context, keyword *string) ([]*model.Subject, error)
@@ -287,7 +316,7 @@ type StudysetResolver interface {
 	Folder(ctx context.Context, obj *model.Studyset) (*model.Folder, error)
 }
 type SubjectResolver interface {
-	Studysets(ctx context.Context, obj *model.Subject, limit *int32, offset *int32) ([]*model.Studyset, error)
+	Studysets(ctx context.Context, obj *model.Subject, first *int32, after *string) (*model.StudysetConnection, error)
 }
 type TermResolver interface {
 	Progress(ctx context.Context, obj *model.Term) (*model.TermProgress, error)
@@ -437,6 +466,41 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Folder.Studysets(childComplexity), true
+
+	case "FolderConnection.edges":
+		if e.complexity.FolderConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.FolderConnection.Edges(childComplexity), true
+
+	case "FolderConnection.pageInfo":
+		if e.complexity.FolderConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.FolderConnection.PageInfo(childComplexity), true
+
+	case "FolderConnection.totalCount":
+		if e.complexity.FolderConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.FolderConnection.TotalCount(childComplexity), true
+
+	case "FolderEdge.cursor":
+		if e.complexity.FolderEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.FolderEdge.Cursor(childComplexity), true
+
+	case "FolderEdge.node":
+		if e.complexity.FolderEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.FolderEdge.Node(childComplexity), true
 
 	case "MCQ.answerWith":
 		if e.complexity.MCQ.AnswerWith == nil {
@@ -695,6 +759,34 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Mutation.UpdateUser(childComplexity, args["displayName"].(*string)), true
 
+	case "PageInfo.endCursor":
+		if e.complexity.PageInfo.EndCursor == nil {
+			break
+		}
+
+		return e.complexity.PageInfo.EndCursor(childComplexity), true
+
+	case "PageInfo.hasNextPage":
+		if e.complexity.PageInfo.HasNextPage == nil {
+			break
+		}
+
+		return e.complexity.PageInfo.HasNextPage(childComplexity), true
+
+	case "PageInfo.hasPreviousPage":
+		if e.complexity.PageInfo.HasPreviousPage == nil {
+			break
+		}
+
+		return e.complexity.PageInfo.HasPreviousPage(childComplexity), true
+
+	case "PageInfo.startCursor":
+		if e.complexity.PageInfo.StartCursor == nil {
+			break
+		}
+
+		return e.complexity.PageInfo.StartCursor(childComplexity), true
+
 	case "PracticeTest.id":
 		if e.complexity.PracticeTest.ID == nil {
 			break
@@ -780,7 +872,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.MyFolders(childComplexity, args["limit"].(*int32), args["offset"].(*int32)), true
+		return e.complexity.Query.MyFolders(childComplexity, args["first"].(*int32), args["after"].(*string)), true
 
 	case "Query.mySavedStudysets":
 		if e.complexity.Query.MySavedStudysets == nil {
@@ -792,7 +884,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.MySavedStudysets(childComplexity, args["limit"].(*int32), args["offset"].(*int32)), true
+		return e.complexity.Query.MySavedStudysets(childComplexity, args["first"].(*int32), args["after"].(*string)), true
 
 	case "Query.myStudysets":
 		if e.complexity.Query.MyStudysets == nil {
@@ -804,7 +896,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.MyStudysets(childComplexity, args["limit"].(*int32), args["offset"].(*int32), args["hideFoldered"].(*bool)), true
+		return e.complexity.Query.MyStudysets(childComplexity, args["first"].(*int32), args["after"].(*string), args["hideFoldered"].(*bool)), true
 
 	case "Query.practiceTest":
 		if e.complexity.Query.PracticeTest == nil {
@@ -828,7 +920,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.RecentlyCreatedStudysets(childComplexity, args["limit"].(*int32), args["offset"].(*int32)), true
+		return e.complexity.Query.RecentlyCreatedStudysets(childComplexity, args["first"].(*int32), args["after"].(*string)), true
 
 	case "Query.recentlyUpdatedStudysets":
 		if e.complexity.Query.RecentlyUpdatedStudysets == nil {
@@ -840,7 +932,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.RecentlyUpdatedStudysets(childComplexity, args["limit"].(*int32), args["offset"].(*int32)), true
+		return e.complexity.Query.RecentlyUpdatedStudysets(childComplexity, args["first"].(*int32), args["after"].(*string)), true
 
 	case "Query.searchStudysets":
 		if e.complexity.Query.SearchStudysets == nil {
@@ -852,7 +944,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.SearchStudysets(childComplexity, args["q"].(string), args["limit"].(*int32), args["offset"].(*int32)), true
+		return e.complexity.Query.SearchStudysets(childComplexity, args["q"].(string), args["first"].(*int32), args["after"].(*string)), true
 
 	case "Query.studyset":
 		if e.complexity.Query.Studyset == nil {
@@ -1045,6 +1137,41 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Studyset.User(childComplexity), true
 
+	case "StudysetConnection.edges":
+		if e.complexity.StudysetConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.StudysetConnection.Edges(childComplexity), true
+
+	case "StudysetConnection.pageInfo":
+		if e.complexity.StudysetConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.StudysetConnection.PageInfo(childComplexity), true
+
+	case "StudysetConnection.totalCount":
+		if e.complexity.StudysetConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.StudysetConnection.TotalCount(childComplexity), true
+
+	case "StudysetEdge.cursor":
+		if e.complexity.StudysetEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.StudysetEdge.Cursor(childComplexity), true
+
+	case "StudysetEdge.node":
+		if e.complexity.StudysetEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.StudysetEdge.Node(childComplexity), true
+
 	case "Subject.category":
 		if e.complexity.Subject.Category == nil {
 			break
@@ -1076,7 +1203,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Subject.Studysets(childComplexity, args["limit"].(*int32), args["offset"].(*int32)), true
+		return e.complexity.Subject.Studysets(childComplexity, args["first"].(*int32), args["after"].(*string)), true
 
 	case "Term.createdAt":
 		if e.complexity.Term.CreatedAt == nil {
@@ -1744,48 +1871,48 @@ func (ec *executionContext) field_Query_folder_args(ctx context.Context, rawArgs
 func (ec *executionContext) field_Query_myFolders_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalOInt2ᚖint32)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint32)
 	if err != nil {
 		return nil, err
 	}
-	args["limit"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "offset", ec.unmarshalOInt2ᚖint32)
+	args["first"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOString2ᚖstring)
 	if err != nil {
 		return nil, err
 	}
-	args["offset"] = arg1
+	args["after"] = arg1
 	return args, nil
 }
 
 func (ec *executionContext) field_Query_mySavedStudysets_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalOInt2ᚖint32)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint32)
 	if err != nil {
 		return nil, err
 	}
-	args["limit"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "offset", ec.unmarshalOInt2ᚖint32)
+	args["first"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOString2ᚖstring)
 	if err != nil {
 		return nil, err
 	}
-	args["offset"] = arg1
+	args["after"] = arg1
 	return args, nil
 }
 
 func (ec *executionContext) field_Query_myStudysets_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalOInt2ᚖint32)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint32)
 	if err != nil {
 		return nil, err
 	}
-	args["limit"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "offset", ec.unmarshalOInt2ᚖint32)
+	args["first"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOString2ᚖstring)
 	if err != nil {
 		return nil, err
 	}
-	args["offset"] = arg1
+	args["after"] = arg1
 	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "hideFoldered", ec.unmarshalOBoolean2ᚖbool)
 	if err != nil {
 		return nil, err
@@ -1808,32 +1935,32 @@ func (ec *executionContext) field_Query_practiceTest_args(ctx context.Context, r
 func (ec *executionContext) field_Query_recentlyCreatedStudysets_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalOInt2ᚖint32)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint32)
 	if err != nil {
 		return nil, err
 	}
-	args["limit"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "offset", ec.unmarshalOInt2ᚖint32)
+	args["first"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOString2ᚖstring)
 	if err != nil {
 		return nil, err
 	}
-	args["offset"] = arg1
+	args["after"] = arg1
 	return args, nil
 }
 
 func (ec *executionContext) field_Query_recentlyUpdatedStudysets_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalOInt2ᚖint32)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint32)
 	if err != nil {
 		return nil, err
 	}
-	args["limit"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "offset", ec.unmarshalOInt2ᚖint32)
+	args["first"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOString2ᚖstring)
 	if err != nil {
 		return nil, err
 	}
-	args["offset"] = arg1
+	args["after"] = arg1
 	return args, nil
 }
 
@@ -1845,16 +1972,16 @@ func (ec *executionContext) field_Query_searchStudysets_args(ctx context.Context
 		return nil, err
 	}
 	args["q"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalOInt2ᚖint32)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint32)
 	if err != nil {
 		return nil, err
 	}
-	args["limit"] = arg1
-	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "offset", ec.unmarshalOInt2ᚖint32)
+	args["first"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOString2ᚖstring)
 	if err != nil {
 		return nil, err
 	}
-	args["offset"] = arg2
+	args["after"] = arg2
 	return args, nil
 }
 
@@ -1927,16 +2054,16 @@ func (ec *executionContext) field_Query_user_args(ctx context.Context, rawArgs m
 func (ec *executionContext) field_Subject_studysets_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalOInt2ᚖint32)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint32)
 	if err != nil {
 		return nil, err
 	}
-	args["limit"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "offset", ec.unmarshalOInt2ᚖint32)
+	args["first"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOString2ᚖstring)
 	if err != nil {
 		return nil, err
 	}
-	args["offset"] = arg1
+	args["after"] = arg1
 	return args, nil
 }
 
@@ -2758,6 +2885,247 @@ func (ec *executionContext) fieldContext_Folder_studysets(_ context.Context, fie
 				return ec.fieldContext_Studyset_folder(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Studyset", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FolderConnection_edges(ctx context.Context, field graphql.CollectedField, obj *model.FolderConnection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FolderConnection_edges(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Edges, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.FolderEdge)
+	fc.Result = res
+	return ec.marshalNFolderEdge2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐFolderEdgeᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FolderConnection_edges(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FolderConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "node":
+				return ec.fieldContext_FolderEdge_node(ctx, field)
+			case "cursor":
+				return ec.fieldContext_FolderEdge_cursor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type FolderEdge", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FolderConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *model.FolderConnection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FolderConnection_pageInfo(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.PageInfo)
+	fc.Result = res
+	return ec.marshalNPageInfo2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐPageInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FolderConnection_pageInfo(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FolderConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "hasNextPage":
+				return ec.fieldContext_PageInfo_hasNextPage(ctx, field)
+			case "hasPreviousPage":
+				return ec.fieldContext_PageInfo_hasPreviousPage(ctx, field)
+			case "startCursor":
+				return ec.fieldContext_PageInfo_startCursor(ctx, field)
+			case "endCursor":
+				return ec.fieldContext_PageInfo_endCursor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PageInfo", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FolderConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *model.FolderConnection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FolderConnection_totalCount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int32)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint32(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FolderConnection_totalCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FolderConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FolderEdge_node(ctx context.Context, field graphql.CollectedField, obj *model.FolderEdge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FolderEdge_node(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Node, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Folder)
+	fc.Result = res
+	return ec.marshalNFolder2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐFolder(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FolderEdge_node(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FolderEdge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Folder_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Folder_name(ctx, field)
+			case "studysets":
+				return ec.fieldContext_Folder_studysets(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Folder", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FolderEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *model.FolderEdge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FolderEdge_cursor(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FolderEdge_cursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FolderEdge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -4242,6 +4610,176 @@ func (ec *executionContext) fieldContext_Mutation_unsaveStudyset(ctx context.Con
 	return fc, nil
 }
 
+func (ec *executionContext) _PageInfo_hasNextPage(ctx context.Context, field graphql.CollectedField, obj *model.PageInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PageInfo_hasNextPage(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.HasNextPage, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PageInfo_hasNextPage(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PageInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PageInfo_hasPreviousPage(ctx context.Context, field graphql.CollectedField, obj *model.PageInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PageInfo_hasPreviousPage(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.HasPreviousPage, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PageInfo_hasPreviousPage(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PageInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PageInfo_startCursor(ctx context.Context, field graphql.CollectedField, obj *model.PageInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PageInfo_startCursor(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.StartCursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PageInfo_startCursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PageInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PageInfo_endCursor(ctx context.Context, field graphql.CollectedField, obj *model.PageInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PageInfo_endCursor(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EndCursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PageInfo_endCursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PageInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _PracticeTest_id(ctx context.Context, field graphql.CollectedField, obj *model.PracticeTest) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_PracticeTest_id(ctx, field)
 	if err != nil {
@@ -4822,18 +5360,21 @@ func (ec *executionContext) _Query_recentlyCreatedStudysets(ctx context.Context,
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().RecentlyCreatedStudysets(rctx, fc.Args["limit"].(*int32), fc.Args["offset"].(*int32))
+		return ec.resolvers.Query().RecentlyCreatedStudysets(rctx, fc.Args["first"].(*int32), fc.Args["after"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Studyset)
+	res := resTmp.(*model.StudysetConnection)
 	fc.Result = res
-	return ec.marshalOStudyset2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐStudyset(ctx, field.Selections, res)
+	return ec.marshalNStudysetConnection2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐStudysetConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_recentlyCreatedStudysets(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -4844,32 +5385,14 @@ func (ec *executionContext) fieldContext_Query_recentlyCreatedStudysets(ctx cont
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "id":
-				return ec.fieldContext_Studyset_id(ctx, field)
-			case "title":
-				return ec.fieldContext_Studyset_title(ctx, field)
-			case "private":
-				return ec.fieldContext_Studyset_private(ctx, field)
-			case "subject":
-				return ec.fieldContext_Studyset_subject(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_Studyset_createdAt(ctx, field)
-			case "updatedAt":
-				return ec.fieldContext_Studyset_updatedAt(ctx, field)
-			case "user":
-				return ec.fieldContext_Studyset_user(ctx, field)
-			case "terms":
-				return ec.fieldContext_Studyset_terms(ctx, field)
-			case "termsCount":
-				return ec.fieldContext_Studyset_termsCount(ctx, field)
-			case "practiceTests":
-				return ec.fieldContext_Studyset_practiceTests(ctx, field)
-			case "saved":
-				return ec.fieldContext_Studyset_saved(ctx, field)
-			case "folder":
-				return ec.fieldContext_Studyset_folder(ctx, field)
+			case "edges":
+				return ec.fieldContext_StudysetConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_StudysetConnection_pageInfo(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_StudysetConnection_totalCount(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type Studyset", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type StudysetConnection", field.Name)
 		},
 	}
 	defer func() {
@@ -4900,18 +5423,21 @@ func (ec *executionContext) _Query_recentlyUpdatedStudysets(ctx context.Context,
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().RecentlyUpdatedStudysets(rctx, fc.Args["limit"].(*int32), fc.Args["offset"].(*int32))
+		return ec.resolvers.Query().RecentlyUpdatedStudysets(rctx, fc.Args["first"].(*int32), fc.Args["after"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Studyset)
+	res := resTmp.(*model.StudysetConnection)
 	fc.Result = res
-	return ec.marshalOStudyset2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐStudyset(ctx, field.Selections, res)
+	return ec.marshalNStudysetConnection2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐStudysetConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_recentlyUpdatedStudysets(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -4922,32 +5448,14 @@ func (ec *executionContext) fieldContext_Query_recentlyUpdatedStudysets(ctx cont
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "id":
-				return ec.fieldContext_Studyset_id(ctx, field)
-			case "title":
-				return ec.fieldContext_Studyset_title(ctx, field)
-			case "private":
-				return ec.fieldContext_Studyset_private(ctx, field)
-			case "subject":
-				return ec.fieldContext_Studyset_subject(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_Studyset_createdAt(ctx, field)
-			case "updatedAt":
-				return ec.fieldContext_Studyset_updatedAt(ctx, field)
-			case "user":
-				return ec.fieldContext_Studyset_user(ctx, field)
-			case "terms":
-				return ec.fieldContext_Studyset_terms(ctx, field)
-			case "termsCount":
-				return ec.fieldContext_Studyset_termsCount(ctx, field)
-			case "practiceTests":
-				return ec.fieldContext_Studyset_practiceTests(ctx, field)
-			case "saved":
-				return ec.fieldContext_Studyset_saved(ctx, field)
-			case "folder":
-				return ec.fieldContext_Studyset_folder(ctx, field)
+			case "edges":
+				return ec.fieldContext_StudysetConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_StudysetConnection_pageInfo(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_StudysetConnection_totalCount(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type Studyset", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type StudysetConnection", field.Name)
 		},
 	}
 	defer func() {
@@ -4978,18 +5486,21 @@ func (ec *executionContext) _Query_searchStudysets(ctx context.Context, field gr
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().SearchStudysets(rctx, fc.Args["q"].(string), fc.Args["limit"].(*int32), fc.Args["offset"].(*int32))
+		return ec.resolvers.Query().SearchStudysets(rctx, fc.Args["q"].(string), fc.Args["first"].(*int32), fc.Args["after"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Studyset)
+	res := resTmp.(*model.StudysetConnection)
 	fc.Result = res
-	return ec.marshalOStudyset2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐStudyset(ctx, field.Selections, res)
+	return ec.marshalNStudysetConnection2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐStudysetConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_searchStudysets(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5000,32 +5511,14 @@ func (ec *executionContext) fieldContext_Query_searchStudysets(ctx context.Conte
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "id":
-				return ec.fieldContext_Studyset_id(ctx, field)
-			case "title":
-				return ec.fieldContext_Studyset_title(ctx, field)
-			case "private":
-				return ec.fieldContext_Studyset_private(ctx, field)
-			case "subject":
-				return ec.fieldContext_Studyset_subject(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_Studyset_createdAt(ctx, field)
-			case "updatedAt":
-				return ec.fieldContext_Studyset_updatedAt(ctx, field)
-			case "user":
-				return ec.fieldContext_Studyset_user(ctx, field)
-			case "terms":
-				return ec.fieldContext_Studyset_terms(ctx, field)
-			case "termsCount":
-				return ec.fieldContext_Studyset_termsCount(ctx, field)
-			case "practiceTests":
-				return ec.fieldContext_Studyset_practiceTests(ctx, field)
-			case "saved":
-				return ec.fieldContext_Studyset_saved(ctx, field)
-			case "folder":
-				return ec.fieldContext_Studyset_folder(ctx, field)
+			case "edges":
+				return ec.fieldContext_StudysetConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_StudysetConnection_pageInfo(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_StudysetConnection_totalCount(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type Studyset", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type StudysetConnection", field.Name)
 		},
 	}
 	defer func() {
@@ -5056,18 +5549,21 @@ func (ec *executionContext) _Query_myStudysets(ctx context.Context, field graphq
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().MyStudysets(rctx, fc.Args["limit"].(*int32), fc.Args["offset"].(*int32), fc.Args["hideFoldered"].(*bool))
+		return ec.resolvers.Query().MyStudysets(rctx, fc.Args["first"].(*int32), fc.Args["after"].(*string), fc.Args["hideFoldered"].(*bool))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Studyset)
+	res := resTmp.(*model.StudysetConnection)
 	fc.Result = res
-	return ec.marshalOStudyset2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐStudyset(ctx, field.Selections, res)
+	return ec.marshalNStudysetConnection2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐStudysetConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_myStudysets(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5078,32 +5574,14 @@ func (ec *executionContext) fieldContext_Query_myStudysets(ctx context.Context, 
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "id":
-				return ec.fieldContext_Studyset_id(ctx, field)
-			case "title":
-				return ec.fieldContext_Studyset_title(ctx, field)
-			case "private":
-				return ec.fieldContext_Studyset_private(ctx, field)
-			case "subject":
-				return ec.fieldContext_Studyset_subject(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_Studyset_createdAt(ctx, field)
-			case "updatedAt":
-				return ec.fieldContext_Studyset_updatedAt(ctx, field)
-			case "user":
-				return ec.fieldContext_Studyset_user(ctx, field)
-			case "terms":
-				return ec.fieldContext_Studyset_terms(ctx, field)
-			case "termsCount":
-				return ec.fieldContext_Studyset_termsCount(ctx, field)
-			case "practiceTests":
-				return ec.fieldContext_Studyset_practiceTests(ctx, field)
-			case "saved":
-				return ec.fieldContext_Studyset_saved(ctx, field)
-			case "folder":
-				return ec.fieldContext_Studyset_folder(ctx, field)
+			case "edges":
+				return ec.fieldContext_StudysetConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_StudysetConnection_pageInfo(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_StudysetConnection_totalCount(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type Studyset", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type StudysetConnection", field.Name)
 		},
 	}
 	defer func() {
@@ -5134,18 +5612,21 @@ func (ec *executionContext) _Query_myFolders(ctx context.Context, field graphql.
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().MyFolders(rctx, fc.Args["limit"].(*int32), fc.Args["offset"].(*int32))
+		return ec.resolvers.Query().MyFolders(rctx, fc.Args["first"].(*int32), fc.Args["after"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Folder)
+	res := resTmp.(*model.FolderConnection)
 	fc.Result = res
-	return ec.marshalOFolder2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐFolder(ctx, field.Selections, res)
+	return ec.marshalNFolderConnection2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐFolderConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_myFolders(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5156,14 +5637,14 @@ func (ec *executionContext) fieldContext_Query_myFolders(ctx context.Context, fi
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "id":
-				return ec.fieldContext_Folder_id(ctx, field)
-			case "name":
-				return ec.fieldContext_Folder_name(ctx, field)
-			case "studysets":
-				return ec.fieldContext_Folder_studysets(ctx, field)
+			case "edges":
+				return ec.fieldContext_FolderConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_FolderConnection_pageInfo(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_FolderConnection_totalCount(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type Folder", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type FolderConnection", field.Name)
 		},
 	}
 	defer func() {
@@ -5194,18 +5675,21 @@ func (ec *executionContext) _Query_mySavedStudysets(ctx context.Context, field g
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().MySavedStudysets(rctx, fc.Args["limit"].(*int32), fc.Args["offset"].(*int32))
+		return ec.resolvers.Query().MySavedStudysets(rctx, fc.Args["first"].(*int32), fc.Args["after"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Studyset)
+	res := resTmp.(*model.StudysetConnection)
 	fc.Result = res
-	return ec.marshalOStudyset2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐStudyset(ctx, field.Selections, res)
+	return ec.marshalNStudysetConnection2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐStudysetConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_mySavedStudysets(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5216,32 +5700,14 @@ func (ec *executionContext) fieldContext_Query_mySavedStudysets(ctx context.Cont
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "id":
-				return ec.fieldContext_Studyset_id(ctx, field)
-			case "title":
-				return ec.fieldContext_Studyset_title(ctx, field)
-			case "private":
-				return ec.fieldContext_Studyset_private(ctx, field)
-			case "subject":
-				return ec.fieldContext_Studyset_subject(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_Studyset_createdAt(ctx, field)
-			case "updatedAt":
-				return ec.fieldContext_Studyset_updatedAt(ctx, field)
-			case "user":
-				return ec.fieldContext_Studyset_user(ctx, field)
-			case "terms":
-				return ec.fieldContext_Studyset_terms(ctx, field)
-			case "termsCount":
-				return ec.fieldContext_Studyset_termsCount(ctx, field)
-			case "practiceTests":
-				return ec.fieldContext_Studyset_practiceTests(ctx, field)
-			case "saved":
-				return ec.fieldContext_Studyset_saved(ctx, field)
-			case "folder":
-				return ec.fieldContext_Studyset_folder(ctx, field)
+			case "edges":
+				return ec.fieldContext_StudysetConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_StudysetConnection_pageInfo(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_StudysetConnection_totalCount(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type Studyset", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type StudysetConnection", field.Name)
 		},
 	}
 	defer func() {
@@ -6561,6 +7027,265 @@ func (ec *executionContext) fieldContext_Studyset_folder(_ context.Context, fiel
 	return fc, nil
 }
 
+func (ec *executionContext) _StudysetConnection_edges(ctx context.Context, field graphql.CollectedField, obj *model.StudysetConnection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_StudysetConnection_edges(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Edges, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.StudysetEdge)
+	fc.Result = res
+	return ec.marshalNStudysetEdge2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐStudysetEdgeᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_StudysetConnection_edges(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "StudysetConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "node":
+				return ec.fieldContext_StudysetEdge_node(ctx, field)
+			case "cursor":
+				return ec.fieldContext_StudysetEdge_cursor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type StudysetEdge", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _StudysetConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *model.StudysetConnection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_StudysetConnection_pageInfo(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.PageInfo)
+	fc.Result = res
+	return ec.marshalNPageInfo2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐPageInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_StudysetConnection_pageInfo(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "StudysetConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "hasNextPage":
+				return ec.fieldContext_PageInfo_hasNextPage(ctx, field)
+			case "hasPreviousPage":
+				return ec.fieldContext_PageInfo_hasPreviousPage(ctx, field)
+			case "startCursor":
+				return ec.fieldContext_PageInfo_startCursor(ctx, field)
+			case "endCursor":
+				return ec.fieldContext_PageInfo_endCursor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PageInfo", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _StudysetConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *model.StudysetConnection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_StudysetConnection_totalCount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int32)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint32(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_StudysetConnection_totalCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "StudysetConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _StudysetEdge_node(ctx context.Context, field graphql.CollectedField, obj *model.StudysetEdge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_StudysetEdge_node(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Node, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Studyset)
+	fc.Result = res
+	return ec.marshalNStudyset2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐStudyset(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_StudysetEdge_node(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "StudysetEdge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Studyset_id(ctx, field)
+			case "title":
+				return ec.fieldContext_Studyset_title(ctx, field)
+			case "private":
+				return ec.fieldContext_Studyset_private(ctx, field)
+			case "subject":
+				return ec.fieldContext_Studyset_subject(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Studyset_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Studyset_updatedAt(ctx, field)
+			case "user":
+				return ec.fieldContext_Studyset_user(ctx, field)
+			case "terms":
+				return ec.fieldContext_Studyset_terms(ctx, field)
+			case "termsCount":
+				return ec.fieldContext_Studyset_termsCount(ctx, field)
+			case "practiceTests":
+				return ec.fieldContext_Studyset_practiceTests(ctx, field)
+			case "saved":
+				return ec.fieldContext_Studyset_saved(ctx, field)
+			case "folder":
+				return ec.fieldContext_Studyset_folder(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Studyset", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _StudysetEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *model.StudysetEdge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_StudysetEdge_cursor(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_StudysetEdge_cursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "StudysetEdge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Subject_id(ctx context.Context, field graphql.CollectedField, obj *model.Subject) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Subject_id(ctx, field)
 	if err != nil {
@@ -6698,18 +7423,21 @@ func (ec *executionContext) _Subject_studysets(ctx context.Context, field graphq
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Subject().Studysets(rctx, obj, fc.Args["limit"].(*int32), fc.Args["offset"].(*int32))
+		return ec.resolvers.Subject().Studysets(rctx, obj, fc.Args["first"].(*int32), fc.Args["after"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Studyset)
+	res := resTmp.(*model.StudysetConnection)
 	fc.Result = res
-	return ec.marshalOStudyset2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐStudyset(ctx, field.Selections, res)
+	return ec.marshalNStudysetConnection2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐStudysetConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Subject_studysets(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -6720,32 +7448,14 @@ func (ec *executionContext) fieldContext_Subject_studysets(ctx context.Context, 
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "id":
-				return ec.fieldContext_Studyset_id(ctx, field)
-			case "title":
-				return ec.fieldContext_Studyset_title(ctx, field)
-			case "private":
-				return ec.fieldContext_Studyset_private(ctx, field)
-			case "subject":
-				return ec.fieldContext_Studyset_subject(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_Studyset_createdAt(ctx, field)
-			case "updatedAt":
-				return ec.fieldContext_Studyset_updatedAt(ctx, field)
-			case "user":
-				return ec.fieldContext_Studyset_user(ctx, field)
-			case "terms":
-				return ec.fieldContext_Studyset_terms(ctx, field)
-			case "termsCount":
-				return ec.fieldContext_Studyset_termsCount(ctx, field)
-			case "practiceTests":
-				return ec.fieldContext_Studyset_practiceTests(ctx, field)
-			case "saved":
-				return ec.fieldContext_Studyset_saved(ctx, field)
-			case "folder":
-				return ec.fieldContext_Studyset_folder(ctx, field)
+			case "edges":
+				return ec.fieldContext_StudysetConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_StudysetConnection_pageInfo(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_StudysetConnection_totalCount(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type Studyset", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type StudysetConnection", field.Name)
 		},
 	}
 	defer func() {
@@ -11455,6 +12165,96 @@ func (ec *executionContext) _Folder(ctx context.Context, sel ast.SelectionSet, o
 	return out
 }
 
+var folderConnectionImplementors = []string{"FolderConnection"}
+
+func (ec *executionContext) _FolderConnection(ctx context.Context, sel ast.SelectionSet, obj *model.FolderConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, folderConnectionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("FolderConnection")
+		case "edges":
+			out.Values[i] = ec._FolderConnection_edges(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "pageInfo":
+			out.Values[i] = ec._FolderConnection_pageInfo(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalCount":
+			out.Values[i] = ec._FolderConnection_totalCount(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var folderEdgeImplementors = []string{"FolderEdge"}
+
+func (ec *executionContext) _FolderEdge(ctx context.Context, sel ast.SelectionSet, obj *model.FolderEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, folderEdgeImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("FolderEdge")
+		case "node":
+			out.Values[i] = ec._FolderEdge_node(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "cursor":
+			out.Values[i] = ec._FolderEdge_cursor(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var mCQImplementors = []string{"MCQ"}
 
 func (ec *executionContext) _MCQ(ctx context.Context, sel ast.SelectionSet, obj *model.Mcq) graphql.Marshaler {
@@ -11647,6 +12447,54 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 	return out
 }
 
+var pageInfoImplementors = []string{"PageInfo"}
+
+func (ec *executionContext) _PageInfo(ctx context.Context, sel ast.SelectionSet, obj *model.PageInfo) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, pageInfoImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PageInfo")
+		case "hasNextPage":
+			out.Values[i] = ec._PageInfo_hasNextPage(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "hasPreviousPage":
+			out.Values[i] = ec._PageInfo_hasPreviousPage(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "startCursor":
+			out.Values[i] = ec._PageInfo_startCursor(ctx, field, obj)
+		case "endCursor":
+			out.Values[i] = ec._PageInfo_endCursor(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var practiceTestImplementors = []string{"PracticeTest"}
 
 func (ec *executionContext) _PracticeTest(ctx context.Context, sel ast.SelectionSet, obj *model.PracticeTest) graphql.Marshaler {
@@ -11810,13 +12658,16 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		case "recentlyCreatedStudysets":
 			field := field
 
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
 				defer func() {
 					if r := recover(); r != nil {
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
 				res = ec._Query_recentlyCreatedStudysets(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
 				return res
 			}
 
@@ -11829,13 +12680,16 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		case "recentlyUpdatedStudysets":
 			field := field
 
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
 				defer func() {
 					if r := recover(); r != nil {
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
 				res = ec._Query_recentlyUpdatedStudysets(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
 				return res
 			}
 
@@ -11848,13 +12702,16 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		case "searchStudysets":
 			field := field
 
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
 				defer func() {
 					if r := recover(); r != nil {
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
 				res = ec._Query_searchStudysets(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
 				return res
 			}
 
@@ -11867,13 +12724,16 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		case "myStudysets":
 			field := field
 
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
 				defer func() {
 					if r := recover(); r != nil {
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
 				res = ec._Query_myStudysets(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
 				return res
 			}
 
@@ -11886,13 +12746,16 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		case "myFolders":
 			field := field
 
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
 				defer func() {
 					if r := recover(); r != nil {
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
 				res = ec._Query_myFolders(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
 				return res
 			}
 
@@ -11905,13 +12768,16 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		case "mySavedStudysets":
 			field := field
 
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
 				defer func() {
 					if r := recover(); r != nil {
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
 				res = ec._Query_mySavedStudysets(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
 				return res
 			}
 
@@ -12385,6 +13251,96 @@ func (ec *executionContext) _Studyset(ctx context.Context, sel ast.SelectionSet,
 	return out
 }
 
+var studysetConnectionImplementors = []string{"StudysetConnection"}
+
+func (ec *executionContext) _StudysetConnection(ctx context.Context, sel ast.SelectionSet, obj *model.StudysetConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, studysetConnectionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("StudysetConnection")
+		case "edges":
+			out.Values[i] = ec._StudysetConnection_edges(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "pageInfo":
+			out.Values[i] = ec._StudysetConnection_pageInfo(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalCount":
+			out.Values[i] = ec._StudysetConnection_totalCount(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var studysetEdgeImplementors = []string{"StudysetEdge"}
+
+func (ec *executionContext) _StudysetEdge(ctx context.Context, sel ast.SelectionSet, obj *model.StudysetEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, studysetEdgeImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("StudysetEdge")
+		case "node":
+			out.Values[i] = ec._StudysetEdge_node(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "cursor":
+			out.Values[i] = ec._StudysetEdge_cursor(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var subjectImplementors = []string{"Subject"}
 
 func (ec *executionContext) _Subject(ctx context.Context, sel ast.SelectionSet, obj *model.Subject) graphql.Marshaler {
@@ -12405,13 +13361,16 @@ func (ec *executionContext) _Subject(ctx context.Context, sel ast.SelectionSet, 
 		case "studysets":
 			field := field
 
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
 				defer func() {
 					if r := recover(); r != nil {
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
 				res = ec._Subject_studysets(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
 				return res
 			}
 
@@ -13285,6 +14244,84 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
+func (ec *executionContext) marshalNFolder2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐFolder(ctx context.Context, sel ast.SelectionSet, v *model.Folder) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Folder(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNFolderConnection2quizfreelyᚋapiᚋgraphᚋmodelᚐFolderConnection(ctx context.Context, sel ast.SelectionSet, v model.FolderConnection) graphql.Marshaler {
+	return ec._FolderConnection(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNFolderConnection2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐFolderConnection(ctx context.Context, sel ast.SelectionSet, v *model.FolderConnection) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._FolderConnection(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNFolderEdge2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐFolderEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.FolderEdge) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNFolderEdge2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐFolderEdge(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNFolderEdge2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐFolderEdge(ctx context.Context, sel ast.SelectionSet, v *model.FolderEdge) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._FolderEdge(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNID2string(ctx context.Context, v any) (string, error) {
 	res, err := graphql.UnmarshalID(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -13317,6 +14354,16 @@ func (ec *executionContext) marshalNInt2int32(ctx context.Context, sel ast.Selec
 	return res
 }
 
+func (ec *executionContext) marshalNPageInfo2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐPageInfo(ctx context.Context, sel ast.SelectionSet, v *model.PageInfo) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._PageInfo(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v any) (string, error) {
 	res, err := graphql.UnmarshalString(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -13331,6 +14378,84 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNStudyset2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐStudyset(ctx context.Context, sel ast.SelectionSet, v *model.Studyset) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Studyset(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNStudysetConnection2quizfreelyᚋapiᚋgraphᚋmodelᚐStudysetConnection(ctx context.Context, sel ast.SelectionSet, v model.StudysetConnection) graphql.Marshaler {
+	return ec._StudysetConnection(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNStudysetConnection2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐStudysetConnection(ctx context.Context, sel ast.SelectionSet, v *model.StudysetConnection) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._StudysetConnection(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNStudysetEdge2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐStudysetEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.StudysetEdge) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNStudysetEdge2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐStudysetEdge(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNStudysetEdge2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐStudysetEdge(ctx context.Context, sel ast.SelectionSet, v *model.StudysetEdge) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._StudysetEdge(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNStudysetInput2quizfreelyᚋapiᚋgraphᚋmodelᚐStudysetInput(ctx context.Context, v any) (model.StudysetInput, error) {
@@ -13693,47 +14818,6 @@ func (ec *executionContext) unmarshalOFRQInput2ᚖquizfreelyᚋapiᚋgraphᚋmod
 	}
 	res, err := ec.unmarshalInputFRQInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalOFolder2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐFolder(ctx context.Context, sel ast.SelectionSet, v []*model.Folder) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOFolder2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐFolder(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	return ret
 }
 
 func (ec *executionContext) marshalOFolder2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐFolder(ctx context.Context, sel ast.SelectionSet, v *model.Folder) graphql.Marshaler {

@@ -37,6 +37,17 @@ type Folder struct {
 	Studysets []*Studyset `json:"studysets,omitempty"`
 }
 
+type FolderConnection struct {
+	Edges      []*FolderEdge `json:"edges"`
+	PageInfo   *PageInfo     `json:"pageInfo"`
+	TotalCount *int32        `json:"totalCount,omitempty"`
+}
+
+type FolderEdge struct {
+	Node   *Folder `json:"node"`
+	Cursor string  `json:"cursor"`
+}
+
 type Mcq struct {
 	Term               *Term       `json:"term,omitempty"`
 	AnswerWith         *AnswerWith `json:"answerWith,omitempty"`
@@ -80,6 +91,13 @@ type NewTermInput struct {
 	SortOrder int32   `json:"sortOrder"`
 }
 
+type PageInfo struct {
+	HasNextPage     bool    `json:"hasNextPage"`
+	HasPreviousPage bool    `json:"hasPreviousPage"`
+	StartCursor     *string `json:"startCursor,omitempty"`
+	EndCursor       *string `json:"endCursor,omitempty"`
+}
+
 type PracticeTestInput struct {
 	ID               *string          `json:"id,omitempty"`
 	Timestamp        *string          `json:"timestamp,omitempty"`
@@ -108,6 +126,17 @@ type QuestionInput struct {
 	Frq               *FRQInput               `json:"frq,omitempty"`
 }
 
+type StudysetConnection struct {
+	Edges      []*StudysetEdge `json:"edges"`
+	PageInfo   *PageInfo       `json:"pageInfo"`
+	TotalCount *int32          `json:"totalCount,omitempty"`
+}
+
+type StudysetEdge struct {
+	Node   *Studyset `json:"node"`
+	Cursor string    `json:"cursor"`
+}
+
 type StudysetInput struct {
 	Title     string  `json:"title"`
 	Private   bool    `json:"private"`
@@ -115,10 +144,10 @@ type StudysetInput struct {
 }
 
 type Subject struct {
-	ID        *string          `json:"id,omitempty"`
-	Name      *string          `json:"name,omitempty"`
-	Category  *SubjectCategory `json:"category,omitempty"`
-	Studysets []*Studyset      `json:"studysets,omitempty"`
+	ID        *string             `json:"id,omitempty"`
+	Name      *string             `json:"name,omitempty"`
+	Category  *SubjectCategory    `json:"category,omitempty"`
+	Studysets *StudysetConnection `json:"studysets"`
 }
 
 type TermConfusionPairInput struct {

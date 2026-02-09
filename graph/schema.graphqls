@@ -4,12 +4,12 @@ type Query {
     studyset(id: ID!): Studyset
     user(id: ID!): User
     term(id: ID!): Term
-    recentlyCreatedStudysets(limit: Int, offset: Int): [Studyset]
-    recentlyUpdatedStudysets(limit: Int, offset: Int): [Studyset]
-    searchStudysets(q: String!, limit: Int, offset: Int): [Studyset]
-    myStudysets(limit: Int, offset: Int, hideFoldered: Boolean): [Studyset]
-    myFolders(limit: Int, offset: Int): [Folder]
-    mySavedStudysets(limit: Int, offset: Int): [Studyset]
+    recentlyCreatedStudysets(first: Int = 24, after: String): StudysetConnection!
+    recentlyUpdatedStudysets(first: Int = 24, after: String): StudysetConnection!
+    searchStudysets(q: String!, first: Int = 24, after: String): StudysetConnection!
+    myStudysets(first: Int = 24, after: String, hideFoldered: Boolean): StudysetConnection!
+    myFolders(first: Int = 24, after: String): FolderConnection!
+    mySavedStudysets(first: Int = 24, after: String): StudysetConnection!
     practiceTest(id: ID!): PracticeTest
     subject(id: String!): Subject
     subjectsByKeyword(keyword: String): [Subject]
@@ -51,6 +51,24 @@ enum AuthType {
     USERNAME_PASSWORD
     OAUTH_GOOGLE
 }
+type PageInfo {
+    hasNextPage: Boolean!
+    hasPreviousPage: Boolean!
+    startCursor: String
+    endCursor: String
+}
+
+type StudysetEdge {
+    node: Studyset!
+    cursor: String!
+}
+
+type StudysetConnection {
+    edges: [StudysetEdge!]!
+    pageInfo: PageInfo!
+    totalCount: Int
+}
+
 type Studyset {
     id: ID
     title: String
@@ -245,6 +263,17 @@ type Category {
     title: String
     studysets: [Studyset]
 }
+type FolderEdge {
+    node: Folder!
+    cursor: String!
+}
+
+type FolderConnection {
+    edges: [FolderEdge!]!
+    pageInfo: PageInfo!
+    totalCount: Int
+}
+
 type Folder {
     id: ID
     name: String
@@ -261,5 +290,5 @@ type Subject {
     id: String
     name: String
     category: SubjectCategory
-    studysets(limit: Int, offset: Int): [Studyset]
+    studysets(first: Int = 24, after: String): StudysetConnection!
 }
