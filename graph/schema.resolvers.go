@@ -802,19 +802,80 @@ WHERE terms.id = $1 AND studysets.private = FALSE`,
 }
 
 // RecentlyCreatedStudysets is the resolver for the recentlyCreatedStudysets field.
-func (r *queryResolver) RecentlyCreatedStudysets(ctx context.Context, first *int32, after *string) (*model.StudysetConnection, error) {
+func (r *queryResolver) RecentlyCreatedStudysets(ctx context.Context, first *int32, after *string, last *int32, before *string) (*model.StudysetConnection, error) {
 	l := 24
 	if first != nil && *first > 0 && *first < 1000 {
 		l = int(*first)
+	} else if last != nil && *last > 0 && *last < 1000 {
+		l = int(*last)
 	}
 	limit := l + 1
 
-	cursorTS, cursorID := DecodeStudysetCursor(ptrToString(after))
-	hasPrevious := cursorTS != "" || cursorID != ""
+	cursorScore, cursorID := DecodeStudysetCursor(ptrToString(after))
+	beforeCursorScore, beforeCursorID := DecodeStudysetCursor(ptrToString(before))
+
+	// Check for Previous Page possibility
+	hasPrevious := cursorScore != "" || cursorID != ""
+	if before != nil {
+		// If we are paginating backwards, there is always a "next" page (which is the one we came from)
+		// but in the context of "hasPrevious", it means "are there newer items?"
+		// When going backwards (using before), we are moving towards newer items.
+		// If we find more than limit, it means there are even newer items.
+		// For the sake of the connection spec:
+		// hasNextPage: false (usually, unless we fetched more than limit)
+		// hasPreviousPage: true (we assume there are older items if we are in the middle)
+		// But let's stick to the data:
+	}
 
 	var studysets []*model.Studyset
 	var err error
-	if cursorID != "" {
+
+	if beforeCursorID != "" {
+		// Backward pagination
+		// We want items NEWER than the cursor, sorted ASC (oldest to newest) to get the "previous" 24 items
+		// Then we reverse them back to DESC (newest to oldest) for the client.
+
+		sql := `
+			SELECT
+				id,
+				user_id,
+				title,
+				private,
+				subject_id,
+				to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
+				to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
+			FROM public.studysets
+			WHERE private = false
+				AND (to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM'), id) > ($1, $2::uuid)
+			ORDER BY created_at ASC, id ASC
+			LIMIT $3
+		`
+		err = pgxscan.Select(ctx, r.DB, &studysets, sql, beforeCursorScore, beforeCursorID, limit)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch recently created studysets: %w", err)
+		}
+
+		// If we found more than the limit, it means there is a "previous" page (newer items)
+		hasPrevious = len(studysets) > l
+		if hasPrevious {
+			studysets = studysets[:l]
+		}
+
+		// Reverse connections to restore DESC order
+		for i, j := 0, len(studysets)-1; i < j; i, j = i+1, j-1 {
+			studysets[i], studysets[j] = studysets[j], studysets[i]
+		}
+
+		// Since we moved backwards, we know there is a "next" page (older items, where we came from)
+		// strictly speaking, unless we are at the very beginning of the list?
+		// No, if we successfully fetched items using `before`, it implies we are not at the end.
+		// But we need to know if there are MORE older items. `hasPrevious` check above tells us if there are NEWER.
+		// To know if there are OLDER items (hasNextPage), we'd typically rely on where we came from or do a peek.
+		// For simple prev/next buttons, we can assume:
+		// If we utilized `before`, we definitely have `hasNextPage` = true (the page we came from).
+
+	} else if cursorID != "" {
+		// Forward pagination
 		sql := `
 			SELECT
 				id,
@@ -830,8 +891,9 @@ func (r *queryResolver) RecentlyCreatedStudysets(ctx context.Context, first *int
 			ORDER BY created_at DESC, id DESC
 			LIMIT $3
 		`
-		err = pgxscan.Select(ctx, r.DB, &studysets, sql, cursorTS, cursorID, limit)
+		err = pgxscan.Select(ctx, r.DB, &studysets, sql, cursorScore, cursorID, limit)
 	} else {
+		// First page
 		sql := `
 			SELECT
 				id,
@@ -848,14 +910,23 @@ func (r *queryResolver) RecentlyCreatedStudysets(ctx context.Context, first *int
 		`
 		err = pgxscan.Select(ctx, r.DB, &studysets, sql, limit)
 	}
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch recently created studysets: %w", err)
 	}
 
-	hasNext := len(studysets) > l
-	if hasNext {
-		studysets = studysets[:l]
+	hasNext := false
+	if beforeCursorID != "" {
+		// If we went backwards, we assume there's a next page (older items)
+		// This is a simplification but sufficient for linear navigation
+		hasNext = true
+	} else {
+		hasNext = len(studysets) > l
+		if hasNext {
+			studysets = studysets[:l]
+		}
 	}
+
 	getCursor := func(s *model.Studyset) (string, string) {
 		return ptrToString(s.CreatedAt), ptrToString(s.ID)
 	}
@@ -863,19 +934,65 @@ func (r *queryResolver) RecentlyCreatedStudysets(ctx context.Context, first *int
 }
 
 // RecentlyUpdatedStudysets is the resolver for the recentlyUpdatedStudysets field.
-func (r *queryResolver) RecentlyUpdatedStudysets(ctx context.Context, first *int32, after *string) (*model.StudysetConnection, error) {
+func (r *queryResolver) RecentlyUpdatedStudysets(ctx context.Context, first *int32, after *string, last *int32, before *string) (*model.StudysetConnection, error) {
 	l := 24
 	if first != nil && *first > 0 && *first < 1000 {
 		l = int(*first)
+	} else if last != nil && *last > 0 && *last < 1000 {
+		l = int(*last)
 	}
 	limit := l + 1
 
-	cursorTS, cursorID := DecodeStudysetCursor(ptrToString(after))
-	hasPrevious := cursorTS != "" || cursorID != ""
+	cursorScore, cursorID := DecodeStudysetCursor(ptrToString(after))
+	beforeCursorScore, beforeCursorID := DecodeStudysetCursor(ptrToString(before))
+
+	// Check for Previous Page possibility
+	hasPrevious := cursorScore != "" || cursorID != ""
+	if before != nil {
+
+	}
 
 	var studysets []*model.Studyset
 	var err error
-	if cursorID != "" {
+
+	if beforeCursorID != "" {
+		// Backward pagination
+		// We want items NEWER than the cursor, sorted ASC (oldest to newest) to get the "previous" 24 items
+		// Then we reverse them back to DESC (newest to oldest) for the client.
+
+		sql := `
+			SELECT
+				id,
+				user_id,
+				title,
+				private,
+				subject_id,
+				to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
+				to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
+			FROM public.studysets
+			WHERE private = false
+				AND (to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM'), id) > ($1, $2::uuid)
+			ORDER BY updated_at ASC, id ASC
+			LIMIT $3
+		`
+		err = pgxscan.Select(ctx, r.DB, &studysets, sql, beforeCursorScore, beforeCursorID, limit)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch recently updated studysets: %w", err)
+		}
+
+		// If we found more than the limit, it means there is a "previous" page (newer items)
+		hasPrevious = len(studysets) > l
+		if hasPrevious {
+			studysets = studysets[:l]
+		}
+
+		// Reverse connections to restore DESC order
+		for i, j := 0, len(studysets)-1; i < j; i, j = i+1, j-1 {
+			studysets[i], studysets[j] = studysets[j], studysets[i]
+		}
+
+	} else if cursorID != "" {
+		// Forward pagination
 		sql := `
 			SELECT
 				id,
@@ -891,8 +1008,9 @@ func (r *queryResolver) RecentlyUpdatedStudysets(ctx context.Context, first *int
 			ORDER BY updated_at DESC, id DESC
 			LIMIT $3
 		`
-		err = pgxscan.Select(ctx, r.DB, &studysets, sql, cursorTS, cursorID, limit)
+		err = pgxscan.Select(ctx, r.DB, &studysets, sql, cursorScore, cursorID, limit)
 	} else {
+		// First page
 		sql := `
 			SELECT
 				id,
@@ -909,14 +1027,23 @@ func (r *queryResolver) RecentlyUpdatedStudysets(ctx context.Context, first *int
 		`
 		err = pgxscan.Select(ctx, r.DB, &studysets, sql, limit)
 	}
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch recently updated studysets: %w", err)
 	}
 
-	hasNext := len(studysets) > l
-	if hasNext {
-		studysets = studysets[:l]
+	hasNext := false
+	if beforeCursorID != "" {
+		// If we went backwards, we assume there's a next page (older items)
+		// This is a simplification but sufficient for linear navigation
+		hasNext = true
+	} else {
+		hasNext = len(studysets) > l
+		if hasNext {
+			studysets = studysets[:l]
+		}
 	}
+
 	getCursor := func(s *model.Studyset) (string, string) {
 		return ptrToString(s.UpdatedAt), ptrToString(s.ID)
 	}

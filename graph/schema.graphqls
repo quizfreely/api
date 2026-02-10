@@ -4,8 +4,8 @@ type Query {
     studyset(id: ID!): Studyset
     user(id: ID!): User
     term(id: ID!): Term
-    recentlyCreatedStudysets(first: Int = 24, after: String): StudysetConnection!
-    recentlyUpdatedStudysets(first: Int = 24, after: String): StudysetConnection!
+    recentlyCreatedStudysets(first: Int = 24, after: String, last: Int, before: String): StudysetConnection!
+    recentlyUpdatedStudysets(first: Int = 24, after: String, last: Int, before: String): StudysetConnection!
     searchStudysets(q: String!, first: Int = 24, after: String): StudysetConnection!
     myStudysets(first: Int = 24, after: String, hideFoldered: Boolean): StudysetConnection!
     myFolders(first: Int = 24, after: String): FolderConnection!
