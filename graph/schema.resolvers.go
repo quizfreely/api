@@ -84,7 +84,7 @@ func (r *mutationResolver) CreateStudyset(ctx context.Context, studyset model.St
 		return nil, fmt.Errorf("failed to create studyset: %w", err)
 	}
 
-	if terms != nil && len(terms) > 0 {
+	if len(terms) > 0 {
 		values := make([]interface{}, 0, len(terms)*4)
 		placeholders := make([]string, 0, len(terms))
 
@@ -118,7 +118,7 @@ func (r *mutationResolver) UpdateStudyset(ctx context.Context, id string, studys
 		return nil, fmt.Errorf("not authenticated")
 	}
 
-	if studyset == nil && (terms == nil || len(terms) == 0) {
+	if studyset == nil && (len(terms) == 0) {
 		return r.Query().Studyset(ctx, id)
 	}
 
@@ -168,7 +168,7 @@ func (r *mutationResolver) UpdateStudyset(ctx context.Context, id string, studys
 		}
 	}
 
-	if terms != nil && len(terms) > 0 {
+	if len(terms) > 0 {
 		values := make([]interface{}, 0, len(terms)*4)
 		placeholders := make([]string, 0, len(terms))
 
@@ -195,7 +195,7 @@ func (r *mutationResolver) UpdateStudyset(ctx context.Context, id string, studys
 		}
 	}
 
-	if newTerms != nil && len(newTerms) > 0 {
+	if len(newTerms) > 0 {
 		values := make([]interface{}, 0, len(newTerms)*4)
 		placeholders := make([]string, 0, len(newTerms))
 
@@ -211,7 +211,7 @@ func (r *mutationResolver) UpdateStudyset(ctx context.Context, id string, studys
 		}
 	}
 
-	if deleteTerms != nil && len(deleteTerms) > 0 {
+	if len(deleteTerms) > 0 {
 		_, err := tx.Exec(
 			ctx,
 			"DELETE FROM terms WHERE id = ANY($1) AND studyset_id = $2",
@@ -419,7 +419,7 @@ func (r *mutationResolver) RecordConfusedTerms(ctx context.Context, confusedTerm
 		return &success, fmt.Errorf("not authenticated")
 	}
 
-	if confusedTerms == nil || len(confusedTerms) == 0 {
+	if len(confusedTerms) == 0 {
 		success = false
 		return &success, nil
 	}
@@ -925,63 +925,114 @@ func (r *queryResolver) RecentlyUpdatedStudysets(ctx context.Context, first *int
 
 // SearchStudysets is the resolver for the searchStudysets field.
 func (r *queryResolver) SearchStudysets(ctx context.Context, q string, first *int32, after *string) (*model.StudysetConnection, error) {
+	if len(q) < 1 {
+		return &model.StudysetConnection{
+			Edges:    []*model.StudysetEdge{},
+			PageInfo: &model.PageInfo{},
+		}, nil
+	}
 	l := 240
 	if first != nil && *first > 0 && *first < 1000 {
 		l = int(*first)
 	}
 	limit := l + 1
 
-	cursorTS, cursorID := DecodeStudysetCursor(ptrToString(after))
-	hasPrevious := cursorTS != "" || cursorID != ""
+	cursorScore, cursorTS, cursorID := DecodeStudysetScoreCursor(ptrToString(after))
+	hasPrevious := cursorScore != "" || cursorTS != "" || cursorID != ""
 
-	var studysets []*model.Studyset
+	// We need a temporary struct to hold the score for cursor generation
+	type searchRow struct {
+		model.Studyset
+		Score float64 `db:"score"`
+	}
+
+	var rows []*searchRow
 	var err error
+
+	// Common select columns matching model.Studyset fields (via scany/db tags or name matching)
+	selectCols := `
+		id,
+		user_id,
+		title,
+		private,
+		subject_id,
+		to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
+		to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at,
+		word_similarity(lower($1), lower(title)) as score
+	`
+
 	if cursorID != "" {
 		sql := `
-			SELECT
-				id,
-				user_id,
-				title,
-				private,
-				subject_id,
-				to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
-				to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
+			SELECT ` + selectCols + `
 			FROM public.studysets
-			WHERE tsvector_title @@ websearch_to_tsquery('english', $1) AND private = false
-				AND (to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM'), id) < ($2, $3::uuid)
-			ORDER BY ts_rank(tsvector_title, websearch_to_tsquery('english', $1)) DESC, created_at DESC, id DESC
-			LIMIT $4
+			WHERE lower($1) <% lower(title) AND private = false
+				AND (word_similarity(lower($1), lower(title)), to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM'), id) < ($2::float4, $3, $4::uuid)
+			ORDER BY score DESC, created_at DESC, id DESC
+			LIMIT $5
 		`
-		err = pgxscan.Select(ctx, r.DB, &studysets, sql, q, cursorTS, cursorID, limit)
+		// cursorScore is passed as string, Postgres will parse it with ::float4
+		err = pgxscan.Select(ctx, r.DB, &rows, sql, q, cursorScore, cursorTS, cursorID, limit)
 	} else {
+		// No cursor
 		sql := `
-			SELECT
-				id,
-				user_id,
-				title,
-				private,
-				subject_id,
-				to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
-				to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
+			SELECT ` + selectCols + `
 			FROM public.studysets
-			WHERE tsvector_title @@ websearch_to_tsquery('english', $1) AND private = false
-			ORDER BY ts_rank(tsvector_title, websearch_to_tsquery('english', $1)) DESC, created_at DESC, id DESC
+			WHERE lower($1) <% lower(title) AND private = false
+			ORDER BY score DESC, created_at DESC, id DESC
 			LIMIT $2
 		`
-		err = pgxscan.Select(ctx, r.DB, &studysets, sql, q, limit)
+		err = pgxscan.Select(ctx, r.DB, &rows, sql, q, limit)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to search studysets: %w", err)
 	}
 
-	hasNext := len(studysets) > l
+	hasNext := len(rows) > l
 	if hasNext {
-		studysets = studysets[:l]
+		rows = rows[:l]
 	}
-	getCursor := func(s *model.Studyset) (string, string) {
-		return ptrToString(s.CreatedAt), ptrToString(s.ID)
+
+	// Convert back to []*model.Studyset for the connection
+	studysets := make([]*model.Studyset, len(rows))
+	for i, r := range rows {
+		// Make a copy or point to the embedded struct?
+		// r.Studyset is embedded. We can take address of it?
+		// Be careful with loop variable capturing.
+		// Actually, r is a pointer to searchRow.
+		// We can just return &row.Studyset?
+		// Yes, r.Studyset is the struct value embedded. &r.Studyset works.
+		s := r.Studyset
+		studysets[i] = &s
 	}
-	return StudysetConnectionFrom(studysets, hasNext, hasPrevious, getCursor), nil
+
+	// Manual connection building
+	edges := make([]*model.StudysetEdge, 0, len(studysets))
+	for i, s := range studysets {
+		score := rows[i].Score
+		edges = append(edges, &model.StudysetEdge{
+			Node:   s,
+			Cursor: EncodeStudysetScoreCursor(fmt.Sprintf("%f", score), ptrToString(s.CreatedAt), ptrToString(s.ID)),
+		})
+	}
+
+	var startCursor, endCursor *string
+	if len(edges) > 0 {
+		startCursor = &edges[0].Cursor
+		endCursor = &edges[len(edges)-1].Cursor
+	}
+
+	return &model.StudysetConnection{
+		Edges: edges,
+		PageInfo: &model.PageInfo{
+			HasNextPage:     hasNext,
+			HasPreviousPage: hasPrevious,
+			StartCursor:     startCursor,
+			EndCursor:       endCursor,
+		},
+	}, nil
+
+	// Note: I am not using StudysetConnectionFrom because it hardcodes EncodeStudysetCursor.
+	// `getCursor` var above was just to show I considered it.
 }
 
 // MyStudysets is the resolver for the myStudysets field.

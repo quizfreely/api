@@ -71,11 +71,37 @@ func DecodeStudysetCursor(cursor string) (timestampStr, id string) {
 		return "", ""
 	}
 	s := string(raw)
-	idx := strings.LastIndex(s, "|")
-	if idx < 0 {
+	parts := strings.Split(s, "|")
+	if len(parts) != 2 {
 		return "", ""
 	}
-	return s[:idx], s[idx+1:]
+	return parts[0], parts[1]
+}
+
+// EncodeStudysetScoreCursor encodes (score, timestampStr, id) for search pagination.
+// score is the similarity score (float string).
+func EncodeStudysetScoreCursor(score, timestampStr, id string) string {
+	if timestampStr == "" {
+		timestampStr = ""
+	}
+	return base64.StdEncoding.EncodeToString([]byte(score + "|" + timestampStr + "|" + id))
+}
+
+// DecodeStudysetScoreCursor returns (score, timestampStr, id).
+func DecodeStudysetScoreCursor(cursor string) (score, timestampStr, id string) {
+	if cursor == "" {
+		return "", "", ""
+	}
+	raw, err := base64.StdEncoding.DecodeString(cursor)
+	if err != nil {
+		return "", "", ""
+	}
+	s := string(raw)
+	parts := strings.Split(s, "|")
+	if len(parts) != 3 {
+		return "", "", ""
+	}
+	return parts[0], parts[1], parts[2]
 }
 
 // EncodeFolderCursor encodes folder id for keyset pagination (order by id).
