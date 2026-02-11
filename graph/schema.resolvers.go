@@ -55,6 +55,10 @@ func (r *folderResolver) Studysets(ctx context.Context, obj *model.Folder) ([]*m
 
 // CreateStudyset is the resolver for the createStudyset field.
 func (r *mutationResolver) CreateStudyset(ctx context.Context, studyset model.StudysetInput, terms []*model.NewTermInput, folderID *string) (*model.Studyset, error) {
+	if len(terms) > MaxBatchMutationSize {
+		return nil, fmt.Errorf("too many terms in a single request (max %d)", MaxBatchMutationSize)
+	}
+
 	authedUser := auth.AuthedUserContext(ctx)
 	if authedUser == nil {
 		return nil, fmt.Errorf("not authenticated")
@@ -113,6 +117,10 @@ func (r *mutationResolver) CreateStudyset(ctx context.Context, studyset model.St
 
 // UpdateStudyset is the resolver for the updateStudyset field.
 func (r *mutationResolver) UpdateStudyset(ctx context.Context, id string, studyset *model.StudysetInput, terms []*model.TermInput, newTerms []*model.NewTermInput, deleteTerms []*string) (*model.Studyset, error) {
+	if len(terms)+len(newTerms)+len(deleteTerms) > MaxBatchMutationSize {
+		return nil, fmt.Errorf("too many items in a single request (max %d)", MaxBatchMutationSize)
+	}
+
 	authedUser := auth.AuthedUserContext(ctx)
 	if authedUser == nil {
 		return nil, fmt.Errorf("not authenticated")
@@ -297,6 +305,10 @@ func (r *mutationResolver) UpdateUser(ctx context.Context, displayName *string) 
 
 // UpdateTermProgress is the resolver for the updateTermProgress field.
 func (r *mutationResolver) UpdateTermProgress(ctx context.Context, termProgress []*model.TermProgressInput) ([]*model.TermProgress, error) {
+	if len(termProgress) > MaxBatchMutationSize {
+		return nil, fmt.Errorf("too many items in a single request (max %d)", MaxBatchMutationSize)
+	}
+
 	authedUser := auth.AuthedUserContext(ctx)
 	if authedUser == nil {
 		return nil, fmt.Errorf("not authenticated")
@@ -438,6 +450,11 @@ func (r *mutationResolver) UpdateTermProgress(ctx context.Context, termProgress 
 // RecordConfusedTerms is the resolver for the recordConfusedTerms field.
 func (r *mutationResolver) RecordConfusedTerms(ctx context.Context, confusedTerms []*model.TermConfusionPairInput) (*bool, error) {
 	var success bool
+	if len(confusedTerms) > MaxBatchMutationSize {
+		success = false
+		return &success, fmt.Errorf("too many items in a single request (max %d)", MaxBatchMutationSize)
+	}
+
 	authedUser := auth.AuthedUserContext(ctx)
 	if authedUser == nil {
 		success = false
