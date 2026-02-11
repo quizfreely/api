@@ -1102,6 +1102,10 @@ func (r *queryResolver) SearchStudysets(ctx context.Context, q string, first *in
 			PageInfo: &model.PageInfo{},
 		}, nil
 	}
+	// limit query length before using it with the database because `word_similarity` can become really heavy
+	if len(q) > 200 {
+		q = q[:200]
+	}
 	l := 240
 	if first != nil && *first > 0 && *first < 1000 {
 		l = int(*first)
