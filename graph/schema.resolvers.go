@@ -187,10 +187,10 @@ func (r *mutationResolver) UpdateStudyset(ctx context.Context, id string, studys
 			FROM (VALUES
 				%s
 			) AS v(id, term, def, sort_order)
-			WHERE t.id = v.id`,
+			WHERE t.id = v.id AND t.studyset_id = $1`,
 			strings.Join(placeholders, ","),
 		)
-		_, err := tx.Exec(ctx, sql, values...)
+		_, err := tx.Exec(ctx, sql, append([]interface{}{id}, values...)...)
 		if err != nil {
 			return nil, fmt.Errorf("failed to update terms: %w", err)
 		}
@@ -348,7 +348,28 @@ func (r *mutationResolver) UpdateTermProgress(ctx context.Context, termProgress 
 			term_leitner_system_box, def_leitner_system_box,
 			term_correct_count, term_incorrect_count,
 			def_correct_count, def_incorrect_count
-		) VALUES %s
+		)
+		SELECT v.term_id, v.user_id,
+			v.term_first_reviewed_at, v.term_last_reviewed_at,
+			v.term_review_count,
+			v.def_first_reviewed_at, v.def_last_reviewed_at,
+			v.def_review_count,
+			v.term_leitner_system_box, v.def_leitner_system_box,
+			v.term_correct_count, v.term_incorrect_count,
+			v.def_correct_count, v.def_incorrect_count
+		FROM (VALUES %s) AS v(
+			term_id, user_id,
+			term_first_reviewed_at, term_last_reviewed_at,
+			term_review_count,
+			def_first_reviewed_at, def_last_reviewed_at,
+			def_review_count,
+			term_leitner_system_box, def_leitner_system_box,
+			term_correct_count, term_incorrect_count,
+			def_correct_count, def_incorrect_count
+		)
+		JOIN terms t ON t.id = v.term_id::uuid
+		JOIN studysets s ON s.id = t.studyset_id
+		WHERE s.private = false OR s.user_id = v.user_id::uuid
 		ON CONFLICT (term_id, user_id) DO UPDATE SET
 			term_last_reviewed_at = COALESCE(EXCLUDED.term_last_reviewed_at, term_progress.term_last_reviewed_at),
 			def_last_reviewed_at = COALESCE(EXCLUDED.def_last_reviewed_at, term_progress.def_last_reviewed_at),
@@ -362,16 +383,16 @@ func (r *mutationResolver) UpdateTermProgress(ctx context.Context, termProgress 
 			term_incorrect_count = term_progress.term_incorrect_count + EXCLUDED.term_incorrect_count,
 			def_correct_count = term_progress.def_correct_count + EXCLUDED.def_correct_count,
 			def_incorrect_count = term_progress.def_incorrect_count + EXCLUDED.def_incorrect_count
-		RETURNING id,
-			to_char(term_first_reviewed_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as term_first_reviewed_at,
-			to_char(term_last_reviewed_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as term_last_reviewed_at,
-			term_review_count,
-			to_char(def_first_reviewed_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as def_first_reviewed_at,
-			to_char(def_last_reviewed_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as def_last_reviewed_at,
-			def_review_count,
-			term_leitner_system_box, def_leitner_system_box,
-			term_correct_count, term_incorrect_count,
-			def_correct_count, def_incorrect_count
+		RETURNING term_progress.id,
+			to_char(term_progress.term_first_reviewed_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as term_first_reviewed_at,
+			to_char(term_progress.term_last_reviewed_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as term_last_reviewed_at,
+			term_progress.term_review_count,
+			to_char(term_progress.def_first_reviewed_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as def_first_reviewed_at,
+			to_char(term_progress.def_last_reviewed_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as def_last_reviewed_at,
+			term_progress.def_review_count,
+			term_progress.term_leitner_system_box, term_progress.def_leitner_system_box,
+			term_progress.term_correct_count, term_progress.term_incorrect_count,
+			term_progress.def_correct_count, term_progress.def_incorrect_count
 	`, strings.Join(valueStrings, ","))
 
 	var results []*model.TermProgress
@@ -452,7 +473,15 @@ func (r *mutationResolver) RecordConfusedTerms(ctx context.Context, confusedTerm
 
 	sql := fmt.Sprintf(`INSERT INTO term_confusion_pairs (
 	user_id, term_id, confused_term_id, answered_with, confused_count, last_confused_at
-) VALUES %s
+)
+SELECT v.user_id, v.term_id, v.confused_term_id, v.answered_with, v.confused_count, v.last_confused_at
+FROM (VALUES %s) AS v(user_id, term_id, confused_term_id, answered_with, confused_count, last_confused_at)
+JOIN terms t1 ON t1.id = v.term_id::uuid
+JOIN studysets s1 ON s1.id = t1.studyset_id
+JOIN terms t2 ON t2.id = v.confused_term_id::uuid
+JOIN studysets s2 ON s2.id = t2.studyset_id
+WHERE (s1.private = false OR s1.user_id = v.user_id::uuid)
+  AND (s2.private = false OR s2.user_id = v.user_id::uuid)
 ON CONFLICT (user_id, term_id, confused_term_id, answered_with)
 DO UPDATE SET confused_count = term_confusion_pairs.confused_count + EXCLUDED.confused_count,
 	last_confused_at = EXCLUDED.last_confused_at`,
@@ -482,7 +511,9 @@ func (r *mutationResolver) RecordPracticeTest(ctx context.Context, input *model.
 		&practiceTest,
 		`INSERT INTO practice_tests
 	(timestamp, user_id, studyset_id, questions_correct, questions_total, questions)
-VALUES (now(), $1, $2, $3, $4, $5)
+SELECT now(), $1, s.id, $3, $4, $5
+FROM studysets s
+WHERE s.id = $2 AND (s.private = false OR s.user_id = $1)
 RETURNING
 	id,
 	to_char(timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as timestamp,
@@ -496,6 +527,9 @@ RETURNING
 		input.Questions,
 	)
 	if err != nil {
+		if pgxscan.NotFound(err) {
+			return nil, fmt.Errorf("studyset not found or not accessible")
+		}
 		return nil, fmt.Errorf("database error in RecordPracticeTest: %w", err)
 	}
 
@@ -611,9 +645,14 @@ func (r *mutationResolver) SetStudysetFolder(ctx context.Context, studysetID str
 	_, err := r.DB.Exec(
 		ctx,
 		`INSERT INTO folder_studysets (user_id, studyset_id, folder_id)
-		VALUES ($1, $2, $3)
+		SELECT $1, s.id, f.id
+		FROM studysets s
+		JOIN folders f ON f.id = $3::uuid
+		WHERE s.id = $2::uuid
+		  AND (s.private = false OR s.user_id = $1)
+		  AND f.user_id = $1
 		ON CONFLICT (user_id, studyset_id) DO UPDATE
-		SET folder_id = $3`,
+		SET folder_id = EXCLUDED.folder_id`,
 		authedUser.ID,
 		studysetID,
 		folderID,
@@ -657,7 +696,8 @@ func (r *mutationResolver) SaveStudyset(ctx context.Context, studysetID string) 
 	_, err := r.DB.Exec(
 		ctx,
 		`INSERT INTO saved_studysets (user_id, studyset_id)
-		VALUES ($1, $2)`,
+		SELECT $1, id FROM studysets
+		WHERE id = $2 AND (private = false OR user_id = $1)`,
 		authedUser.ID,
 		studysetID,
 	)
