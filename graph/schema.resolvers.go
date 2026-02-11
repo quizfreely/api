@@ -16,7 +16,6 @@ import (
 
 	"github.com/georgysavva/scany/v2/pgxscan"
 	pgx "github.com/jackc/pgx/v5"
-	"github.com/rs/zerolog/log"
 )
 
 // Studysets is the resolver for the studysets field.
@@ -400,33 +399,35 @@ func (r *mutationResolver) UpdateTermProgress(ctx context.Context, termProgress 
 		return nil, fmt.Errorf("bulk upsert failed: %w", err)
 	}
 
+	// ---- Bulk insert into history ----
+	if len(results) > 0 {
+		histVals := make([]string, 0, len(results))
+		histArgs := make([]interface{}, 0, len(results)*6)
+		for i, tp := range results {
+			base := i*6 + 1
+			histVals = append(histVals, fmt.Sprintf("($%d,$%d,$%d,$%d,$%d,$%d)", base, base+1, base+2, base+3, base+4, base+5))
+			histArgs = append(histArgs,
+				authedUser.ID,
+				termIDs[i],
+				tp.TermCorrectCount,
+				tp.TermIncorrectCount,
+				tp.DefCorrectCount,
+				tp.DefIncorrectCount,
+			)
+		}
+		histQuery := fmt.Sprintf(`
+			INSERT INTO term_progress_history (
+				user_id, term_id, term_correct_count, term_incorrect_count,
+				def_correct_count, def_incorrect_count
+			) VALUES %s`, strings.Join(histVals, ","))
+
+		if _, err := tx.Exec(ctx, histQuery, histArgs...); err != nil {
+			return nil, fmt.Errorf("failed to insert into term_progress_history: %w", err)
+		}
+	}
+
 	if err := tx.Commit(ctx); err != nil {
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
-	}
-
-	// ---- Bulk insert into history ----
-	histVals := make([]string, 0, len(results))
-	histArgs := make([]interface{}, 0, len(results)*6)
-	for i, tp := range results {
-		base := i*6 + 1
-		histVals = append(histVals, fmt.Sprintf("($%d,$%d,$%d,$%d,$%d,$%d)", base, base+1, base+2, base+3, base+4, base+5))
-		histArgs = append(histArgs,
-			authedUser.ID,
-			termIDs[i],
-			tp.TermCorrectCount,
-			tp.TermIncorrectCount,
-			tp.DefCorrectCount,
-			tp.DefIncorrectCount,
-		)
-	}
-	histQuery := fmt.Sprintf(`
-		INSERT INTO term_progress_history (
-			user_id, term_id, term_correct_count, term_incorrect_count,
-			def_correct_count, def_incorrect_count
-		) VALUES %s`, strings.Join(histVals, ","))
-
-	if _, err := r.DB.Exec(ctx, histQuery, histArgs...); err != nil {
-		log.Error().Err(err).Msg("DB err inserting into term_progress_history in UpdateTermProgress")
 	}
 
 	return results, nil
@@ -781,7 +782,7 @@ func (r *queryResolver) User(ctx context.Context, id string) (*model.User, error
 		SELECT
 			id,
 			username,
-			display_name,
+			display_name
 		FROM auth.users
 		WHERE id = $1
 	`
