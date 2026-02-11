@@ -122,6 +122,9 @@ func (r *mutationResolver) UpdateStudyset(ctx context.Context, id string, studys
 		return r.Query().Studyset(ctx, id)
 	}
 
+	// This transaction is protected by the studyset update queries below (lines 141/157).
+	// They act as an authorization guard: if the user doesn't own the studyset,
+	// the query affects 0 rows, and we return a "not found" error before any terms are modified.
 	tx, err := r.DB.Begin(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
