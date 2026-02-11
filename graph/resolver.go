@@ -16,6 +16,7 @@ import (
 var validTitleRegex = regexp.MustCompile(`[\p{L}\p{M}\p{N}]`)
 
 const MaxBatchMutationSize = 9000
+const MaxFolderNameLen = 1000
 
 type Resolver struct {
 	DB *pgxpool.Pool

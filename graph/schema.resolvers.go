@@ -600,6 +600,10 @@ func (r *mutationResolver) CreateFolder(ctx context.Context, name string) (*mode
 		return nil, fmt.Errorf("not authenticated")
 	}
 
+	if len(name) > MaxFolderNameLen {
+		name = name[:MaxFolderNameLen]
+	}
+
 	sql := `
 		INSERT INTO folders (user_id, name)
 		VALUES ($1, $2)
@@ -619,6 +623,10 @@ func (r *mutationResolver) RenameFolder(ctx context.Context, id string, name str
 	authedUser := auth.AuthedUserContext(ctx)
 	if authedUser == nil {
 		return nil, fmt.Errorf("not authenticated")
+	}
+
+	if len(name) > MaxFolderNameLen {
+		name = name[:MaxFolderNameLen]
 	}
 
 	sql := `
