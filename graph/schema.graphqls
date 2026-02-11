@@ -16,6 +16,8 @@ type Query {
     subjectsByCategory(category: SubjectCategory): [Subject]
     allSubjects: [Subject]
     folder(id: ID!): Folder
+    studysetCount(after: String, includePrivate: Boolean = false): Int!
+    studysetUpdateCount(after: String, includePrivate: Boolean = false): Int!
 }
 type Mutation {
     createStudyset(studyset: StudysetInput!, terms: [NewTermInput], folderId: ID): Studyset
@@ -292,3 +294,4 @@ type Subject {
     category: SubjectCategory
     studysets(first: Int = 24, after: String): StudysetConnection!
 }
+

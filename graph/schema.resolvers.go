@@ -12,6 +12,7 @@ import (
 	"quizfreely/api/graph/loader"
 	"quizfreely/api/graph/model"
 	"strings"
+	"time"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
 	pgx "github.com/jackc/pgx/v5"
@@ -1558,6 +1559,64 @@ func (r *queryResolver) Folder(ctx context.Context, id string) (*model.Folder, e
 	}
 
 	return &folder, nil
+}
+
+// StudysetCount is the resolver for the studysetCount field.
+func (r *queryResolver) StudysetCount(ctx context.Context, after *string, includePrivate *bool) (int32, error) {
+	incPrivate := false
+	if includePrivate != nil {
+		incPrivate = *includePrivate
+	}
+
+	if after == nil {
+		var count int32
+		err := r.DB.QueryRow(ctx, "SELECT COUNT(*) FROM studysets WHERE (private = false OR $1 = true)", incPrivate).Scan(&count)
+		if err != nil {
+			return 0, fmt.Errorf("failed to fetch total studysets: %w", err)
+		}
+		return count, nil
+	}
+
+	afterTime, err := time.Parse(time.RFC3339, *after)
+	if err != nil {
+		return 0, fmt.Errorf("invalid date format: %w", err)
+	}
+
+	var count int32
+	err = r.DB.QueryRow(ctx, "SELECT COUNT(*) FROM studysets WHERE (private = false OR $1 = true) AND created_at > $2", incPrivate, afterTime).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to fetch studysets after date: %w", err)
+	}
+	return count, nil
+}
+
+// StudysetUpdateCount is the resolver for the studysetUpdateCount field.
+func (r *queryResolver) StudysetUpdateCount(ctx context.Context, after *string, includePrivate *bool) (int32, error) {
+	incPrivate := false
+	if includePrivate != nil {
+		incPrivate = *includePrivate
+	}
+
+	if after == nil {
+		var count int32
+		err := r.DB.QueryRow(ctx, "SELECT COUNT(*) FROM studysets WHERE (private = false OR $1 = true)", incPrivate).Scan(&count)
+		if err != nil {
+			return 0, fmt.Errorf("failed to fetch total studysets: %w", err)
+		}
+		return count, nil
+	}
+
+	afterTime, err := time.Parse(time.RFC3339, *after)
+	if err != nil {
+		return 0, fmt.Errorf("invalid date format: %w", err)
+	}
+
+	var count int32
+	err = r.DB.QueryRow(ctx, "SELECT COUNT(*) FROM studysets WHERE (private = false OR $1 = true) AND updated_at > $2", incPrivate, afterTime).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to fetch studysets updated after date: %w", err)
+	}
+	return count, nil
 }
 
 // Subject is the resolver for the subject field.
