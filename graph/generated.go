@@ -149,12 +149,12 @@ type ComplexityRoot struct {
 		AuthedUser               func(childComplexity int) int
 		Folder                   func(childComplexity int, id string) int
 		MyFolders                func(childComplexity int, first *int32, after *string) int
-		MySavedStudysets         func(childComplexity int, first *int32, after *string) int
-		MyStudysets              func(childComplexity int, first *int32, after *string, hideFoldered *bool) int
+		MySavedStudysets         func(childComplexity int, first *int32, after *string, last *int32, before *string) int
+		MyStudysets              func(childComplexity int, first *int32, after *string, last *int32, before *string, hideFoldered *bool) int
 		PracticeTest             func(childComplexity int, id string) int
 		RecentlyCreatedStudysets func(childComplexity int, first *int32, after *string, last *int32, before *string) int
 		RecentlyUpdatedStudysets func(childComplexity int, first *int32, after *string, last *int32, before *string) int
-		SearchStudysets          func(childComplexity int, q string, first *int32, after *string) int
+		SearchStudysets          func(childComplexity int, q string, first *int32, after *string, last *int32, before *string) int
 		Studyset                 func(childComplexity int, id string) int
 		StudysetCount            func(childComplexity int, after *string, includePrivate *bool) int
 		StudysetUpdateCount      func(childComplexity int, after *string, includePrivate *bool) int
@@ -203,7 +203,7 @@ type ComplexityRoot struct {
 		Category  func(childComplexity int) int
 		ID        func(childComplexity int) int
 		Name      func(childComplexity int) int
-		Studysets func(childComplexity int, first *int32, after *string) int
+		Studysets func(childComplexity int, first *int32, after *string, last *int32, before *string) int
 	}
 
 	Term struct {
@@ -296,10 +296,10 @@ type QueryResolver interface {
 	Term(ctx context.Context, id string) (*model.Term, error)
 	RecentlyCreatedStudysets(ctx context.Context, first *int32, after *string, last *int32, before *string) (*model.StudysetConnection, error)
 	RecentlyUpdatedStudysets(ctx context.Context, first *int32, after *string, last *int32, before *string) (*model.StudysetConnection, error)
-	SearchStudysets(ctx context.Context, q string, first *int32, after *string) (*model.StudysetConnection, error)
-	MyStudysets(ctx context.Context, first *int32, after *string, hideFoldered *bool) (*model.StudysetConnection, error)
+	SearchStudysets(ctx context.Context, q string, first *int32, after *string, last *int32, before *string) (*model.StudysetConnection, error)
+	MyStudysets(ctx context.Context, first *int32, after *string, last *int32, before *string, hideFoldered *bool) (*model.StudysetConnection, error)
 	MyFolders(ctx context.Context, first *int32, after *string) (*model.FolderConnection, error)
-	MySavedStudysets(ctx context.Context, first *int32, after *string) (*model.StudysetConnection, error)
+	MySavedStudysets(ctx context.Context, first *int32, after *string, last *int32, before *string) (*model.StudysetConnection, error)
 	PracticeTest(ctx context.Context, id string) (*model.PracticeTest, error)
 	Subject(ctx context.Context, id string) (*model.Subject, error)
 	SubjectsByKeyword(ctx context.Context, keyword *string) ([]*model.Subject, error)
@@ -320,7 +320,7 @@ type StudysetResolver interface {
 	Folder(ctx context.Context, obj *model.Studyset) (*model.Folder, error)
 }
 type SubjectResolver interface {
-	Studysets(ctx context.Context, obj *model.Subject, first *int32, after *string) (*model.StudysetConnection, error)
+	Studysets(ctx context.Context, obj *model.Subject, first *int32, after *string, last *int32, before *string) (*model.StudysetConnection, error)
 }
 type TermResolver interface {
 	Progress(ctx context.Context, obj *model.Term) (*model.TermProgress, error)
@@ -888,7 +888,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.MySavedStudysets(childComplexity, args["first"].(*int32), args["after"].(*string)), true
+		return e.complexity.Query.MySavedStudysets(childComplexity, args["first"].(*int32), args["after"].(*string), args["last"].(*int32), args["before"].(*string)), true
 
 	case "Query.myStudysets":
 		if e.complexity.Query.MyStudysets == nil {
@@ -900,7 +900,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.MyStudysets(childComplexity, args["first"].(*int32), args["after"].(*string), args["hideFoldered"].(*bool)), true
+		return e.complexity.Query.MyStudysets(childComplexity, args["first"].(*int32), args["after"].(*string), args["last"].(*int32), args["before"].(*string), args["hideFoldered"].(*bool)), true
 
 	case "Query.practiceTest":
 		if e.complexity.Query.PracticeTest == nil {
@@ -948,7 +948,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.SearchStudysets(childComplexity, args["q"].(string), args["first"].(*int32), args["after"].(*string)), true
+		return e.complexity.Query.SearchStudysets(childComplexity, args["q"].(string), args["first"].(*int32), args["after"].(*string), args["last"].(*int32), args["before"].(*string)), true
 
 	case "Query.studyset":
 		if e.complexity.Query.Studyset == nil {
@@ -1231,7 +1231,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Subject.Studysets(childComplexity, args["first"].(*int32), args["after"].(*string)), true
+		return e.complexity.Subject.Studysets(childComplexity, args["first"].(*int32), args["after"].(*string), args["last"].(*int32), args["before"].(*string)), true
 
 	case "Term.createdAt":
 		if e.complexity.Term.CreatedAt == nil {
@@ -1925,6 +1925,16 @@ func (ec *executionContext) field_Query_mySavedStudysets_args(ctx context.Contex
 		return nil, err
 	}
 	args["after"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint32)
+	if err != nil {
+		return nil, err
+	}
+	args["last"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOString2ᚖstring)
+	if err != nil {
+		return nil, err
+	}
+	args["before"] = arg3
 	return args, nil
 }
 
@@ -1941,11 +1951,21 @@ func (ec *executionContext) field_Query_myStudysets_args(ctx context.Context, ra
 		return nil, err
 	}
 	args["after"] = arg1
-	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "hideFoldered", ec.unmarshalOBoolean2ᚖbool)
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint32)
 	if err != nil {
 		return nil, err
 	}
-	args["hideFoldered"] = arg2
+	args["last"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOString2ᚖstring)
+	if err != nil {
+		return nil, err
+	}
+	args["before"] = arg3
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "hideFoldered", ec.unmarshalOBoolean2ᚖbool)
+	if err != nil {
+		return nil, err
+	}
+	args["hideFoldered"] = arg4
 	return args, nil
 }
 
@@ -2030,6 +2050,16 @@ func (ec *executionContext) field_Query_searchStudysets_args(ctx context.Context
 		return nil, err
 	}
 	args["after"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint32)
+	if err != nil {
+		return nil, err
+	}
+	args["last"] = arg3
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOString2ᚖstring)
+	if err != nil {
+		return nil, err
+	}
+	args["before"] = arg4
 	return args, nil
 }
 
@@ -2144,6 +2174,16 @@ func (ec *executionContext) field_Subject_studysets_args(ctx context.Context, ra
 		return nil, err
 	}
 	args["after"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint32)
+	if err != nil {
+		return nil, err
+	}
+	args["last"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOString2ᚖstring)
+	if err != nil {
+		return nil, err
+	}
+	args["before"] = arg3
 	return args, nil
 }
 
@@ -5566,7 +5606,7 @@ func (ec *executionContext) _Query_searchStudysets(ctx context.Context, field gr
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().SearchStudysets(rctx, fc.Args["q"].(string), fc.Args["first"].(*int32), fc.Args["after"].(*string))
+		return ec.resolvers.Query().SearchStudysets(rctx, fc.Args["q"].(string), fc.Args["first"].(*int32), fc.Args["after"].(*string), fc.Args["last"].(*int32), fc.Args["before"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5629,7 +5669,7 @@ func (ec *executionContext) _Query_myStudysets(ctx context.Context, field graphq
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().MyStudysets(rctx, fc.Args["first"].(*int32), fc.Args["after"].(*string), fc.Args["hideFoldered"].(*bool))
+		return ec.resolvers.Query().MyStudysets(rctx, fc.Args["first"].(*int32), fc.Args["after"].(*string), fc.Args["last"].(*int32), fc.Args["before"].(*string), fc.Args["hideFoldered"].(*bool))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5755,7 +5795,7 @@ func (ec *executionContext) _Query_mySavedStudysets(ctx context.Context, field g
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().MySavedStudysets(rctx, fc.Args["first"].(*int32), fc.Args["after"].(*string))
+		return ec.resolvers.Query().MySavedStudysets(rctx, fc.Args["first"].(*int32), fc.Args["after"].(*string), fc.Args["last"].(*int32), fc.Args["before"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7613,7 +7653,7 @@ func (ec *executionContext) _Subject_studysets(ctx context.Context, field graphq
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Subject().Studysets(rctx, obj, fc.Args["first"].(*int32), fc.Args["after"].(*string))
+		return ec.resolvers.Subject().Studysets(rctx, obj, fc.Args["first"].(*int32), fc.Args["after"].(*string), fc.Args["last"].(*int32), fc.Args["before"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

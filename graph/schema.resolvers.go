@@ -1120,7 +1120,7 @@ func (r *queryResolver) RecentlyUpdatedStudysets(ctx context.Context, first *int
 }
 
 // SearchStudysets is the resolver for the searchStudysets field.
-func (r *queryResolver) SearchStudysets(ctx context.Context, q string, first *int32, after *string) (*model.StudysetConnection, error) {
+func (r *queryResolver) SearchStudysets(ctx context.Context, q string, first *int32, after *string, last *int32, before *string) (*model.StudysetConnection, error) {
 	if len(q) < 1 {
 		return &model.StudysetConnection{
 			Edges:    []*model.StudysetEdge{},
@@ -1134,11 +1134,19 @@ func (r *queryResolver) SearchStudysets(ctx context.Context, q string, first *in
 	l := 240
 	if first != nil && *first > 0 && *first < 1000 {
 		l = int(*first)
+	} else if last != nil && *last > 0 && *last < 1000 {
+		l = int(*last)
 	}
 	limit := l + 1
 
 	cursorScore, cursorTS, cursorID := DecodeStudysetScoreCursor(ptrToString(after))
-	hasPrevious := cursorScore != "" || cursorTS != "" || cursorID != ""
+	beforeCursorScore, beforeCursorTS, beforeCursorID := DecodeStudysetScoreCursor(ptrToString(before))
+
+	isBackward := beforeCursorID != ""
+	hasPrevious := false
+	if !isBackward {
+		hasPrevious = cursorScore != "" || cursorTS != "" || cursorID != ""
+	}
 
 	// We need a temporary struct to hold the score for cursor generation
 	type searchRow struct {
@@ -1161,7 +1169,28 @@ func (r *queryResolver) SearchStudysets(ctx context.Context, q string, first *in
 		word_similarity(lower($1), lower(title)) as score
 	`
 
-	if cursorID != "" {
+	if isBackward {
+		sql := `
+			SELECT ` + selectCols + `
+			FROM public.studysets
+			WHERE lower($1) <% lower(title) AND private = false
+				AND (word_similarity(lower($1), lower(title)), to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM'), id) > ($2::float4, $3, $4::uuid)
+			ORDER BY score ASC, created_at ASC, id ASC
+			LIMIT $5
+		`
+		err = pgxscan.Select(ctx, r.DB, &rows, sql, q, beforeCursorScore, beforeCursorTS, beforeCursorID, limit)
+		if err == nil {
+			// If we found more than the limit, it means there is a "previous" page (newer items)
+			hasPrevious = len(rows) > l
+			if hasPrevious {
+				rows = rows[:l]
+			}
+			// Reverse results to restore DESC order
+			for i, j := 0, len(rows)-1; i < j; i, j = i+1, j-1 {
+				rows[i], rows[j] = rows[j], rows[i]
+			}
+		}
+	} else if cursorID != "" {
 		sql := `
 			SELECT ` + selectCols + `
 			FROM public.studysets
@@ -1187,9 +1216,14 @@ func (r *queryResolver) SearchStudysets(ctx context.Context, q string, first *in
 		return nil, fmt.Errorf("failed to search studysets: %w", err)
 	}
 
-	hasNext := len(rows) > l
-	if hasNext {
-		rows = rows[:l]
+	hasNext := false
+	if isBackward {
+		hasNext = true
+	} else {
+		hasNext = len(rows) > l
+		if hasNext {
+			rows = rows[:l]
+		}
 	}
 
 	// Convert back to []*model.Studyset for the connection
@@ -1236,7 +1270,7 @@ func (r *queryResolver) SearchStudysets(ctx context.Context, q string, first *in
 }
 
 // MyStudysets is the resolver for the myStudysets field.
-func (r *queryResolver) MyStudysets(ctx context.Context, first *int32, after *string, hideFoldered *bool) (*model.StudysetConnection, error) {
+func (r *queryResolver) MyStudysets(ctx context.Context, first *int32, after *string, last *int32, before *string, hideFoldered *bool) (*model.StudysetConnection, error) {
 	authedUser := auth.AuthedUserContext(ctx)
 	if authedUser == nil {
 		return nil, fmt.Errorf("not authenticated")
@@ -1245,100 +1279,84 @@ func (r *queryResolver) MyStudysets(ctx context.Context, first *int32, after *st
 	l := 240
 	if first != nil && *first > 0 && *first < 1000 {
 		l = int(*first)
+	} else if last != nil && *last > 0 && *last < 1000 {
+		l = int(*last)
 	}
 	limit := l + 1
 
 	cursorTS, cursorID := DecodeStudysetCursor(ptrToString(after))
-	hasPrevious := cursorTS != "" || cursorID != ""
+	beforeCursorTS, beforeCursorID := DecodeStudysetCursor(ptrToString(before))
+
+	isBackward := beforeCursorID != ""
+	hasPrevious := false
+	if !isBackward {
+		hasPrevious = cursorTS != "" || cursorID != ""
+	}
 
 	var studysets []*model.Studyset
 	var err error
+
+	// Common columns for selectivity
+	cols := `id, user_id, title, private, subject_id,
+				to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
+				to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at`
+
+	// Where clause fragments
+	whereBase := `WHERE user_id = $1`
 	if hideFoldered != nil && *hideFoldered {
-		if cursorID != "" {
-			sql := `
-				SELECT
-					id,
-					user_id,
-					title,
-					private,
-					subject_id,
-					to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
-					to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
-				FROM public.studysets s
-				WHERE s.user_id = $1 AND s.id NOT IN (
-					SELECT fs.studyset_id
-					FROM folder_studysets fs
-					WHERE fs.user_id = $1
-				)
-					AND (to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM'), id) < ($2, $3::uuid)
-				ORDER BY updated_at DESC, id DESC
-				LIMIT $4
-			`
-			err = pgxscan.Select(ctx, r.DB, &studysets, sql, authedUser.ID, cursorTS, cursorID, limit)
-		} else {
-			sql := `
-				SELECT
-					id,
-					user_id,
-					title,
-					private,
-					subject_id,
-					to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
-					to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
-				FROM public.studysets s
-				WHERE s.user_id = $1 AND s.id NOT IN (
-					SELECT fs.studyset_id
-					FROM folder_studysets fs
-					WHERE fs.user_id = $1
-				)
-				ORDER BY updated_at DESC, id DESC
-				LIMIT $2
-			`
-			err = pgxscan.Select(ctx, r.DB, &studysets, sql, authedUser.ID, limit)
+		whereBase += ` AND id NOT IN (SELECT fs.studyset_id FROM folder_studysets fs WHERE fs.user_id = $1)`
+	}
+
+	if isBackward {
+		sql := fmt.Sprintf(`
+			SELECT %s
+			FROM public.studysets
+			%s AND (to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM'), id) > ($2, $3::uuid)
+			ORDER BY updated_at ASC, id ASC
+			LIMIT $4
+		`, cols, whereBase)
+		err = pgxscan.Select(ctx, r.DB, &studysets, sql, authedUser.ID, beforeCursorTS, beforeCursorID, limit)
+		if err == nil {
+			hasPrevious = len(studysets) > l
+			if hasPrevious {
+				studysets = studysets[:l]
+			}
+			// Reverse
+			for i, j := 0, len(studysets)-1; i < j; i, j = i+1, j-1 {
+				studysets[i], studysets[j] = studysets[j], studysets[i]
+			}
 		}
+	} else if cursorID != "" {
+		sql := fmt.Sprintf(`
+			SELECT %s
+			FROM public.studysets
+			%s AND (to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM'), id) < ($2, $3::uuid)
+			ORDER BY updated_at DESC, id DESC
+			LIMIT $4
+		`, cols, whereBase)
+		err = pgxscan.Select(ctx, r.DB, &studysets, sql, authedUser.ID, cursorTS, cursorID, limit)
 	} else {
-		if cursorID != "" {
-			sql := `
-				SELECT
-					id,
-					user_id,
-					title,
-					private,
-					subject_id,
-					to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
-					to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
-				FROM public.studysets
-				WHERE user_id = $1
-					AND (to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM'), id) < ($2, $3::uuid)
-				ORDER BY updated_at DESC, id DESC
-				LIMIT $4
-			`
-			err = pgxscan.Select(ctx, r.DB, &studysets, sql, authedUser.ID, cursorTS, cursorID, limit)
-		} else {
-			sql := `
-				SELECT
-					id,
-					user_id,
-					title,
-					private,
-					subject_id,
-					to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
-					to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
-				FROM public.studysets
-				WHERE user_id = $1
-				ORDER BY updated_at DESC, id DESC
-				LIMIT $2
-			`
-			err = pgxscan.Select(ctx, r.DB, &studysets, sql, authedUser.ID, limit)
-		}
+		sql := fmt.Sprintf(`
+			SELECT %s
+			FROM public.studysets
+			%s
+			ORDER BY updated_at DESC, id DESC
+			LIMIT $2
+		`, cols, whereBase)
+		err = pgxscan.Select(ctx, r.DB, &studysets, sql, authedUser.ID, limit)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch my studysets: %w", err)
 	}
 
-	hasNext := len(studysets) > l
-	if hasNext {
-		studysets = studysets[:l]
+	hasNext := false
+	if isBackward {
+		hasNext = true
+	} else {
+		hasNext = len(studysets) > l
+		if hasNext {
+			studysets = studysets[:l]
+		}
 	}
 	getCursor := func(s *model.Studyset) (string, string) {
 		return ptrToString(s.UpdatedAt), ptrToString(s.ID)
@@ -1416,7 +1434,7 @@ func (r *queryResolver) MyFolders(ctx context.Context, first *int32, after *stri
 }
 
 // MySavedStudysets is the resolver for the mySavedStudysets field.
-func (r *queryResolver) MySavedStudysets(ctx context.Context, first *int32, after *string) (*model.StudysetConnection, error) {
+func (r *queryResolver) MySavedStudysets(ctx context.Context, first *int32, after *string, last *int32, before *string) (*model.StudysetConnection, error) {
 	authedUser := auth.AuthedUserContext(ctx)
 	if authedUser == nil {
 		return nil, fmt.Errorf("not authenticated")
@@ -1425,15 +1443,53 @@ func (r *queryResolver) MySavedStudysets(ctx context.Context, first *int32, afte
 	l := 240
 	if first != nil && *first > 0 && *first < 1000 {
 		l = int(*first)
+	} else if last != nil && *last > 0 && *last < 1000 {
+		l = int(*last)
 	}
 	limit := l + 1
 
 	cursorTS, cursorID := DecodeStudysetCursor(ptrToString(after))
-	hasPrevious := cursorTS != "" || cursorID != ""
+	beforeCursorTS, beforeCursorID := DecodeStudysetCursor(ptrToString(before))
+
+	isBackward := beforeCursorID != ""
+	hasPrevious := false
+	if !isBackward {
+		hasPrevious = cursorTS != "" || cursorID != ""
+	}
 
 	var rows []*SavedStudysetRow
 	var err error
-	if cursorID != "" {
+	if isBackward {
+		sql := `
+			SELECT
+				s.id,
+				s.user_id,
+				s.title,
+				s.private,
+				s.subject_id,
+				to_char(s.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
+				to_char(s.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at,
+				to_char(saved_studysets.timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as saved_at
+			FROM saved_studysets
+			JOIN studysets s ON saved_studysets.studyset_id = s.id
+			WHERE saved_studysets.user_id = $1
+				AND s.private = false
+				AND (to_char(saved_studysets.timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM'), s.id) > ($2, $3::uuid)
+			ORDER BY saved_studysets.timestamp ASC, s.id ASC
+			LIMIT $4
+		`
+		err = pgxscan.Select(ctx, r.DB, &rows, sql, authedUser.ID, beforeCursorTS, beforeCursorID, limit)
+		if err == nil {
+			hasPrevious = len(rows) > l
+			if hasPrevious {
+				rows = rows[:l]
+			}
+			// Reverse
+			for i, j := 0, len(rows)-1; i < j; i, j = i+1, j-1 {
+				rows[i], rows[j] = rows[j], rows[i]
+			}
+		}
+	} else if cursorID != "" {
 		sql := `
 			SELECT
 				s.id,
@@ -1477,9 +1533,14 @@ func (r *queryResolver) MySavedStudysets(ctx context.Context, first *int32, afte
 		return nil, fmt.Errorf("failed to fetch saved studysets: %w", err)
 	}
 
-	hasNext := len(rows) > l
-	if hasNext {
-		rows = rows[:l]
+	hasNext := false
+	if isBackward {
+		hasNext = true
+	} else {
+		hasNext = len(rows) > l
+		if hasNext {
+			rows = rows[:l]
+		}
 	}
 	edges := make([]*model.StudysetEdge, 0, len(rows))
 	for _, row := range rows {
@@ -1805,7 +1866,7 @@ func (r *studysetResolver) Folder(ctx context.Context, obj *model.Studyset) (*mo
 }
 
 // Studysets is the resolver for the studysets field.
-func (r *subjectResolver) Studysets(ctx context.Context, obj *model.Subject, first *int32, after *string) (*model.StudysetConnection, error) {
+func (r *subjectResolver) Studysets(ctx context.Context, obj *model.Subject, first *int32, after *string, last *int32, before *string) (*model.StudysetConnection, error) {
 	if obj == nil || obj.ID == nil {
 		return nil, nil
 	}
@@ -1813,15 +1874,52 @@ func (r *subjectResolver) Studysets(ctx context.Context, obj *model.Subject, fir
 	l := 24
 	if first != nil && *first > 0 && *first < 1000 {
 		l = int(*first)
+	} else if last != nil && *last > 0 && *last < 1000 {
+		l = int(*last)
 	}
 	limit := l + 1
 
 	cursorTS, cursorID := DecodeStudysetCursor(ptrToString(after))
-	hasPrevious := cursorTS != "" || cursorID != ""
+	beforeCursorTS, beforeCursorID := DecodeStudysetCursor(ptrToString(before))
+
+	isBackward := beforeCursorID != ""
+	hasPrevious := false
+	if !isBackward {
+		hasPrevious = cursorTS != "" || cursorID != ""
+	}
 
 	var studysets []*model.Studyset
 	var err error
-	if cursorID != "" {
+	if isBackward {
+		sql := `
+			SELECT
+				s.id,
+				s.user_id,
+				s.title,
+				s.private,
+				s.subject_id,
+				to_char(s.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
+				to_char(s.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
+			FROM studysets s
+			JOIN subjects ON s.subject_id = subjects.id
+			WHERE subjects.id = $1
+				AND s.private = false
+				AND (to_char(s.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM'), s.id) > ($2, $3::uuid)
+			ORDER BY s.updated_at ASC, s.id ASC
+			LIMIT $4
+		`
+		err = pgxscan.Select(ctx, r.DB, &studysets, sql, *obj.ID, beforeCursorTS, beforeCursorID, limit)
+		if err == nil {
+			hasPrevious = len(studysets) > l
+			if hasPrevious {
+				studysets = studysets[:l]
+			}
+			// Reverse
+			for i, j := 0, len(studysets)-1; i < j; i, j = i+1, j-1 {
+				studysets[i], studysets[j] = studysets[j], studysets[i]
+			}
+		}
+	} else if cursorID != "" {
 		sql := `
 			SELECT
 				s.id,
@@ -1863,9 +1961,14 @@ func (r *subjectResolver) Studysets(ctx context.Context, obj *model.Subject, fir
 		return nil, fmt.Errorf("failed to fetch subject's studysets: %w", err)
 	}
 
-	hasNext := len(studysets) > l
-	if hasNext {
-		studysets = studysets[:l]
+	hasNext := false
+	if isBackward {
+		hasNext = true
+	} else {
+		hasNext = len(studysets) > l
+		if hasNext {
+			studysets = studysets[:l]
+		}
 	}
 	getCursor := func(s *model.Studyset) (string, string) {
 		return ptrToString(s.UpdatedAt), ptrToString(s.ID)
