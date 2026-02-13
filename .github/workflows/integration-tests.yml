@@ -7,11 +7,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v6
       - name: Set up Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v6
         with:
-          go-version: 1.16
+          go-version: 1.26.0
       - name: Set up gotestfmt
         uses: GoTestTools/gotestfmt-action@v2
 
@@ -23,7 +23,7 @@ jobs:
 
       # Upload original go test log as an artifact
       - name: Upload test log
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v6
         if: always()
         with:
           name: test-log
