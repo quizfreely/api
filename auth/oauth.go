@@ -17,7 +17,7 @@ import (
 var googleOauthConfig *oauth2.Config
 
 func InitOAuthGoogle() {
-	/* this gets called after env vars are loaded by main() in server.go */
+	/* this gets called after env vars are loaded by main() in main.go */
 
 	googleOauthConfig = &oauth2.Config{
 		ClientID:     os.Getenv("OAUTH_GOOGLE_CLIENT_ID"),

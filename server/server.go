@@ -1,7 +1,6 @@
-package main
+package server
 
 import (
-	"context"
 	"net/http"
 	"os"
 	"quizfreely/api/auth"
@@ -16,51 +15,10 @@ import (
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/joho/godotenv"
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 	"github.com/vektah/gqlparser/v2/ast"
 )
 
-const defaultPort = "8008"
-
-func main() {
-	_ = godotenv.Load()
-	/* godotenv means go dotenv, not godot env*/
-
-	if os.Getenv("PRETTY_LOG") == "true" {
-		log.Logger = log.Output(
-			zerolog.ConsoleWriter{Out: os.Stderr},
-		)
-	} else {
-		zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
-	}
-
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = defaultPort
-	}
-
-	dbUrl := os.Getenv("DB_URL")
-	if dbUrl == "" {
-		log.Fatal().Msgf(
-			`DB_URL is not set
-Copy .env.example to .env and/or
-check your environment variables`,
-		)
-	}
-
-	var err error
-	var dbPool *pgxpool.Pool
-	dbPool, err = pgxpool.New(
-		context.Background(),
-		dbUrl,
-	)
-	if err != nil {
-		log.Fatal().Err(err).Msgf("Error creating database pool")
-	}
-	defer dbPool.Close()
-
+func NewRouter(dbPool *pgxpool.Pool) http.Handler {
 	router := chi.NewRouter()
 
 	authHandler := &auth.AuthHandler{DB: dbPool}
@@ -145,10 +103,5 @@ check your environment variables`,
 		)
 	})
 
-	log.Info().Msg(
-		"http://localhost:" + port + "/graphiql for GraphiQL",
-	)
-	log.Fatal().Err(
-		http.ListenAndServe(":"+port, router),
-	).Msgf("Error starting server")
+	return router
 }
