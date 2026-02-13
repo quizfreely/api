@@ -185,7 +185,7 @@ func (r *mutationResolver) UpdateStudyset(ctx context.Context, id string, studys
 		for i, t := range terms {
 			placeholders = append(placeholders, fmt.Sprintf(
 				"($%d::uuid, $%d::text, $%d::text, $%d::int)",
-				i*4+1, i*4+2, i*4+3, i*4+4,
+				i*4+2, i*4+3, i*4+4, i*4+5,
 			))
 			values = append(values, t.ID, t.Term, t.Def, t.SortOrder)
 		}
