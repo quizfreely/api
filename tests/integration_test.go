@@ -6,11 +6,14 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"testing"
 
 	"quizfreely/api/server"
 
+	"github.com/amacneil/dbmate/v2/pkg/dbmate"
+	_ "github.com/amacneil/dbmate/v2/pkg/driver/postgres"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stretchr/testify/require"
 	tc "github.com/testcontainers/testcontainers-go"
@@ -46,18 +49,35 @@ func startPostgres(t *testing.T) (tc.Container, string) {
 }
 
 var testServer *httptest.Server
+var container tc.Container
+var dbURL string
 
 func TestMain(m *testing.M) {
 	ctx := context.Background()
 
-	container, dbURL := startPostgres(&testing.T{})
+	t := &testing.T{}
+	container, dbURL = startPostgres(t)
 
+	parsedDBURL, err := url.Parse(dbURL)
+	if err != nil {
+		panic(err)
+	}
 	dbPool, err := pgxpool.New(ctx, dbURL)
 	if err != nil {
 		panic(err)
 	}
 
-	// TODO: run migrations here
+	_, err = dbPool.Exec(ctx, "CREATE ROLE quizfreely_api")
+	if err != nil {
+		panic(err)
+	}
+
+	dbm := dbmate.New(parsedDBURL)
+	dbm.MigrationsDir = []string{"../db/migrations"}
+	err = dbm.CreateAndMigrate()
+	if err != nil {
+		panic(err)
+	}
 
 	router := server.NewRouter(dbPool)
 	testServer = httptest.NewServer(router)
