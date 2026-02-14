@@ -20,8 +20,11 @@ type Query {
     studysetUpdateCount(after: String, includePrivate: Boolean = false): Int!
 }
 type Mutation {
-    createStudyset(studyset: StudysetInput!, terms: [NewTermInput], folderId: ID): Studyset
-    updateStudyset(id: ID!, studyset: StudysetInput, terms: [TermInput], newTerms: [NewTermInput], deleteTerms: [ID]): Studyset
+    createStudyset(studyset: StudysetInput!, folderId: ID): Studyset
+    updateStudyset(id: ID!, studyset: StudysetInput): Studyset
+    createTerms(studysetId: ID!, terms: [NewTermInput!]!): [Term]
+    updateTerms(studysetId: ID!, terms: [TermInput!]!): [Term]
+    deleteTerms(studysetId: ID!, ids: [ID!]!): [ID]
     deleteStudyset(id: ID!): ID
     updateUser(displayName: String): AuthedUser
     updateTermProgress(termProgress: [TermProgressInput!]!): [TermProgress]

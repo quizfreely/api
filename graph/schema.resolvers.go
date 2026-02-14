@@ -54,11 +54,7 @@ func (r *folderResolver) Studysets(ctx context.Context, obj *model.Folder) ([]*m
 }
 
 // CreateStudyset is the resolver for the createStudyset field.
-func (r *mutationResolver) CreateStudyset(ctx context.Context, studyset model.StudysetInput, terms []*model.NewTermInput, folderID *string) (*model.Studyset, error) {
-	if len(terms) > MaxBatchMutationSize {
-		return nil, fmt.Errorf("too many terms in a single request (max %d)", MaxBatchMutationSize)
-	}
-
+func (r *mutationResolver) CreateStudyset(ctx context.Context, studyset model.StudysetInput, folderID *string) (*model.Studyset, error) {
 	authedUser := auth.AuthedUserContext(ctx)
 	if authedUser == nil {
 		return nil, fmt.Errorf("not authenticated")
@@ -88,22 +84,6 @@ func (r *mutationResolver) CreateStudyset(ctx context.Context, studyset model.St
 		return nil, fmt.Errorf("failed to create studyset: %w", err)
 	}
 
-	if len(terms) > 0 {
-		values := make([]interface{}, 0, len(terms)*4)
-		placeholders := make([]string, 0, len(terms))
-
-		for i, t := range terms {
-			placeholders = append(placeholders, fmt.Sprintf("($%d,$%d,$%d,$%d)", i*4+1, i*4+2, i*4+3, i*4+4))
-			values = append(values, newStudyset.ID, t.Term, t.Def, t.SortOrder)
-		}
-
-		sql := fmt.Sprintf("INSERT INTO terms (studyset_id, term, def, sort_order) VALUES %s", strings.Join(placeholders, ","))
-		_, err := tx.Exec(ctx, sql, values...)
-		if err != nil {
-			return nil, fmt.Errorf("failed to insert terms: %w", err)
-		}
-	}
-
 	if err := tx.Commit(ctx); err != nil {
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
@@ -116,8 +96,183 @@ func (r *mutationResolver) CreateStudyset(ctx context.Context, studyset model.St
 }
 
 // UpdateStudyset is the resolver for the updateStudyset field.
-func (r *mutationResolver) UpdateStudyset(ctx context.Context, id string, studyset *model.StudysetInput, terms []*model.TermInput, newTerms []*model.NewTermInput, deleteTerms []*string) (*model.Studyset, error) {
-	if len(terms)+len(newTerms)+len(deleteTerms) > MaxBatchMutationSize {
+func (r *mutationResolver) UpdateStudyset(ctx context.Context, id string, studyset *model.StudysetInput) (*model.Studyset, error) {
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil {
+		return nil, fmt.Errorf("not authenticated")
+	}
+
+	if studyset == nil {
+		return r.Query().Studyset(ctx, id)
+	}
+
+	// if the user doesn't own the studyset, the query affects 0 rows, and we return a "not found" error
+	tx, err := r.DB.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	var updatedStudyset model.Studyset
+	title := "Untitled Studyset"
+	if len(studyset.Title) > 0 && len(studyset.Title) < 200 && validTitleRegex.MatchString(studyset.Title) {
+		title = studyset.Title
+	}
+
+	sql := `
+		UPDATE public.studysets
+		SET title = $1, private = $2, subject_id = $3, updated_at = now()
+		WHERE id = $4 AND (user_id = $5 OR COALESCE($6, false) = true)
+		RETURNING id, user_id, title, private, subject_id,
+			to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
+			to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
+	`
+	err = pgxscan.Get(ctx, tx, &updatedStudyset, sql, title, studyset.Private, studyset.SubjectID, id, authedUser.ID, authedUser.ModPerms)
+	if err != nil {
+		if pgxscan.NotFound(err) {
+			return nil, fmt.Errorf("studyset not found")
+		}
+		return nil, fmt.Errorf("failed to update studyset: %w", err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return &updatedStudyset, nil
+}
+
+// CreateTerms is the resolver for the createTerms field.
+func (r *mutationResolver) CreateTerms(ctx context.Context, studysetID string, terms []*model.NewTermInput) ([]*model.Term, error) {
+	if len(terms) > MaxBatchMutationSize {
+		return nil, fmt.Errorf("too many terms in a single request (max %d)", MaxBatchMutationSize)
+	}
+
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil {
+		return nil, fmt.Errorf("not authenticated")
+	}
+
+	tx, err := r.DB.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	// Check ownership
+	var exists bool
+	err = tx.QueryRow(ctx, "SELECT exists(SELECT 1 FROM studysets WHERE id = $1 AND user_id = $2)", studysetID, authedUser.ID).Scan(&exists)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check studyset ownership: %w", err)
+	}
+	if !exists {
+		return nil, fmt.Errorf("studyset not found or not owned by user")
+	}
+
+	if len(terms) == 0 {
+		return []*model.Term{}, nil
+	}
+
+	values := make([]interface{}, 0, len(terms)*4)
+	placeholders := make([]string, 0, len(terms))
+
+	for i, t := range terms {
+		placeholders = append(placeholders, fmt.Sprintf("($%d,$%d,$%d,$%d)", i*4+1, i*4+2, i*4+3, i*4+4))
+		values = append(values, studysetID, t.Term, t.Def, t.SortOrder)
+	}
+
+	sql := fmt.Sprintf(`
+		INSERT INTO terms (studyset_id, term, def, sort_order)
+		VALUES %s
+		RETURNING id, term, def, sort_order,
+			to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
+			to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
+	`, strings.Join(placeholders, ","))
+
+	var newTerms []*model.Term
+	err = pgxscan.Select(ctx, tx, &newTerms, sql, values...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to insert terms: %w", err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return newTerms, nil
+}
+
+// UpdateTerms is the resolver for the updateTerms field.
+func (r *mutationResolver) UpdateTerms(ctx context.Context, studysetID string, terms []*model.TermInput) ([]*model.Term, error) {
+	if len(terms) > MaxBatchMutationSize {
+		return nil, fmt.Errorf("too many terms in a single request (max %d)", MaxBatchMutationSize)
+	}
+
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil {
+		return nil, fmt.Errorf("not authenticated")
+	}
+
+	tx, err := r.DB.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	// Check ownership
+	var exists bool
+	err = tx.QueryRow(ctx, "SELECT exists(SELECT 1 FROM studysets WHERE id = $1 AND user_id = $2)", studysetID, authedUser.ID).Scan(&exists)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check studyset ownership: %w", err)
+	}
+	if !exists {
+		return nil, fmt.Errorf("studyset not found or not owned by user")
+	}
+
+	if len(terms) == 0 {
+		return []*model.Term{}, nil
+	}
+
+	values := make([]interface{}, 0, len(terms)*4)
+	placeholders := make([]string, 0, len(terms))
+
+	for i, t := range terms {
+		placeholders = append(placeholders, fmt.Sprintf(
+			"($%d::uuid, $%d::text, $%d::text, $%d::int)",
+			i*4+2, i*4+3, i*4+4, i*4+5,
+		))
+		values = append(values, t.ID, t.Term, t.Def, t.SortOrder)
+	}
+
+	sql := fmt.Sprintf(
+		`UPDATE terms AS t
+		SET term = v.term, def = v.def, sort_order = v.sort_order, updated_at = now()
+		FROM (VALUES
+			%s
+		) AS v(id, term, def, sort_order)
+		WHERE t.id = v.id AND t.studyset_id = $1
+		RETURNING t.id, t.term, t.def, t.sort_order,
+			to_char(t.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
+			to_char(t.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at`,
+		strings.Join(placeholders, ","),
+	)
+
+	var updatedTerms []*model.Term
+	err = pgxscan.Select(ctx, tx, &updatedTerms, sql, append([]interface{}{studysetID}, values...)...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update terms: %w", err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return updatedTerms, nil
+}
+
+// DeleteTerms is the resolver for the deleteTerms field.
+func (r *mutationResolver) DeleteTerms(ctx context.Context, studysetID string, ids []string) ([]*string, error) {
+	if len(ids) > MaxBatchMutationSize {
 		return nil, fmt.Errorf("too many items in a single request (max %d)", MaxBatchMutationSize)
 	}
 
@@ -126,118 +281,38 @@ func (r *mutationResolver) UpdateStudyset(ctx context.Context, id string, studys
 		return nil, fmt.Errorf("not authenticated")
 	}
 
-	if studyset == nil && (len(terms) == 0) {
-		return r.Query().Studyset(ctx, id)
-	}
-
-	// if the user doesn't own the studyset, the query affects 0 rows, and we return a "not found" error before any terms are modified below
 	tx, err := r.DB.Begin(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer tx.Rollback(ctx)
 
-	var updatedStudyset model.Studyset
-	if studyset != nil {
-		title := "Untitled Studyset"
-		if len(studyset.Title) > 0 && len(studyset.Title) < 200 && validTitleRegex.MatchString(studyset.Title) {
-			title = studyset.Title
-		}
-
-		sql := `
-			UPDATE public.studysets
-			SET title = $1, private = $2, subject_id = $3, updated_at = now()
-			WHERE id = $4 AND (user_id = $5 OR COALESCE($6, false) = true)
-			RETURNING id, user_id, title, private, subject_id,
-				to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
-				to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
-		`
-		err = pgxscan.Get(ctx, tx, &updatedStudyset, sql, title, studyset.Private, studyset.SubjectID, id, authedUser.ID, authedUser.ModPerms)
-		if err != nil {
-			if pgxscan.NotFound(err) {
-				return nil, fmt.Errorf("studyset not found")
-			}
-			return nil, fmt.Errorf("failed to update studyset: %w", err)
-		}
-	} else {
-		sql := `
-			UPDATE public.studysets
-			SET updated_at = now()
-			WHERE id = $1 AND (user_id = $2 OR COALESCE($3, false) = true)
-			RETURNING id, user_id, title, private, subject_id,
-				to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
-				to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
-		`
-		err = pgxscan.Get(ctx, tx, &updatedStudyset, sql, id, authedUser.ID, authedUser.ModPerms)
-		if err != nil {
-			if pgxscan.NotFound(err) {
-				return nil, fmt.Errorf("studyset not found")
-			}
-			return nil, fmt.Errorf("failed to update studyset: %w", err)
-		}
+	// Check ownership
+	var exists bool
+	err = tx.QueryRow(ctx, "SELECT exists(SELECT 1 FROM studysets WHERE id = $1 AND user_id = $2)", studysetID, authedUser.ID).Scan(&exists)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check studyset ownership: %w", err)
+	}
+	if !exists {
+		return nil, fmt.Errorf("studyset not found or not owned by user")
 	}
 
-	// if the user doesn't own the studyset, the query above affects 0 rows, and we return a "not found" error before any terms are modified below
-	if len(terms) > 0 {
-		values := make([]interface{}, 0, len(terms)*4)
-		placeholders := make([]string, 0, len(terms))
-
-		for i, t := range terms {
-			placeholders = append(placeholders, fmt.Sprintf(
-				"($%d::uuid, $%d::text, $%d::text, $%d::int)",
-				i*4+2, i*4+3, i*4+4, i*4+5,
-			))
-			values = append(values, t.ID, t.Term, t.Def, t.SortOrder)
-		}
-
-		sql := fmt.Sprintf(
-			`UPDATE terms AS t
-			SET term = v.term, def = v.def, sort_order = v.sort_order, updated_at = now()
-			FROM (VALUES
-				%s
-			) AS v(id, term, def, sort_order)
-			WHERE t.id = v.id AND t.studyset_id = $1`,
-			strings.Join(placeholders, ","),
-		)
-		_, err := tx.Exec(ctx, sql, append([]interface{}{id}, values...)...)
-		if err != nil {
-			return nil, fmt.Errorf("failed to update terms: %w", err)
-		}
+	if len(ids) == 0 {
+		return []*string{}, nil
 	}
 
-	if len(newTerms) > 0 {
-		values := make([]interface{}, 0, len(newTerms)*4)
-		placeholders := make([]string, 0, len(newTerms))
-
-		for i, t := range newTerms {
-			placeholders = append(placeholders, fmt.Sprintf("($%d,$%d,$%d,$%d)", i*4+1, i*4+2, i*4+3, i*4+4))
-			values = append(values, id, t.Term, t.Def, t.SortOrder)
-		}
-
-		sql := fmt.Sprintf("INSERT INTO terms (studyset_id, term, def, sort_order) VALUES %s", strings.Join(placeholders, ","))
-		_, err := tx.Exec(ctx, sql, values...)
-		if err != nil {
-			return nil, fmt.Errorf("failed to insert new terms: %w", err)
-		}
-	}
-
-	if len(deleteTerms) > 0 {
-		_, err := tx.Exec(
-			ctx,
-			"DELETE FROM terms WHERE id = ANY($1) AND studyset_id = $2",
-			deleteTerms,
-			id,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to delete terms: %w", err)
-		}
+	var deletedIDs []*string
+	sql := "DELETE FROM terms WHERE id = ANY($1) AND studyset_id = $2 RETURNING id"
+	err = pgxscan.Select(ctx, tx, &deletedIDs, sql, ids, studysetID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to delete terms: %w", err)
 	}
 
 	if err := tx.Commit(ctx); err != nil {
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
-	return &updatedStudyset, nil
+	return deletedIDs, nil
 }
 
 // DeleteStudyset is the resolver for the deleteStudyset field.
