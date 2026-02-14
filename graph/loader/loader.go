@@ -149,12 +149,8 @@ func (dr *dataReader) getTermsCountByStudysetIDs(ctx context.Context, studysetID
 func (dr *dataReader) getTermsProgress(ctx context.Context, termIDs []string) ([]*model.TermProgress, []error) {
 	authedUser := auth.AuthedUserContext(ctx)
 
-	var termsProgress []*model.TermProgress
-
-	err := pgxscan.Select(
+	rows, err := dr.db.Query(
 		ctx,
-		dr.db,
-		&termsProgress,
 		`SELECT tp.id,
 	to_char(tp.term_first_reviewed_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as term_first_reviewed_at,
 	to_char(tp.term_last_reviewed_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as term_last_reviewed_at,
@@ -175,6 +171,22 @@ ORDER BY input.og_order`,
 	)
 	if err != nil {
 		return nil, []error{err}
+	}
+	defer rows.Close()
+
+	var termsProgress []*model.TermProgress
+	for rows.Next() {
+		var tp model.TermProgress
+		err := pgxscan.ScanRow(&tp, rows)
+		if err != nil {
+			return nil, []error{err}
+		}
+
+		if tp.ID == nil {
+			termsProgress = append(termsProgress, nil)
+		} else {
+			termsProgress = append(termsProgress, &tp)
+		}
 	}
 
 	return termsProgress, nil

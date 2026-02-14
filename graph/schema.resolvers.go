@@ -408,7 +408,7 @@ func (r *mutationResolver) UpdateTermProgress(ctx context.Context, termProgress 
 		// Each row has 10 parameters (adjust if needed)
 		base := i*10 + 1
 		valueStrings = append(valueStrings, fmt.Sprintf(
-			"($%d,$%d,$%d::timestamptz,$%d::timestamptz,CASE WHEN $%d IS NOT NULL THEN 1 ELSE 0 END,$%d::timestamptz,$%d::timestamptz,CASE WHEN $%d IS NOT NULL THEN 1 ELSE 0 END,$%d,$%d,COALESCE($%d,0),COALESCE($%d,0),COALESCE($%d,0),COALESCE($%d,0))",
+			"($%d::uuid,$%d::uuid,$%d::timestamptz,$%d::timestamptz,CASE WHEN $%d IS NOT NULL THEN 1 ELSE 0 END,$%d::timestamptz,$%d::timestamptz,CASE WHEN $%d IS NOT NULL THEN 1 ELSE 0 END,$%d::int,$%d::int,COALESCE($%d::int,0),COALESCE($%d::int,0),COALESCE($%d::int,0),COALESCE($%d::int,0))",
 			base, base+1, base+2, base+2, base+2, base+3, base+3, base+3, base+4, base+5, base+6, base+7, base+8, base+9,
 		))
 
@@ -437,14 +437,14 @@ func (r *mutationResolver) UpdateTermProgress(ctx context.Context, termProgress 
 			term_correct_count, term_incorrect_count,
 			def_correct_count, def_incorrect_count
 		)
-		SELECT v.term_id, v.user_id,
-			v.term_first_reviewed_at, v.term_last_reviewed_at,
-			v.term_review_count,
-			v.def_first_reviewed_at, v.def_last_reviewed_at,
-			v.def_review_count,
-			v.term_leitner_system_box, v.def_leitner_system_box,
-			v.term_correct_count, v.term_incorrect_count,
-			v.def_correct_count, v.def_incorrect_count
+		SELECT v.term_id::uuid, v.user_id::uuid,
+			v.term_first_reviewed_at::timestamptz, v.term_last_reviewed_at::timestamptz,
+			v.term_review_count::int,
+			v.def_first_reviewed_at::timestamptz, v.def_last_reviewed_at::timestamptz,
+			v.def_review_count::int,
+			v.term_leitner_system_box::int, v.def_leitner_system_box::int,
+			v.term_correct_count::int, v.term_incorrect_count::int,
+			v.def_correct_count::int, v.def_incorrect_count::int
 		FROM (VALUES %s) AS v(
 			term_id, user_id,
 			term_first_reviewed_at, term_last_reviewed_at,
@@ -486,6 +486,10 @@ func (r *mutationResolver) UpdateTermProgress(ctx context.Context, termProgress 
 	var results []*model.TermProgress
 	if err := pgxscan.Select(ctx, tx, &results, query, valueArgs...); err != nil {
 		return nil, fmt.Errorf("bulk upsert failed: %w", err)
+	}
+
+	if len(results) != len(termProgress) {
+		return nil, fmt.Errorf("some terms not found or not accessible")
 	}
 
 	// ---- Bulk insert into history ----
