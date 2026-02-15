@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"quizfreely/api/server"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
@@ -59,4 +60,20 @@ check your environment variables`,
 	log.Fatal().Err(
 		http.ListenAndServe(":"+port, router),
 	).Msgf("Error starting server")
+
+	startSessionCleanupJob(dbPool)
+}
+
+func startSessionCleanupJob(dbPool *pgxpool.Pool) {
+	ticker := time.NewTicker(24 * time.Hour) // Once per day
+	go func() {
+		for range ticker.C {
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+			_, err := dbPool.Exec(ctx, "DELETE FROM auth.sessions WHERE expire_at < now()")
+			if err != nil {
+				log.Error().Err(err).Msg("Failed to clean up expired sessions")
+			}
+			cancel()
+		}
+	}()
 }
