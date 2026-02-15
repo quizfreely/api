@@ -115,6 +115,28 @@ func TestStudysetLifecycle(t *testing.T) {
 	require.NoError(t, err)
 	require.Nil(t, deleteResult["errors"], "should have no errors on deletion")
 	require.Equal(t, studysetID, getNested(deleteResult, "data", "deleteStudyset").(string))
+	// 5. Unauthorized Delete (user2 trying to delete user1's studyset)
+	// First, recreate a studyset since we deleted one
+	req, err = http.NewRequest(http.MethodPost, testServer.URL+"/graphql", marshal(createBody))
+	require.NoError(t, err)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+user1Token)
+	resp, err = http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	var recreateResult map[string]interface{}
+	json.NewDecoder(resp.Body).Decode(&recreateResult)
+	newStudysetID := getNested(recreateResult, "data", "createStudyset", "id").(string)
+
+	deleteBody["variables"].(map[string]interface{})["id"] = newStudysetID
+	req, err = http.NewRequest(http.MethodPost, testServer.URL+"/graphql", marshal(deleteBody))
+	require.NoError(t, err)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+user2Token)
+	resp, err = http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	var unauthorizedDeleteResult map[string]interface{}
+	json.NewDecoder(resp.Body).Decode(&unauthorizedDeleteResult)
+	require.NotNil(t, unauthorizedDeleteResult["errors"], "should return authorization error on delete")
 }
 
 func TestStudysetNoAuth(t *testing.T) {
@@ -136,4 +158,34 @@ func TestStudysetNoAuth(t *testing.T) {
 	err = json.NewDecoder(resp.Body).Decode(&result)
 	require.NoError(t, err)
 	require.NotNil(t, result["errors"], "should fail without auth")
+
+	// Unauthenticated Edit
+	updateBody := map[string]interface{}{
+		"query": `mutation {
+			updateStudyset(id: "123", studyset: {title: "No Auth", private: false}) { id }
+		}`,
+	}
+	req, err = http.NewRequest(http.MethodPost, testServer.URL+"/graphql", marshal(updateBody))
+	require.NoError(t, err)
+	req.Header.Set("Content-Type", "application/json")
+	resp, err = http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	var updateResult map[string]interface{}
+	json.NewDecoder(resp.Body).Decode(&updateResult)
+	require.NotNil(t, updateResult["errors"], "should fail update without auth")
+
+	// Unauthenticated Delete
+	deleteBody := map[string]interface{}{
+		"query": `mutation {
+			deleteStudyset(id: "123")
+		}`,
+	}
+	req, err = http.NewRequest(http.MethodPost, testServer.URL+"/graphql", marshal(deleteBody))
+	require.NoError(t, err)
+	req.Header.Set("Content-Type", "application/json")
+	resp, err = http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	var deleteResult map[string]interface{}
+	json.NewDecoder(resp.Body).Decode(&deleteResult)
+	require.NotNil(t, deleteResult["errors"], "should fail delete without auth")
 }
