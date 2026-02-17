@@ -25,7 +25,7 @@ This setup process in the `TestMain` function in `integration_test.go` is only r
     4. **Invalid Authz**: `user1` attempts to update `user2`'s practice test (should fail).
     5. **Private Set Security**: `user1` creates a private studyset; `user2` attempts to record a practice test for it (should fail).
 
-## `progress_test.go`
+## `term_progress_test.go`
 
 - **TestTermProgressLifecycle**:
     1. **Setup**: `user1` creates a public studyset with a term.
@@ -65,3 +65,46 @@ Tests related to term CRUD operations within a studyset.
     1. **No Auth Creation**: anonymous user attempts to create terms (should fail).
     2. **No Auth Edit**: anonymous user attempts to edit terms (should fail).
     3. **No Auth Delete**: anonymous user attempts to delete terms (should fail).
+
+## `folder_test.go`
+Tests related to folder CRUD operations and organization.
+
+- **TestFolderLifecycle**:
+    1. **Create Folder**: `user1` creates a folder (Valid Auth).
+    2. **Rename Folder**: `user1` renames the folder (Valid Auth).
+    3. **Unauthorized Rename**: `user2` attempts to rename `user1`'s folder (should fail).
+    4. **Query Folder**: `user1` queries the folder details.
+    5. **Delete Folder**: `user1` deletes the folder (Valid Auth).
+    6. **Unauthorized Delete**: `user2` attempts to delete `user1`'s folder (should fail). (Note: Verifies that an attempt to delete an unauthorized folder returns an error).
+
+- **TestStudysetFolderOperations**:
+    1. **Setup**: `user1` creates a studyset and a folder.
+    2. **Set Folder**: `user1` assigns the studyset to the folder.
+    3. **Verify Association**: Verifies the studyset links to the folder in queries.
+    4. **Remove from Folder**: `user1` removes the studyset from the folder.
+    5. **Verify Removal**: Verifies the studyset no longer links to the folder.
+
+- **TestFolderNoAuth**:
+    1. **No Auth Creation**: anonymous user attempts to create a folder (should fail).
+
+- **TestSharedStudysetFolderOperations**:
+    1. **Setup**: `user1` creates a public studyset.
+    2. **Setup**: `user2` creates a folder.
+    3. **Add Shared**: `user2` adds `user1`'s public studyset to `user2`'s folder.
+    4. **Verify**: Verifies the studyset appears in `user2`'s folder.
+    5. **Remove Shared**: `user2` removes the studyset from the folder.
+    6. **Verify Removal**: Verifies the studyset is removed.
+
+## `saved_studyset_test.go`
+Tests related to saving studysets (bookmarks).
+
+- **TestSaveStudysetLifecycle**:
+    1. **Setup**: `user1` creates a studyset.
+    2. **Save Studyset**: `user2` saves `user1`'s studyset.
+    3. **Verify Saved**: Verifies the studyset is marked as saved for `user2`.
+    4. **Verify MySavedStudysets**: Verifies the studyset appears in `user2`'s saved list.
+    5. **Unsave Studyset**: `user2` removes the studyset from saved.
+    6. **Verify Unsaved**: Verifies the studyset is no longer marked as saved.
+
+- **TestSaveNoAuth**:
+    1. **No Auth Save**: anonymous user attempts to save a studyset (should fail).

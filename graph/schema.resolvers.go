@@ -28,7 +28,7 @@ func (r *folderResolver) Studysets(ctx context.Context, obj *model.Folder) ([]*m
 		return nil, nil
 	}
 
-	var studysets []*model.Studyset
+	studysets := []*model.Studyset{}
 	sql := `
 		SELECT
 			s.id,
@@ -729,7 +729,7 @@ func (r *mutationResolver) DeleteFolder(ctx context.Context, id string) (*string
 		return nil, fmt.Errorf("not authenticated")
 	}
 
-	_, err := r.DB.Exec(
+	res, err := r.DB.Exec(
 		ctx,
 		"DELETE FROM folders WHERE id = $1 AND user_id = $2",
 		id,
@@ -737,6 +737,10 @@ func (r *mutationResolver) DeleteFolder(ctx context.Context, id string) (*string
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to delete folder: %w", err)
+	}
+
+	if res.RowsAffected() == 0 {
+		return nil, fmt.Errorf("folder not found or access denied")
 	}
 
 	return &id, nil
