@@ -18,6 +18,9 @@ type Query {
     folder(id: ID!): Folder
     studysetCount(after: String, includePrivate: Boolean = false): Int!
     studysetUpdateCount(after: String, includePrivate: Boolean = false): Int!
+    searchStudysetCount(q: String!): Int!
+    myStudysetCount(hideFoldered: Boolean): Int!
+    mySavedStudysetCount: Int!
 }
 type Mutation {
     createStudyset(studyset: StudysetInput!, folderId: ID): Studyset
@@ -50,6 +53,7 @@ type User {
         before: String,
         includePrivate: Boolean = false
     ): StudysetConnection!
+    studysetCount(includePrivate: Boolean = false): Int!
 }
 type AuthedUser {
     id: ID
@@ -78,7 +82,6 @@ type StudysetEdge {
 type StudysetConnection {
     edges: [StudysetEdge!]!
     pageInfo: PageInfo!
-    totalCount: Int
 }
 
 type Studyset {
@@ -283,13 +286,14 @@ type FolderEdge {
 type FolderConnection {
     edges: [FolderEdge!]!
     pageInfo: PageInfo!
-    totalCount: Int
 }
 
 type Folder {
     id: ID
     name: String
-    studysets: [Studyset]
+    studysets(first: Int = 24, after: String, last: Int, before: String): StudysetConnection!
+    studysetCount: Int!
+    user: User
 }
 enum SubjectCategory {
     LANG
@@ -303,5 +307,6 @@ type Subject {
     name: String
     category: SubjectCategory
     studysets(first: Int = 24, after: String, last: Int, before: String): StudysetConnection!
+    studysetCount: Int!
 }
 

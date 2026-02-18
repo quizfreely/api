@@ -32,15 +32,16 @@ type FRQInput struct {
 }
 
 type Folder struct {
-	ID        *string     `json:"id,omitempty"`
-	Name      *string     `json:"name,omitempty"`
-	Studysets []*Studyset `json:"studysets,omitempty"`
+	ID            *string             `json:"id,omitempty"`
+	Name          *string             `json:"name,omitempty"`
+	Studysets     *StudysetConnection `json:"studysets"`
+	StudysetCount int32               `json:"studysetCount"`
+	User          *User               `json:"user,omitempty"`
 }
 
 type FolderConnection struct {
-	Edges      []*FolderEdge `json:"edges"`
-	PageInfo   *PageInfo     `json:"pageInfo"`
-	TotalCount *int32        `json:"totalCount,omitempty"`
+	Edges    []*FolderEdge `json:"edges"`
+	PageInfo *PageInfo     `json:"pageInfo"`
 }
 
 type FolderEdge struct {
@@ -127,9 +128,8 @@ type QuestionInput struct {
 }
 
 type StudysetConnection struct {
-	Edges      []*StudysetEdge `json:"edges"`
-	PageInfo   *PageInfo       `json:"pageInfo"`
-	TotalCount *int32          `json:"totalCount,omitempty"`
+	Edges    []*StudysetEdge `json:"edges"`
+	PageInfo *PageInfo       `json:"pageInfo"`
 }
 
 type StudysetEdge struct {
@@ -144,10 +144,11 @@ type StudysetInput struct {
 }
 
 type Subject struct {
-	ID        *string             `json:"id,omitempty"`
-	Name      *string             `json:"name,omitempty"`
-	Category  *SubjectCategory    `json:"category,omitempty"`
-	Studysets *StudysetConnection `json:"studysets"`
+	ID            *string             `json:"id,omitempty"`
+	Name          *string             `json:"name,omitempty"`
+	Category      *SubjectCategory    `json:"category,omitempty"`
+	Studysets     *StudysetConnection `json:"studysets"`
+	StudysetCount int32               `json:"studysetCount"`
 }
 
 type TermConfusionPairInput struct {
@@ -210,10 +211,11 @@ type TrueFalseQuestionInput struct {
 }
 
 type User struct {
-	ID          *string             `json:"id,omitempty"`
-	Username    *string             `json:"username,omitempty"`
-	DisplayName *string             `json:"displayName,omitempty"`
-	Studysets   *StudysetConnection `json:"studysets"`
+	ID            *string             `json:"id,omitempty"`
+	Username      *string             `json:"username,omitempty"`
+	DisplayName   *string             `json:"displayName,omitempty"`
+	Studysets     *StudysetConnection `json:"studysets"`
+	StudysetCount int32               `json:"studysetCount"`
 }
 
 type AnswerWith string

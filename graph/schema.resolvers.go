@@ -19,38 +19,141 @@ import (
 )
 
 // Studysets is the resolver for the studysets field.
-func (r *folderResolver) Studysets(ctx context.Context, obj *model.Folder) ([]*model.Studyset, error) {
+func (r *folderResolver) Studysets(ctx context.Context, obj *model.Folder, first *int32, after *string, last *int32, before *string) (*model.StudysetConnection, error) {
 	authedUser := auth.AuthedUserContext(ctx)
-	if authedUser == nil {
-		return nil, fmt.Errorf("not authenticated")
+
+	l := 24
+	if first != nil && *first > 0 && *first < 1000 {
+		l = int(*first)
+	} else if last != nil && *last > 0 && *last < 1000 {
+		l = int(*last)
 	}
-	if obj == nil || obj.ID == nil {
-		return nil, nil
+	limit := l + 1
+
+	// We check if caller is owner to decide visibility
+	isOwner := false
+	if authedUser != nil && obj.User != nil && obj.User.ID != nil && *authedUser.ID == *obj.User.ID {
+		isOwner = true
 	}
 
-	studysets := []*model.Studyset{}
-	sql := `
-		SELECT
-			s.id,
-			s.user_id,
-			s.title,
-			s.private,
-			s.subject_id,
-			to_char(s.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
-			to_char(s.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
+	cursorTS, cursorID := DecodeStudysetCursor(ptrToString(after))
+	beforeCursorTS, beforeCursorID := DecodeStudysetCursor(ptrToString(before))
+
+	isBackward := beforeCursorID != ""
+	hasPrevious := false
+	if !isBackward {
+		hasPrevious = cursorTS != "" || cursorID != ""
+	}
+
+	// Format timestamps if present
+	var cursorTime, beforeCursorTime time.Time
+	if cursorTS != "" {
+		cursorTime, _ = time.Parse("2006-01-02T15:04:05.000000Z07:00", cursorTS)
+	}
+	if beforeCursorTS != "" {
+		beforeCursorTime, _ = time.Parse("2006-01-02T15:04:05.000000Z07:00", beforeCursorTS)
+	}
+
+	// Base Query
+	cols := `
+		s.id,
+		s.user_id,
+		s.title,
+		s.private,
+		s.subject_id,
+		to_char(s.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
+		to_char(s.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at,
+		to_char(f.timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.USTZH:TZM') as folder_timestamp
+	`
+	from := `
 		FROM folder_studysets f
 		JOIN studysets s ON f.studyset_id = s.id
-		WHERE f.user_id = $1
-			AND f.folder_id = $2
-			AND (s.private = false OR s.user_id = $1)
-		ORDER BY f.timestamp DESC
 	`
-	err := pgxscan.Select(ctx, r.DB, &studysets, sql, authedUser.ID, *obj.ID)
+	where := "WHERE f.folder_id = $1"
+	args := []interface{}{*obj.ID}
+	argIdx := 2
+
+	if !isOwner {
+		where += " AND s.private = false"
+	}
+
+	// Pagination clauses
+	if isBackward {
+		// Paging backwards (Prev Page): Order ASC, Filter > beforeCursor
+		if !beforeCursorTime.IsZero() {
+			where += fmt.Sprintf(" AND (f.timestamp, s.id) > ($%d, $%d::uuid)", argIdx, argIdx+1)
+			args = append(args, beforeCursorTime, beforeCursorID)
+			argIdx += 2
+		}
+		where += " ORDER BY f.timestamp ASC, s.id ASC"
+	} else {
+		// Paging forwards (Next Page): Order DESC, Filter < afterCursor
+		if !cursorTime.IsZero() {
+			where += fmt.Sprintf(" AND (f.timestamp, s.id) < ($%d, $%d::uuid)", argIdx, argIdx+1)
+			args = append(args, cursorTime, cursorID)
+			argIdx += 2
+		}
+		where += " ORDER BY f.timestamp DESC, s.id DESC"
+	}
+
+	sql := fmt.Sprintf("SELECT %s %s %s LIMIT $%d", cols, from, where, argIdx)
+	args = append(args, limit)
+
+	// Struct to capture the extra folder_timestamp column
+	type studysetWithTimestamp struct {
+		model.Studyset
+		FolderTimestamp *string `db:"folder_timestamp"`
+	}
+	var rows []*studysetWithTimestamp
+
+	err := pgxscan.Select(ctx, r.DB, &rows, sql, args...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch folder's studysets: %w", err)
 	}
 
-	return studysets, nil
+	// Process results
+	studysets := make([]*model.Studyset, len(rows))
+	timestampMap := make(map[string]string)
+	for i, r := range rows {
+		studysets[i] = &r.Studyset
+		if r.ID != nil && r.FolderTimestamp != nil {
+			timestampMap[*r.ID] = *r.FolderTimestamp
+		}
+	}
+
+	hasNext := false
+
+	if isBackward {
+		// We fetched ASC, verify if there are previous items
+		hasPrevious = len(studysets) > l
+		if hasPrevious {
+			studysets = studysets[:l]
+		}
+		// Reverse back to DESC order
+		for i, j := 0, len(studysets)-1; i < j; i, j = i+1, j-1 {
+			studysets[i], studysets[j] = studysets[j], studysets[i]
+		}
+		// If backing up, we assume there is a next page (where we came from)
+		hasNext = true
+	} else {
+		// Forward
+		hasNext = len(studysets) > l
+		if hasNext {
+			studysets = studysets[:l]
+		}
+	}
+
+	// Helper to generate cursor using the captured timestamp
+	getCursor := func(s *model.Studyset) (string, string) {
+		if s.ID != nil {
+			if ts, ok := timestampMap[*s.ID]; ok {
+				return ts, *s.ID
+			}
+		}
+		return ptrToString(s.UpdatedAt), ptrToString(s.ID)
+	}
+
+	return StudysetConnectionFrom(studysets, hasNext, hasPrevious, getCursor), nil
 }
 
 // CreateStudyset is the resolver for the createStudyset field.
@@ -1835,6 +1938,77 @@ func (r *queryResolver) StudysetUpdateCount(ctx context.Context, after *string, 
 	return count, nil
 }
 
+// SearchStudysetCount is the resolver for the searchStudysetCount field.
+func (r *queryResolver) SearchStudysetCount(ctx context.Context, q string) (int32, error) {
+	if len(q) < 1 {
+		return 0, nil
+	}
+	if len(q) > 200 {
+		q = q[:200]
+	}
+
+	var count int32
+	// Matching the WHERE clause of SearchStudysets
+	sql := `
+		SELECT COUNT(*)
+		FROM public.studysets
+		WHERE lower($1) <% lower(title) AND private = false
+	`
+	err := r.DB.QueryRow(ctx, sql, q).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count search results: %w", err)
+	}
+	return count, nil
+}
+
+// MyStudysetCount is the resolver for the myStudysetCount field.
+func (r *queryResolver) MyStudysetCount(ctx context.Context, hideFoldered *bool) (int32, error) {
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil {
+		return 0, fmt.Errorf("not authenticated")
+	}
+
+	sql := `SELECT COUNT(*) FROM studysets WHERE user_id = $1`
+
+	if hideFoldered != nil && *hideFoldered {
+		sql += ` AND NOT EXISTS (
+			SELECT 1 FROM folder_studysets fs 
+			WHERE fs.studyset_id = studysets.id
+		)`
+	}
+
+	var count int32
+	err := r.DB.QueryRow(ctx, sql, authedUser.ID).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count my studysets: %w", err)
+	}
+
+	return count, nil
+}
+
+// MySavedStudysetCount is the resolver for the mySavedStudysetCount field.
+func (r *queryResolver) MySavedStudysetCount(ctx context.Context) (int32, error) {
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil {
+		return 0, fmt.Errorf("not authenticated")
+	}
+
+	// Only counting public saved studysets to match MySavedStudysets resolver logic
+	sql := `
+		SELECT COUNT(*)
+		FROM saved_studysets
+		JOIN studysets s ON saved_studysets.studyset_id = s.id
+		WHERE saved_studysets.user_id = $1
+			AND s.private = false
+	`
+	var count int32
+	err := r.DB.QueryRow(ctx, sql, authedUser.ID).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count saved studysets: %w", err)
+	}
+	return count, nil
+}
+
 // Subject is the resolver for the subject field.
 func (r *studysetResolver) Subject(ctx context.Context, obj *model.Studyset) (*model.Subject, error) {
 	if obj.SubjectID == nil {
@@ -2265,3 +2439,88 @@ type subjectResolver struct{ *Resolver }
 type termResolver struct{ *Resolver }
 type termConfusionPairResolver struct{ *Resolver }
 type userResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//    it when you're done.
+//  - You have helper methods in this file. Move them out to keep these resolver files clean.
+/*
+	func (r *folderResolver) StudysetCount(ctx context.Context, obj *model.Folder) (int, error) {
+	if obj == nil || obj.ID == nil {
+		return 0, nil
+	}
+
+	authedUser := auth.AuthedUserContext(ctx)
+
+	// Visibility check: same as Studysets resolver
+	isOwner := false
+	if authedUser != nil && obj.User != nil && obj.User.ID != nil && *authedUser.ID == *obj.User.ID {
+		isOwner = true
+	}
+
+	sql := "SELECT count(*) FROM folder_studysets f JOIN studysets s ON f.studyset_id = s.id WHERE f.folder_id = $1"
+	if !isOwner {
+		sql += " AND s.private = false"
+	}
+
+	var count int
+	err := r.DB.QueryRow(ctx, sql, *obj.ID).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count folder studysets: %w", err)
+	}
+
+	return count, nil
+}
+func (r *subjectResolver) StudysetCount(ctx context.Context, obj *model.Subject) (int, error) {
+	if obj == nil || obj.ID == nil {
+		return 0, nil
+	}
+
+	// Always count public studysets only for subjects?
+	// The `Studysets` resolver filters `private = false`.
+	// So we should do the same here.
+
+	var count int
+	err := r.DB.QueryRow(ctx, "SELECT count(*) FROM studysets WHERE subject_id = $1 AND private = false", *obj.ID).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count subject studysets: %w", err)
+	}
+
+	return count, nil
+}
+func (r *userResolver) StudysetCount(ctx context.Context, obj *model.User, includePrivate *bool) (int, error) {
+	if obj == nil || obj.ID == nil {
+		return 0, nil
+	}
+
+	canSeePrivate := false
+	authedUser := auth.AuthedUserContext(ctx)
+	if includePrivate != nil && *includePrivate {
+		if authedUser != nil {
+			// Check if owner
+			if authedUser.ID != nil && obj.ID != nil && *authedUser.ID == *obj.ID {
+				canSeePrivate = true
+			}
+			// Check if mod
+			if !canSeePrivate && authedUser.ModPerms != nil && *authedUser.ModPerms {
+				canSeePrivate = true
+			}
+		}
+	}
+
+	sql := "SELECT count(*) FROM studysets WHERE user_id = $1"
+	if !canSeePrivate {
+		sql += " AND private = false"
+	}
+
+	var count int
+	err := r.DB.QueryRow(ctx, sql, obj.ID).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count user studysets: %w", err)
+	}
+
+	return count, nil
+}
+*/
