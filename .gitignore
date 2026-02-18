@@ -1,5 +1,4 @@
 .env
 
-api-server
-
-.crush
+/api-server
+/api
