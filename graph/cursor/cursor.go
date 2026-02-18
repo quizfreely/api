@@ -1,17 +1,10 @@
-package graph
+package cursor
 
 import (
 	"encoding/base64"
 	"quizfreely/api/graph/model"
 	"strings"
 )
-
-func ptrToString(s *string) string {
-	if s == nil {
-		return ""
-	}
-	return *s
-}
 
 // SavedStudysetRow is used for MySavedStudysets to include saved_at for cursor.
 type SavedStudysetRow struct {

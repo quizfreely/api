@@ -6,6 +6,7 @@ import (
 	"quizfreely/api/auth"
 	"quizfreely/api/graph"
 	"quizfreely/api/graph/loader"
+	"quizfreely/api/graph/resolver"
 	"quizfreely/api/rest"
 
 	"github.com/99designs/gqlgen/graphql/handler"
@@ -71,7 +72,7 @@ func NewRouter(dbPool *pgxpool.Pool) http.Handler {
 	router.Group(func(r chi.Router) {
 		r.Use(authHandler.AuthMiddleware)
 
-		h := handler.New(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{DB: dbPool}}))
+		h := handler.New(graph.NewExecutableSchema(graph.Config{Resolvers: &resolver.Resolver{DB: dbPool}}))
 
 		h.AddTransport(transport.Options{})
 		h.AddTransport(transport.GET{})

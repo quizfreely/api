@@ -1,4 +1,4 @@
-package graph
+package resolver
 
 // This file will be automatically regenerated based on the schema, any resolver implementations
 // will be copied through when generating and any unknown code will be moved to the end.
@@ -9,6 +9,8 @@ import (
 	"errors"
 	"fmt"
 	"quizfreely/api/auth"
+	"quizfreely/api/graph"
+	"quizfreely/api/graph/cursor"
 	"quizfreely/api/graph/loader"
 	"quizfreely/api/graph/model"
 	"strings"
@@ -36,8 +38,8 @@ func (r *folderResolver) Studysets(ctx context.Context, obj *model.Folder, first
 		isOwner = true
 	}
 
-	cursorTS, cursorID := DecodeStudysetCursor(ptrToString(after))
-	beforeCursorTS, beforeCursorID := DecodeStudysetCursor(ptrToString(before))
+	cursorTS, cursorID := cursor.DecodeStudysetCursor(ptrToString(after))
+	beforeCursorTS, beforeCursorID := cursor.DecodeStudysetCursor(ptrToString(before))
 
 	isBackward := beforeCursorID != ""
 	hasPrevious := false
@@ -153,7 +155,7 @@ func (r *folderResolver) Studysets(ctx context.Context, obj *model.Folder, first
 		return ptrToString(s.UpdatedAt), ptrToString(s.ID)
 	}
 
-	return StudysetConnectionFrom(studysets, hasNext, hasPrevious, getCursor), nil
+	return cursor.StudysetConnectionFrom(studysets, hasNext, hasPrevious, getCursor), nil
 }
 
 // CreateStudyset is the resolver for the createStudyset field.
@@ -1066,8 +1068,8 @@ func (r *queryResolver) RecentlyCreatedStudysets(ctx context.Context, first *int
 	}
 	limit := l + 1
 
-	cursorScore, cursorID := DecodeStudysetCursor(ptrToString(after))
-	beforeCursorScore, beforeCursorID := DecodeStudysetCursor(ptrToString(before))
+	cursorScore, cursorID := cursor.DecodeStudysetCursor(ptrToString(after))
+	beforeCursorScore, beforeCursorID := cursor.DecodeStudysetCursor(ptrToString(before))
 
 	// Check for Previous Page possibility
 	hasPrevious := cursorScore != "" || cursorID != ""
@@ -1185,7 +1187,7 @@ func (r *queryResolver) RecentlyCreatedStudysets(ctx context.Context, first *int
 	getCursor := func(s *model.Studyset) (string, string) {
 		return ptrToString(s.CreatedAt), ptrToString(s.ID)
 	}
-	return StudysetConnectionFrom(studysets, hasNext, hasPrevious, getCursor), nil
+	return cursor.StudysetConnectionFrom(studysets, hasNext, hasPrevious, getCursor), nil
 }
 
 // RecentlyUpdatedStudysets is the resolver for the recentlyUpdatedStudysets field.
@@ -1198,8 +1200,8 @@ func (r *queryResolver) RecentlyUpdatedStudysets(ctx context.Context, first *int
 	}
 	limit := l + 1
 
-	cursorScore, cursorID := DecodeStudysetCursor(ptrToString(after))
-	beforeCursorScore, beforeCursorID := DecodeStudysetCursor(ptrToString(before))
+	cursorScore, cursorID := cursor.DecodeStudysetCursor(ptrToString(after))
+	beforeCursorScore, beforeCursorID := cursor.DecodeStudysetCursor(ptrToString(before))
 
 	// Check for Previous Page possibility
 	hasPrevious := cursorScore != "" || cursorID != ""
@@ -1302,7 +1304,7 @@ func (r *queryResolver) RecentlyUpdatedStudysets(ctx context.Context, first *int
 	getCursor := func(s *model.Studyset) (string, string) {
 		return ptrToString(s.UpdatedAt), ptrToString(s.ID)
 	}
-	return StudysetConnectionFrom(studysets, hasNext, hasPrevious, getCursor), nil
+	return cursor.StudysetConnectionFrom(studysets, hasNext, hasPrevious, getCursor), nil
 }
 
 // SearchStudysets is the resolver for the searchStudysets field.
@@ -1325,8 +1327,8 @@ func (r *queryResolver) SearchStudysets(ctx context.Context, q string, first *in
 	}
 	limit := l + 1
 
-	cursorScore, cursorTS, cursorID := DecodeStudysetScoreCursor(ptrToString(after))
-	beforeCursorScore, beforeCursorTS, beforeCursorID := DecodeStudysetScoreCursor(ptrToString(before))
+	cursorScore, cursorTS, cursorID := cursor.DecodeStudysetScoreCursor(ptrToString(after))
+	beforeCursorScore, beforeCursorTS, beforeCursorID := cursor.DecodeStudysetScoreCursor(ptrToString(before))
 
 	isBackward := beforeCursorID != ""
 	hasPrevious := false
@@ -1431,7 +1433,7 @@ func (r *queryResolver) SearchStudysets(ctx context.Context, q string, first *in
 		score := rows[i].Score
 		edges = append(edges, &model.StudysetEdge{
 			Node:   s,
-			Cursor: EncodeStudysetScoreCursor(fmt.Sprintf("%f", score), ptrToString(s.CreatedAt), ptrToString(s.ID)),
+			Cursor: cursor.EncodeStudysetScoreCursor(fmt.Sprintf("%f", score), ptrToString(s.CreatedAt), ptrToString(s.ID)),
 		})
 	}
 
@@ -1470,8 +1472,8 @@ func (r *queryResolver) MyStudysets(ctx context.Context, first *int32, after *st
 	}
 	limit := l + 1
 
-	cursorTS, cursorID := DecodeStudysetCursor(ptrToString(after))
-	beforeCursorTS, beforeCursorID := DecodeStudysetCursor(ptrToString(before))
+	cursorTS, cursorID := cursor.DecodeStudysetCursor(ptrToString(after))
+	beforeCursorTS, beforeCursorID := cursor.DecodeStudysetCursor(ptrToString(before))
 
 	isBackward := beforeCursorID != ""
 	hasPrevious := false
@@ -1547,7 +1549,7 @@ func (r *queryResolver) MyStudysets(ctx context.Context, first *int32, after *st
 	getCursor := func(s *model.Studyset) (string, string) {
 		return ptrToString(s.UpdatedAt), ptrToString(s.ID)
 	}
-	return StudysetConnectionFrom(studysets, hasNext, hasPrevious, getCursor), nil
+	return cursor.StudysetConnectionFrom(studysets, hasNext, hasPrevious, getCursor), nil
 }
 
 // MyFolders is the resolver for the myFolders field.
@@ -1563,7 +1565,7 @@ func (r *queryResolver) MyFolders(ctx context.Context, first *int32, after *stri
 	}
 	limit := l + 1
 
-	cursorID := DecodeFolderCursor(ptrToString(after))
+	cursorID := cursor.DecodeFolderCursor(ptrToString(after))
 	hasPrevious := cursorID != ""
 
 	var folders []*model.Folder
@@ -1600,7 +1602,7 @@ func (r *queryResolver) MyFolders(ctx context.Context, first *int32, after *stri
 		idStr := ptrToString(f.ID)
 		edges = append(edges, &model.FolderEdge{
 			Node:   f,
-			Cursor: EncodeFolderCursor(idStr),
+			Cursor: cursor.EncodeFolderCursor(idStr),
 		})
 	}
 	var startCursor, endCursor *string
@@ -1634,8 +1636,8 @@ func (r *queryResolver) MySavedStudysets(ctx context.Context, first *int32, afte
 	}
 	limit := l + 1
 
-	cursorTS, cursorID := DecodeStudysetCursor(ptrToString(after))
-	beforeCursorTS, beforeCursorID := DecodeStudysetCursor(ptrToString(before))
+	cursorTS, cursorID := cursor.DecodeStudysetCursor(ptrToString(after))
+	beforeCursorTS, beforeCursorID := cursor.DecodeStudysetCursor(ptrToString(before))
 
 	isBackward := beforeCursorID != ""
 	hasPrevious := false
@@ -1643,7 +1645,7 @@ func (r *queryResolver) MySavedStudysets(ctx context.Context, first *int32, afte
 		hasPrevious = cursorTS != "" || cursorID != ""
 	}
 
-	var rows []*SavedStudysetRow
+	var rows []*cursor.SavedStudysetRow
 	var err error
 	if isBackward {
 		sql := `
@@ -1732,7 +1734,7 @@ func (r *queryResolver) MySavedStudysets(ctx context.Context, first *int32, afte
 	for _, row := range rows {
 		edges = append(edges, &model.StudysetEdge{
 			Node:   &row.Studyset,
-			Cursor: EncodeStudysetCursor(ptrToString(row.SavedAt), ptrToString(row.ID)),
+			Cursor: cursor.EncodeStudysetCursor(ptrToString(row.SavedAt), ptrToString(row.ID)),
 		})
 	}
 	var startCursor, endCursor *string
@@ -2136,8 +2138,8 @@ func (r *subjectResolver) Studysets(ctx context.Context, obj *model.Subject, fir
 	}
 	limit := l + 1
 
-	cursorTS, cursorID := DecodeStudysetCursor(ptrToString(after))
-	beforeCursorTS, beforeCursorID := DecodeStudysetCursor(ptrToString(before))
+	cursorTS, cursorID := cursor.DecodeStudysetCursor(ptrToString(after))
+	beforeCursorTS, beforeCursorID := cursor.DecodeStudysetCursor(ptrToString(before))
 
 	isBackward := beforeCursorID != ""
 	hasPrevious := false
@@ -2230,7 +2232,7 @@ func (r *subjectResolver) Studysets(ctx context.Context, obj *model.Subject, fir
 	getCursor := func(s *model.Studyset) (string, string) {
 		return ptrToString(s.UpdatedAt), ptrToString(s.ID)
 	}
-	return StudysetConnectionFrom(studysets, hasNext, hasPrevious, getCursor), nil
+	return cursor.StudysetConnectionFrom(studysets, hasNext, hasPrevious, getCursor), nil
 }
 
 // Progress is the resolver for the progress field.
@@ -2321,8 +2323,8 @@ func (r *userResolver) Studysets(ctx context.Context, obj *model.User, first *in
 	}
 	limit := l + 1
 
-	cursorTS, cursorID := DecodeStudysetCursor(ptrToString(after))
-	beforeCursorTS, beforeCursorID := DecodeStudysetCursor(ptrToString(before))
+	cursorTS, cursorID := cursor.DecodeStudysetCursor(ptrToString(after))
+	beforeCursorTS, beforeCursorID := cursor.DecodeStudysetCursor(ptrToString(before))
 
 	isBackward := beforeCursorID != ""
 	hasPrevious := false
@@ -2402,34 +2404,34 @@ func (r *userResolver) Studysets(ctx context.Context, obj *model.User, first *in
 	getCursor := func(s *model.Studyset) (string, string) {
 		return ptrToString(s.UpdatedAt), ptrToString(s.ID)
 	}
-	return StudysetConnectionFrom(studysets, hasNext, hasPrevious, getCursor), nil
+	return cursor.StudysetConnectionFrom(studysets, hasNext, hasPrevious, getCursor), nil
 }
 
-// Folder returns FolderResolver implementation.
-func (r *Resolver) Folder() FolderResolver { return &folderResolver{r} }
+// Folder returns graph.FolderResolver implementation.
+func (r *Resolver) Folder() graph.FolderResolver { return &folderResolver{r} }
 
-// Mutation returns MutationResolver implementation.
-func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
+// Mutation returns graph.MutationResolver implementation.
+func (r *Resolver) Mutation() graph.MutationResolver { return &mutationResolver{r} }
 
-// Query returns QueryResolver implementation.
-func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
+// Query returns graph.QueryResolver implementation.
+func (r *Resolver) Query() graph.QueryResolver { return &queryResolver{r} }
 
-// Studyset returns StudysetResolver implementation.
-func (r *Resolver) Studyset() StudysetResolver { return &studysetResolver{r} }
+// Studyset returns graph.StudysetResolver implementation.
+func (r *Resolver) Studyset() graph.StudysetResolver { return &studysetResolver{r} }
 
-// Subject returns SubjectResolver implementation.
-func (r *Resolver) Subject() SubjectResolver { return &subjectResolver{r} }
+// Subject returns graph.SubjectResolver implementation.
+func (r *Resolver) Subject() graph.SubjectResolver { return &subjectResolver{r} }
 
-// Term returns TermResolver implementation.
-func (r *Resolver) Term() TermResolver { return &termResolver{r} }
+// Term returns graph.TermResolver implementation.
+func (r *Resolver) Term() graph.TermResolver { return &termResolver{r} }
 
-// TermConfusionPair returns TermConfusionPairResolver implementation.
-func (r *Resolver) TermConfusionPair() TermConfusionPairResolver {
+// TermConfusionPair returns graph.TermConfusionPairResolver implementation.
+func (r *Resolver) TermConfusionPair() graph.TermConfusionPairResolver {
 	return &termConfusionPairResolver{r}
 }
 
-// User returns UserResolver implementation.
-func (r *Resolver) User() UserResolver { return &userResolver{r} }
+// User returns graph.UserResolver implementation.
+func (r *Resolver) User() graph.UserResolver { return &userResolver{r} }
 
 type folderResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
@@ -2439,88 +2441,3 @@ type subjectResolver struct{ *Resolver }
 type termResolver struct{ *Resolver }
 type termConfusionPairResolver struct{ *Resolver }
 type userResolver struct{ *Resolver }
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//    it when you're done.
-//  - You have helper methods in this file. Move them out to keep these resolver files clean.
-/*
-	func (r *folderResolver) StudysetCount(ctx context.Context, obj *model.Folder) (int, error) {
-	if obj == nil || obj.ID == nil {
-		return 0, nil
-	}
-
-	authedUser := auth.AuthedUserContext(ctx)
-
-	// Visibility check: same as Studysets resolver
-	isOwner := false
-	if authedUser != nil && obj.User != nil && obj.User.ID != nil && *authedUser.ID == *obj.User.ID {
-		isOwner = true
-	}
-
-	sql := "SELECT count(*) FROM folder_studysets f JOIN studysets s ON f.studyset_id = s.id WHERE f.folder_id = $1"
-	if !isOwner {
-		sql += " AND s.private = false"
-	}
-
-	var count int
-	err := r.DB.QueryRow(ctx, sql, *obj.ID).Scan(&count)
-	if err != nil {
-		return 0, fmt.Errorf("failed to count folder studysets: %w", err)
-	}
-
-	return count, nil
-}
-func (r *subjectResolver) StudysetCount(ctx context.Context, obj *model.Subject) (int, error) {
-	if obj == nil || obj.ID == nil {
-		return 0, nil
-	}
-
-	// Always count public studysets only for subjects?
-	// The `Studysets` resolver filters `private = false`.
-	// So we should do the same here.
-
-	var count int
-	err := r.DB.QueryRow(ctx, "SELECT count(*) FROM studysets WHERE subject_id = $1 AND private = false", *obj.ID).Scan(&count)
-	if err != nil {
-		return 0, fmt.Errorf("failed to count subject studysets: %w", err)
-	}
-
-	return count, nil
-}
-func (r *userResolver) StudysetCount(ctx context.Context, obj *model.User, includePrivate *bool) (int, error) {
-	if obj == nil || obj.ID == nil {
-		return 0, nil
-	}
-
-	canSeePrivate := false
-	authedUser := auth.AuthedUserContext(ctx)
-	if includePrivate != nil && *includePrivate {
-		if authedUser != nil {
-			// Check if owner
-			if authedUser.ID != nil && obj.ID != nil && *authedUser.ID == *obj.ID {
-				canSeePrivate = true
-			}
-			// Check if mod
-			if !canSeePrivate && authedUser.ModPerms != nil && *authedUser.ModPerms {
-				canSeePrivate = true
-			}
-		}
-	}
-
-	sql := "SELECT count(*) FROM studysets WHERE user_id = $1"
-	if !canSeePrivate {
-		sql += " AND private = false"
-	}
-
-	var count int
-	err := r.DB.QueryRow(ctx, sql, obj.ID).Scan(&count)
-	if err != nil {
-		return 0, fmt.Errorf("failed to count user studysets: %w", err)
-	}
-
-	return count, nil
-}
-*/

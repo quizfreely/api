@@ -1,4 +1,4 @@
-package graph
+package resolver
 
 //go:generate go run github.com/99designs/gqlgen generate
 
@@ -20,4 +20,11 @@ const MaxFolderNameLen = 1000
 
 type Resolver struct {
 	DB *pgxpool.Pool
+}
+
+func ptrToString(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
 }
