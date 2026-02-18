@@ -43,6 +43,13 @@ type User {
     id: ID
     username: String
     displayName: String
+    studysets(
+        first: Int = 24,
+        after: String,
+        last: Int,
+        before: String,
+        includePrivate: Boolean = false
+    ): StudysetConnection!
 }
 type AuthedUser {
     id: ID

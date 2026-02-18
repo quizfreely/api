@@ -197,3 +197,8 @@ models:
     fields:
       studysets:
         resolver: true
+
+  User:
+    fields:
+      studysets:
+        resolver: true

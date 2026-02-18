@@ -108,3 +108,13 @@ Tests related to saving studysets (bookmarks).
 
 - **TestSaveNoAuth**:
     1. **No Auth Save**: anonymous user attempts to save a studyset (should fail).
+
+## `user_studyset_test.go`
+Tests related to querying a user's studysets.
+
+- **TestUserStudysets**:
+    1. **Setup**: `user1` creates public and private studysets.
+    2. **Public Access (Anon)**: Anonymous user can query public studysets.
+    3. **Public Access (Auth)**: Authenticated user (`user2`) can query `user1`'s public studysets.
+    4. **Private Access (Other)**: `user2` CANNOT see `user1`'s private studysets, even with `includePrivate=true`.
+    5. **Private Access (Owner)**: `user1` CAN see their own private studysets when requesting `includePrivate=true`.

@@ -210,9 +210,10 @@ type TrueFalseQuestionInput struct {
 }
 
 type User struct {
-	ID          *string `json:"id,omitempty"`
-	Username    *string `json:"username,omitempty"`
-	DisplayName *string `json:"displayName,omitempty"`
+	ID          *string             `json:"id,omitempty"`
+	Username    *string             `json:"username,omitempty"`
+	DisplayName *string             `json:"displayName,omitempty"`
+	Studysets   *StudysetConnection `json:"studysets"`
 }
 
 type AnswerWith string

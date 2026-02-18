@@ -2117,6 +2117,120 @@ func (r *termConfusionPairResolver) ConfusedTerm(ctx context.Context, obj *model
 	return loader.GetTermByID(ctx, *obj.ConfusedTermID)
 }
 
+// Studysets is the resolver for the studysets field.
+func (r *userResolver) Studysets(ctx context.Context, obj *model.User, first *int32, after *string, last *int32, before *string, includePrivate *bool) (*model.StudysetConnection, error) {
+	if obj == nil || obj.ID == nil {
+		return nil, nil
+	}
+
+	// Auth check for private visibility
+	canSeePrivate := false
+	authedUser := auth.AuthedUserContext(ctx)
+	if includePrivate != nil && *includePrivate {
+		if authedUser != nil {
+			// Check if owner
+			if authedUser.ID != nil && obj.ID != nil && *authedUser.ID == *obj.ID {
+				canSeePrivate = true
+			}
+			// Check if mod
+			if !canSeePrivate && authedUser.ModPerms != nil && *authedUser.ModPerms {
+				canSeePrivate = true
+			}
+		}
+	}
+
+	l := 24
+	if first != nil && *first > 0 && *first < 1000 {
+		l = int(*first)
+	} else if last != nil && *last > 0 && *last < 1000 {
+		l = int(*last)
+	}
+	limit := l + 1
+
+	cursorTS, cursorID := DecodeStudysetCursor(ptrToString(after))
+	beforeCursorTS, beforeCursorID := DecodeStudysetCursor(ptrToString(before))
+
+	isBackward := beforeCursorID != ""
+	hasPrevious := false
+	if !isBackward {
+		hasPrevious = cursorTS != "" || cursorID != ""
+	}
+
+	studysets := []*model.Studyset{}
+	var err error
+
+	cols := `id, user_id, title, private, subject_id,
+			to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
+			to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at`
+
+	whereClause := "WHERE user_id = $1"
+	if !canSeePrivate {
+		whereClause += " AND private = false"
+	}
+
+	args := []interface{}{obj.ID}
+	argCount := 1
+
+	// Helper to append args
+	addArg := func(v interface{}) string {
+		argCount++
+		args = append(args, v)
+		return fmt.Sprintf("$%d", argCount)
+	}
+
+	ordering := "ORDER BY updated_at DESC, id DESC"
+	comparison := "<"
+	if isBackward {
+		ordering = "ORDER BY updated_at ASC, id ASC"
+		comparison = ">"
+	}
+
+	if isBackward && beforeCursorID != "" {
+		whereClause += fmt.Sprintf(" AND (to_char(updated_at, 'YYYY-MM-DD\"T\"HH24:MI:SS.MSTZH:TZM'), id) %s (%s, %s::uuid)", comparison, addArg(beforeCursorTS), addArg(beforeCursorID))
+	} else if !isBackward && cursorID != "" {
+		whereClause += fmt.Sprintf(" AND (to_char(updated_at, 'YYYY-MM-DD\"T\"HH24:MI:SS.MSTZH:TZM'), id) %s (%s, %s::uuid)", comparison, addArg(cursorTS), addArg(cursorID))
+	}
+
+	sql := fmt.Sprintf(`
+		SELECT %s
+		FROM public.studysets
+		%s
+		%s
+		LIMIT %s
+	`, cols, whereClause, ordering, addArg(limit))
+
+	err = pgxscan.Select(ctx, r.DB, &studysets, sql, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch user studysets: %w", err)
+	}
+
+	// Backward pagination cleanup (reverse)
+	if isBackward {
+		hasPrevious = len(studysets) > l
+		if hasPrevious {
+			studysets = studysets[:l]
+		}
+		for i, j := 0, len(studysets)-1; i < j; i, j = i+1, j-1 {
+			studysets[i], studysets[j] = studysets[j], studysets[i]
+		}
+	}
+
+	hasNext := false
+	if isBackward {
+		hasNext = true
+	} else {
+		hasNext = len(studysets) > l
+		if hasNext {
+			studysets = studysets[:l]
+		}
+	}
+
+	getCursor := func(s *model.Studyset) (string, string) {
+		return ptrToString(s.UpdatedAt), ptrToString(s.ID)
+	}
+	return StudysetConnectionFrom(studysets, hasNext, hasPrevious, getCursor), nil
+}
+
 // Folder returns FolderResolver implementation.
 func (r *Resolver) Folder() FolderResolver { return &folderResolver{r} }
 
@@ -2140,6 +2254,9 @@ func (r *Resolver) TermConfusionPair() TermConfusionPairResolver {
 	return &termConfusionPairResolver{r}
 }
 
+// User returns UserResolver implementation.
+func (r *Resolver) User() UserResolver { return &userResolver{r} }
+
 type folderResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
@@ -2147,3 +2264,4 @@ type studysetResolver struct{ *Resolver }
 type subjectResolver struct{ *Resolver }
 type termResolver struct{ *Resolver }
 type termConfusionPairResolver struct{ *Resolver }
+type userResolver struct{ *Resolver }
