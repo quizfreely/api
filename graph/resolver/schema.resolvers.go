@@ -158,6 +158,34 @@ func (r *folderResolver) Studysets(ctx context.Context, obj *model.Folder, first
 	return cursor.StudysetConnectionFrom(studysets, hasNext, hasPrevious, getCursor), nil
 }
 
+// StudysetCount is the resolver for the studysetCount field.
+func (r *folderResolver) StudysetCount(ctx context.Context, obj *model.Folder) (int32, error) {
+	if obj == nil || obj.ID == nil {
+		return 0, nil
+	}
+
+	authedUser := auth.AuthedUserContext(ctx)
+
+	// Visibility check: same as Studysets resolver
+	isOwner := false
+	if authedUser != nil && obj.User != nil && obj.User.ID != nil && *authedUser.ID == *obj.User.ID {
+		isOwner = true
+	}
+
+	sql := "SELECT count(*) FROM folder_studysets f JOIN studysets s ON f.studyset_id = s.id WHERE f.folder_id = $1"
+	if !isOwner {
+		sql += " AND s.private = false"
+	}
+
+	var count int32
+	err := r.DB.QueryRow(ctx, sql, *obj.ID).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count folder studysets: %w", err)
+	}
+
+	return count, nil
+}
+
 // CreateStudyset is the resolver for the createStudyset field.
 func (r *mutationResolver) CreateStudyset(ctx context.Context, studyset model.StudysetInput, folderID *string) (*model.Studyset, error) {
 	authedUser := auth.AuthedUserContext(ctx)
@@ -2235,6 +2263,25 @@ func (r *subjectResolver) Studysets(ctx context.Context, obj *model.Subject, fir
 	return cursor.StudysetConnectionFrom(studysets, hasNext, hasPrevious, getCursor), nil
 }
 
+// StudysetCount is the resolver for the studysetCount field.
+func (r *subjectResolver) StudysetCount(ctx context.Context, obj *model.Subject) (int32, error) {
+	if obj == nil || obj.ID == nil {
+		return 0, nil
+	}
+
+	// Always count public studysets only for subjects?
+	// The `Studysets` resolver filters `private = false`.
+	// So we should do the same here.
+
+	var count int32
+	err := r.DB.QueryRow(ctx, "SELECT count(*) FROM studysets WHERE subject_id = $1 AND private = false", *obj.ID).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count subject studysets: %w", err)
+	}
+
+	return count, nil
+}
+
 // Progress is the resolver for the progress field.
 func (r *termResolver) Progress(ctx context.Context, obj *model.Term) (*model.TermProgress, error) {
 	authedUser := auth.AuthedUserContext(ctx)
@@ -2405,6 +2452,41 @@ func (r *userResolver) Studysets(ctx context.Context, obj *model.User, first *in
 		return ptrToString(s.UpdatedAt), ptrToString(s.ID)
 	}
 	return cursor.StudysetConnectionFrom(studysets, hasNext, hasPrevious, getCursor), nil
+}
+
+// StudysetCount is the resolver for the studysetCount field.
+func (r *userResolver) StudysetCount(ctx context.Context, obj *model.User, includePrivate *bool) (int32, error) {
+	if obj == nil || obj.ID == nil {
+		return 0, nil
+	}
+
+	canSeePrivate := false
+	authedUser := auth.AuthedUserContext(ctx)
+	if includePrivate != nil && *includePrivate {
+		if authedUser != nil {
+			// Check if owner
+			if authedUser.ID != nil && obj.ID != nil && *authedUser.ID == *obj.ID {
+				canSeePrivate = true
+			}
+			// Check if mod
+			if !canSeePrivate && authedUser.ModPerms != nil && *authedUser.ModPerms {
+				canSeePrivate = true
+			}
+		}
+	}
+
+	sql := "SELECT count(*) FROM studysets WHERE user_id = $1"
+	if !canSeePrivate {
+		sql += " AND private = false"
+	}
+
+	var count int32
+	err := r.DB.QueryRow(ctx, sql, obj.ID).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count user studysets: %w", err)
+	}
+
+	return count, nil
 }
 
 // Folder returns graph.FolderResolver implementation.
