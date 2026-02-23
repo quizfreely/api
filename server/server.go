@@ -2,12 +2,12 @@ package server
 
 import (
 	"net/http"
-	"quizfreely/api"
 	"quizfreely/api/auth"
 	"quizfreely/api/graph"
 	"quizfreely/api/graph/loader"
 	"quizfreely/api/graph/resolver"
 	"quizfreely/api/rest"
+	qzfrAPIConfig "quizfreely/api/config"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/extension"
@@ -19,7 +19,7 @@ import (
 	"github.com/vektah/gqlparser/v2/ast"
 )
 
-func NewRouter(dbPool *pgxpool.Pool, config api.Config) http.Handler {
+func NewRouter(dbPool *pgxpool.Pool, config qzfrAPIConfig.Config) http.Handler {
 	router := chi.NewRouter()
 
 	authHandler := &auth.AuthHandler{DB: dbPool}

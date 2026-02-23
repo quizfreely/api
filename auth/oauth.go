@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"quizfreely/api"
+	qzfrAPIConfig "quizfreely/api/config"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/rs/zerolog/log"
@@ -18,7 +18,7 @@ import (
 var googleOauthConfig *oauth2.Config
 var finalRedirectURL string
 
-func InitOAuthGoogle(config api.Config) {
+func InitOAuthGoogle(config qzfrAPIConfig.Config) {
 	/* this gets called after config is loaded by main() in main.go */
 
 	finalRedirectURL = config.OAuthFinalRedirectURL
