@@ -13,7 +13,6 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-const defaultPort = "8008"
 type Config struct {
 	Port string `toml:"port"`
 	DBURL string `toml:"db_url"`
@@ -33,9 +32,17 @@ type Config struct {
 }
 
 func main() {
-	
+	var config Config
+	configBytes, err := os.ReadFile("config.toml")
+	if err != nil {
+		log.Fatal().Err(err).Msgf("Error reading config.toml")
+	}
+	err = toml.Unmarshal([]byte(configBytes), &config)
+	if err != nil {
+		log.Fatal().Err(err).Msgf("Error parsing config.toml")
+	}
 
-	if os.Getenv("PRETTY_LOG") == "true" {
+	if config.PrettyLog {
 		log.Logger = log.Output(
 			zerolog.ConsoleWriter{Out: os.Stderr},
 		)
@@ -43,25 +50,10 @@ func main() {
 		zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 	}
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = defaultPort
-	}
-
-	dbUrl := os.Getenv("DB_URL")
-	if dbUrl == "" {
-		log.Fatal().Msgf(
-			`DB_URL is not set
-Copy .env.example to .env and/or
-check your environment variables`,
-		)
-	}
-
-	var err error
 	var dbPool *pgxpool.Pool
 	dbPool, err = pgxpool.New(
 		context.Background(),
-		dbUrl,
+		config.DBURL,
 	)
 	if err != nil {
 		log.Fatal().Err(err).Msgf("Error creating database pool")
