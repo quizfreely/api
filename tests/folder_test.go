@@ -359,13 +359,16 @@ func TestSharedStudysetFolderOperations(t *testing.T) {
 	require.True(t, getNested(setResult, "data", "setStudysetFolder").(bool))
 
 	// 4. Verify Studyset is in User2's folder
-	// 4. Verify Studyset is in User2's folder
 	queryFolder := map[string]interface{}{
 		"query": `query GetFolder($id: ID!) {
 			folder(id: $id) {
 				studysets {
-					id
-					title
+					edges {
+						node {
+							id
+							title
+						}
+					}
 				}
 			}
 		}`,
@@ -379,11 +382,11 @@ func TestSharedStudysetFolderOperations(t *testing.T) {
 	json.NewDecoder(resp.Body).Decode(&queryResult)
 	require.Nil(t, queryResult["errors"])
 
-	studysets := getNested(queryResult, "data", "folder", "studysets").([]interface{})
+	edges := getNested(queryResult, "data", "folder", "studysets", "edges").([]interface{})
 	found := false
-	for _, s := range studysets {
-		sMap := s.(map[string]interface{})
-		if sMap["id"] == studysetID {
+	for _, e := range edges {
+		node := getNested(e.(map[string]interface{}), "node").(map[string]interface{})
+		if node["id"] == studysetID {
 			found = true
 			break
 		}
@@ -414,11 +417,11 @@ func TestSharedStudysetFolderOperations(t *testing.T) {
 	req.Header.Set("Authorization", "Bearer "+user2Token)
 	resp, _ = http.DefaultClient.Do(req)
 	json.NewDecoder(resp.Body).Decode(&queryResult)
-	studysets = getNested(queryResult, "data", "folder", "studysets").([]interface{})
+	edges = getNested(queryResult, "data", "folder", "studysets", "edges").([]interface{})
 	found = false
-	for _, s := range studysets {
-		sMap := s.(map[string]interface{})
-		if sMap["id"] == studysetID {
+	for _, e := range edges {
+		node := getNested(e.(map[string]interface{}), "node").(map[string]interface{})
+		if node["id"] == studysetID {
 			found = true
 			break
 		}
