@@ -7,7 +7,6 @@ StartLimitIntervalSec=10
 [Service]
 User=quizfreely
 WorkingDirectory=/home/quizfreely/api/
-EnvironmentFile=/home/quizfreely/api/.env
 ExecStart=/home/quizfreely/api/api-server
 Restart=always
 RestartSec=1
