@@ -1747,7 +1747,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 	return introspection.WrapTypeFromDef(ec.Schema(), ec.Schema().Types[name]), nil
 }
 
-//go:embed "folder.graphqls" "mutation.graphqls" "schema.graphqls" "studyset.graphqls" "subject.graphqls" "term.graphqls" "user.graphqls"
+//go:embed "folder.graphqls" "mutation.graphqls" "query.graphqls" "studyset.graphqls" "subject.graphqls" "term.graphqls" "user.graphqls"
 var sourcesFS embed.FS
 
 func sourceData(filename string) string {
@@ -1761,7 +1761,7 @@ func sourceData(filename string) string {
 var sources = []*ast.Source{
 	{Name: "folder.graphqls", Input: sourceData("folder.graphqls"), BuiltIn: false},
 	{Name: "mutation.graphqls", Input: sourceData("mutation.graphqls"), BuiltIn: false},
-	{Name: "schema.graphqls", Input: sourceData("schema.graphqls"), BuiltIn: false},
+	{Name: "query.graphqls", Input: sourceData("query.graphqls"), BuiltIn: false},
 	{Name: "studyset.graphqls", Input: sourceData("studyset.graphqls"), BuiltIn: false},
 	{Name: "subject.graphqls", Input: sourceData("subject.graphqls"), BuiltIn: false},
 	{Name: "term.graphqls", Input: sourceData("term.graphqls"), BuiltIn: false},
