@@ -8,16 +8,32 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/joho/godotenv"
+	"github.com/pelletier/go-toml/v2"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
 const defaultPort = "8008"
+type Config struct {
+	Port string `toml:"port"`
+	DBURL string `toml:"db_url"`
+	DBMigrationURL string `toml:"db_migration_url"`
+	PrettyLog bool `toml:"pretty_log"`
+	BasePath string `toml:"base_path"`
+	EnableOAuthGoogle bool `toml:"enable_oauth_google"`
+	OAuthGoogleClientID string `toml:"oauth_google_client_id"`
+	OAuthGoogleClientSecret string `toml:"oauth_google_client_secret"`
+	OAuthGoogleCallbackURL string `toml:"oauth_google_callback_url"`
+	OAuthFinalRedirectURL string `toml:"oauth_final_redirect_url"`
+	StorageEndpointURL string `toml:"storage_endpoint_url"`
+	StorageRegion string `toml:"storage_region"`
+	StorageKeyID string `toml:"storage_key_id"`
+	StorageSecretKey string `toml:"storage_secret_key"`
+	UsercontentBucket string `toml:"usercontent_bucket"`
+}
 
 func main() {
-	_ = godotenv.Load()
-	/* godotenv means go dotenv, not godot env*/
+	
 
 	if os.Getenv("PRETTY_LOG") == "true" {
 		log.Logger = log.Output(
@@ -52,7 +68,7 @@ check your environment variables`,
 	}
 	defer dbPool.Close()
 
-	router := server.NewRouter(dbPool)
+	router := server.NewRouter(dbPool, config)
 
 	log.Info().Msg(
 		"http://localhost:" + port + "/graphiql for GraphiQL",

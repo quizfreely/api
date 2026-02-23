@@ -2,7 +2,7 @@ package server
 
 import (
 	"net/http"
-	"os"
+	"quizfreely/api"
 	"quizfreely/api/auth"
 	"quizfreely/api/graph"
 	"quizfreely/api/graph/loader"
@@ -19,7 +19,7 @@ import (
 	"github.com/vektah/gqlparser/v2/ast"
 )
 
-func NewRouter(dbPool *pgxpool.Pool) http.Handler {
+func NewRouter(dbPool *pgxpool.Pool, config api.Config) http.Handler {
 	router := chi.NewRouter()
 
 	authHandler := &auth.AuthHandler{DB: dbPool}
@@ -44,10 +44,10 @@ func NewRouter(dbPool *pgxpool.Pool) http.Handler {
 		authHandler.DeleteAccount,
 	)
 
-	if os.Getenv("ENABLE_OAUTH_GOOGLE") == "true" {
+	if config.EnableOAuthGoogle {
 		/* init oauth config here,
-		after env vars are loaded */
-		auth.InitOAuthGoogle()
+		after config is loaded */
+		auth.InitOAuthGoogle(config)
 
 		router.Get(
 			"/oauth/google",
@@ -59,11 +59,7 @@ func NewRouter(dbPool *pgxpool.Pool) http.Handler {
 		)
 	}
 
-	basePath := os.Getenv("BASE_PATH")
-	/* os.Getenv returns "" when not set,
-	that's great cause we want to default to "" (blank)
-	cause BASE_PATH is prepended/before relative paths */
-
+	basePath := config.BasePath
 	if len(basePath) > 0 && basePath[len(basePath)-1] == '/' {
 		/* if BASE_PATH ends with "/", remove it */
 		basePath = basePath[:(len(basePath) - 1)]

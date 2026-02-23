@@ -27,6 +27,7 @@ enable_oauth_google = false
 # oauth_google_client_id = '123-abc456def789.apps.googleusercontent.com'
 # oauth_google_client_secret = 'ABC-DEf123_4ab-CD567'
 # oauth_google_callback_url = 'http://localhost:8080/api/oauth/google/callback'
+
 # oauth_final_redirect_url = 'http://localhost:8080/sign-in'
 
 storage_endpoint_url = 'http://localhost:3900'

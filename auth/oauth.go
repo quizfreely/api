@@ -6,7 +6,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/url"
-	"os"
+
+	"quizfreely/api"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/rs/zerolog/log"
@@ -15,14 +16,17 @@ import (
 )
 
 var googleOauthConfig *oauth2.Config
+var finalRedirectURL string
 
-func InitOAuthGoogle() {
-	/* this gets called after env vars are loaded by main() in main.go */
+func InitOAuthGoogle(config api.Config) {
+	/* this gets called after config is loaded by main() in main.go */
+
+	finalRedirectURL = config.OAuthFinalRedirectURL
 
 	googleOauthConfig = &oauth2.Config{
-		ClientID:     os.Getenv("OAUTH_GOOGLE_CLIENT_ID"),
-		ClientSecret: os.Getenv("OAUTH_GOOGLE_CLIENT_SECRET"),
-		RedirectURL:  os.Getenv("OAUTH_GOOGLE_CALLBACK_URL"),
+		ClientID:     config.OAuthGoogleClientID,
+		ClientSecret: config.OAuthGoogleClientSecret,
+		RedirectURL:  config.OAuthGoogleCallbackURL,
 		Scopes: []string{
 			"openid",
 			"profile",
@@ -48,7 +52,7 @@ func (ah *AuthHandler) OAuthGoogleRedirect(w http.ResponseWriter, r *http.Reques
 	state, err := generateStateParam(16) // 16 bytes → ~22 chars after base64
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to generate state before Google OAuth redirect")
-		redirUrl := os.Getenv("OAUTH_FINAL_REDIRECT_URL")
+		redirUrl := finalRedirectURL
 		redirUrl += "?error=" + url.QueryEscape("Failed to generate state")
 		http.Redirect(w, r, redirUrl, http.StatusTemporaryRedirect)
 		return
@@ -74,7 +78,7 @@ func (ah *AuthHandler) OAuthGoogleCallback(w http.ResponseWriter, r *http.Reques
 	cookie, err := r.Cookie("qzfr_oauth_g_state")
 	if err != nil {
 		log.Warn().Msg("Google OAuth callback missing state cookie")
-		redirUrl := os.Getenv("OAUTH_FINAL_REDIRECT_URL")
+		redirUrl := finalRedirectURL
 		redirUrl += "?error=" + url.QueryEscape("State cookie missing")
 		http.Redirect(w, r, redirUrl, http.StatusTemporaryRedirect)
 		return
@@ -82,7 +86,7 @@ func (ah *AuthHandler) OAuthGoogleCallback(w http.ResponseWriter, r *http.Reques
 
 	if r.FormValue("state") != cookie.Value {
 		log.Warn().Msg("Google OAuth callback invalid state")
-		redirUrl := os.Getenv("OAUTH_FINAL_REDIRECT_URL")
+		redirUrl := finalRedirectURL
 		redirUrl += "?error=" + url.QueryEscape("Invalid state")
 		http.Redirect(w, r, redirUrl, http.StatusTemporaryRedirect)
 		return
@@ -91,7 +95,7 @@ func (ah *AuthHandler) OAuthGoogleCallback(w http.ResponseWriter, r *http.Reques
 	token, err := googleOauthConfig.Exchange(r.Context(), r.FormValue("code"))
 	if err != nil {
 		log.Warn().Err(err).Msg("Google OAuth code exchange failed")
-		redirUrl := os.Getenv("OAUTH_FINAL_REDIRECT_URL")
+		redirUrl := finalRedirectURL
 		redirUrl += "?error=" + url.QueryEscape("Code exchange failed")
 		http.Redirect(w, r, redirUrl, http.StatusTemporaryRedirect)
 		return
@@ -100,7 +104,7 @@ func (ah *AuthHandler) OAuthGoogleCallback(w http.ResponseWriter, r *http.Reques
 	resp, err := http.Get("https://www.googleapis.com/oauth2/v3/userinfo?access_token=" + token.AccessToken)
 	if err != nil {
 		log.Warn().Err(err).Msg("Failed to get user info from googleapis.com/oauth2/v3/userinfo")
-		redirUrl := os.Getenv("OAUTH_FINAL_REDIRECT_URL")
+		redirUrl := finalRedirectURL
 		redirUrl += "?error=" + url.QueryEscape("Failed to get user info from Google")
 		http.Redirect(w, r, redirUrl, http.StatusTemporaryRedirect)
 		return
@@ -116,7 +120,7 @@ func (ah *AuthHandler) OAuthGoogleCallback(w http.ResponseWriter, r *http.Reques
 
 	if err := json.NewDecoder(resp.Body).Decode(&userInfo); err != nil {
 		log.Warn().Err(err).Msg("Failed to decode user info")
-		redirUrl := os.Getenv("OAUTH_FINAL_REDIRECT_URL")
+		redirUrl := finalRedirectURL
 		redirUrl += "?error=" + url.QueryEscape("Failed to decode user info")
 		http.Redirect(w, r, redirUrl, http.StatusTemporaryRedirect)
 		return
@@ -136,7 +140,7 @@ SET oauth_google_email = $2, oauth_google_name = $3 RETURNING id`,
 	)
 	if err != nil {
 		log.Error().Err(err).Msg("Database error while adding google oauth user")
-		redirUrl := os.Getenv("OAUTH_FINAL_REDIRECT_URL")
+		redirUrl := finalRedirectURL
 		redirUrl += "?error=" + url.QueryEscape("Database error while adding user")
 		http.Redirect(w, r, redirUrl, http.StatusTemporaryRedirect)
 		return
@@ -153,7 +157,7 @@ VALUES ($1) RETURNING token`,
 	)
 	if err != nil {
 		log.Error().Err(err).Msg("Database error while adding session for google oauth")
-		redirUrl := os.Getenv("OAUTH_FINAL_REDIRECT_URL")
+		redirUrl := finalRedirectURL
 		redirUrl += "?error=" + url.QueryEscape("Database error while adding session")
 		http.Redirect(w, r, redirUrl, http.StatusTemporaryRedirect)
 		return
@@ -170,5 +174,5 @@ VALUES ($1) RETURNING token`,
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
 	})
-	http.Redirect(w, r, os.Getenv("OAUTH_FINAL_REDIRECT_URL"), http.StatusTemporaryRedirect)
+	http.Redirect(w, r, finalRedirectURL, http.StatusTemporaryRedirect)
 }
