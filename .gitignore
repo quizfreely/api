@@ -1,5 +1,5 @@
-.env
 config.toml
+.env
 
 /api-server
 /api
