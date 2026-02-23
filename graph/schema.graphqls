@@ -273,11 +273,6 @@ input FRQInput {
     userMarkedCorrect: Boolean
     answeredString: String
 }
-type Category {
-    id: ID
-    title: String
-    studysets: [Studyset]
-}
 type FolderEdge {
     node: Folder!
     cursor: String!
