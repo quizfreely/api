@@ -62,12 +62,6 @@ type ComplexityRoot struct {
 		Username         func(childComplexity int) int
 	}
 
-	Category struct {
-		ID        func(childComplexity int) int
-		Studysets func(childComplexity int) int
-		Title     func(childComplexity int) int
-	}
-
 	FRQ struct {
 		AnswerWith        func(childComplexity int) int
 		AnsweredString    func(childComplexity int) int
@@ -415,27 +409,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.AuthedUser.Username(childComplexity), true
-
-	case "Category.id":
-		if e.complexity.Category.ID == nil {
-			break
-		}
-
-		return e.complexity.Category.ID(childComplexity), true
-
-	case "Category.studysets":
-		if e.complexity.Category.Studysets == nil {
-			break
-		}
-
-		return e.complexity.Category.Studysets(childComplexity), true
-
-	case "Category.title":
-		if e.complexity.Category.Title == nil {
-			break
-		}
-
-		return e.complexity.Category.Title(childComplexity), true
 
 	case "FRQ.answerWith":
 		if e.complexity.FRQ.AnswerWith == nil {
@@ -1774,7 +1747,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 	return introspection.WrapTypeFromDef(ec.Schema(), ec.Schema().Types[name]), nil
 }
 
-//go:embed "schema.graphqls"
+//go:embed "folder.graphqls" "schema.graphqls"
 var sourcesFS embed.FS
 
 func sourceData(filename string) string {
@@ -1786,6 +1759,7 @@ func sourceData(filename string) string {
 }
 
 var sources = []*ast.Source{
+	{Name: "folder.graphqls", Input: sourceData("folder.graphqls"), BuiltIn: false},
 	{Name: "schema.graphqls", Input: sourceData("schema.graphqls"), BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -2723,155 +2697,6 @@ func (ec *executionContext) fieldContext_AuthedUser_modPerms(_ context.Context, 
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Category_id(ctx context.Context, field graphql.CollectedField, obj *model.Category) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Category_id(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Category_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Category",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Category_title(ctx context.Context, field graphql.CollectedField, obj *model.Category) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Category_title(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Title, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Category_title(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Category",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Category_studysets(ctx context.Context, field graphql.CollectedField, obj *model.Category) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Category_studysets(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Studysets, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*model.Studyset)
-	fc.Result = res
-	return ec.marshalOStudyset2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐStudyset(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Category_studysets(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Category",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Studyset_id(ctx, field)
-			case "title":
-				return ec.fieldContext_Studyset_title(ctx, field)
-			case "private":
-				return ec.fieldContext_Studyset_private(ctx, field)
-			case "subject":
-				return ec.fieldContext_Studyset_subject(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_Studyset_createdAt(ctx, field)
-			case "updatedAt":
-				return ec.fieldContext_Studyset_updatedAt(ctx, field)
-			case "user":
-				return ec.fieldContext_Studyset_user(ctx, field)
-			case "terms":
-				return ec.fieldContext_Studyset_terms(ctx, field)
-			case "termsCount":
-				return ec.fieldContext_Studyset_termsCount(ctx, field)
-			case "practiceTests":
-				return ec.fieldContext_Studyset_practiceTests(ctx, field)
-			case "saved":
-				return ec.fieldContext_Studyset_saved(ctx, field)
-			case "folder":
-				return ec.fieldContext_Studyset_folder(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Studyset", field.Name)
 		},
 	}
 	return fc, nil
@@ -13030,46 +12855,6 @@ func (ec *executionContext) _AuthedUser(ctx context.Context, sel ast.SelectionSe
 	return out
 }
 
-var categoryImplementors = []string{"Category"}
-
-func (ec *executionContext) _Category(ctx context.Context, sel ast.SelectionSet, obj *model.Category) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, categoryImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("Category")
-		case "id":
-			out.Values[i] = ec._Category_id(ctx, field, obj)
-		case "title":
-			out.Values[i] = ec._Category_title(ctx, field, obj)
-		case "studysets":
-			out.Values[i] = ec._Category_studysets(ctx, field, obj)
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
 var fRQImplementors = []string{"FRQ"}
 
 func (ec *executionContext) _FRQ(ctx context.Context, sel ast.SelectionSet, obj *model.Frq) graphql.Marshaler {
@@ -16442,47 +16227,6 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 	_ = ctx
 	res := graphql.MarshalString(*v)
 	return res
-}
-
-func (ec *executionContext) marshalOStudyset2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐStudyset(ctx context.Context, sel ast.SelectionSet, v []*model.Studyset) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOStudyset2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐStudyset(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	return ret
 }
 
 func (ec *executionContext) marshalOStudyset2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐStudyset(ctx context.Context, sel ast.SelectionSet, v *model.Studyset) graphql.Marshaler {

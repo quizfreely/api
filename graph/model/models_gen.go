@@ -9,12 +9,6 @@ import (
 	"strconv"
 )
 
-type Category struct {
-	ID        *string     `json:"id,omitempty"`
-	Title     *string     `json:"title,omitempty"`
-	Studysets []*Studyset `json:"studysets,omitempty"`
-}
-
 type Frq struct {
 	Term              *Term       `json:"term,omitempty"`
 	AnswerWith        *AnswerWith `json:"answerWith,omitempty"`
