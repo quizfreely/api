@@ -1,0 +1,14 @@
+enum SubjectCategory {
+    LANG
+    STEM
+    SOCIAL_STUDIES
+    LA
+    MATH
+}
+type Subject {
+    id: String
+    name: String
+    category: SubjectCategory
+    studysets(first: Int = 24, after: String, last: Int, before: String): StudysetConnection!
+    studysetCount: Int!
+}

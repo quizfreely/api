@@ -1,0 +1,25 @@
+type User {
+    id: ID
+    username: String
+    displayName: String
+    studysets(
+        first: Int = 24,
+        after: String,
+        last: Int,
+        before: String,
+        includePrivate: Boolean = false
+    ): StudysetConnection!
+    studysetCount(includePrivate: Boolean = false): Int!
+}
+type AuthedUser {
+    id: ID
+    username: String
+    displayName: String
+    authType: AuthType
+    oauthGoogleEmail: String
+    modPerms: Boolean
+}
+enum AuthType {
+    USERNAME_PASSWORD
+    OAUTH_GOOGLE
+}

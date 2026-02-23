@@ -1,0 +1,64 @@
+type Mutation {
+    createStudyset(studyset: StudysetInput!, folderId: ID): Studyset
+    updateStudyset(id: ID!, studyset: StudysetInput): Studyset
+    createTerms(studysetId: ID!, terms: [NewTermInput!]!): [Term]
+    updateTerms(studysetId: ID!, terms: [TermInput!]!): [Term]
+    deleteTerms(studysetId: ID!, ids: [ID!]!): [ID]
+    deleteStudyset(id: ID!): ID
+    updateUser(displayName: String): AuthedUser
+    updateTermProgress(termProgress: [TermProgressInput!]!): [TermProgress]
+    recordConfusedTerms(confusedTerms: [TermConfusionPairInput]): Boolean
+    recordPracticeTest(input: PracticeTestInput): PracticeTest
+    updatePracticeTest(input: PracticeTestInput): PracticeTest
+    createFolder(name: String!): Folder
+    renameFolder(id: ID!, name: String!): Folder
+    deleteFolder(id: ID!): ID
+    setStudysetFolder(studysetId: ID!, folderId: ID!): Boolean
+    removeStudysetFromFolder(studysetId: ID!): Boolean
+    saveStudyset(studysetId: ID!): Boolean
+    unsaveStudyset(studysetId: ID!): Boolean
+}
+input PracticeTestInput {
+    id: ID
+    timestamp: String
+    studysetId: ID
+    questionsCorrect: Int
+    questionsTotal: Int
+    questions: [QuestionInput]
+}
+input QuestionInput {
+    questionType: QuestionType
+    mcq: MCQInput
+    trueFalseQuestion: TrueFalseQuestionInput
+    matchQuestion: MatchQuestionInput
+    frq: FRQInput
+}
+input MCQInput {
+    term: TermInput
+    answerWith: AnswerWith
+    correct: Boolean
+    answeredTerm: TermInput
+    distractors: [TermInput]
+    correctChoiceIndex: Int
+}
+input TrueFalseQuestionInput {
+    term: TermInput
+    answerWith: AnswerWith
+    correct: Boolean
+    answeredBool: Boolean
+    distractor: TermInput
+}
+input MatchQuestionInput {
+    term: TermInput
+    answerWith: AnswerWith
+    correct: Boolean
+    answeredTerm: TermInput
+    group: Int
+}
+input FRQInput {
+    term: TermInput
+    answerWith: AnswerWith
+    correct: Boolean
+    userMarkedCorrect: Boolean
+    answeredString: String
+}
