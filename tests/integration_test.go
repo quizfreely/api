@@ -9,6 +9,7 @@ import (
 	"os"
 	"testing"
 
+	"quizfreely/api/config"
 	"quizfreely/api/server"
 
 	"github.com/amacneil/dbmate/v2/pkg/dbmate"
@@ -136,7 +137,10 @@ VALUES ($1) RETURNING token`,
 		panic(err)
 	}
 
-	router := server.NewRouter(dbPool)
+	router := server.NewRouter(dbPool, config.Config{
+		BasePath:          "/",
+		EnableOAuthGoogle: false,
+	})
 	testServer = httptest.NewServer(router)
 
 	code := m.Run()
