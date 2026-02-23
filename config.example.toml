@@ -1,0 +1,37 @@
+port = 8008
+
+db_url = 'postgres://quizfreely_api:PASSWORD@localhost:5432/quizfreely_db'
+
+db_migration_url = 'postgres://quizfreely_db_admin:PASSWORD@localhost:5432/quizfreely_db?sslmode=disable'
+
+# for production: pretty_log = false
+# pretty print logs for easier debugging in development
+# disable for production for better performance
+pretty_log = true
+
+# change base_path if the API is under a different path
+# like example.org/api/ instead of example.org/
+# (mabye when using a reverse proxy, mabye in production)
+# 
+# base_path needs to start with a slash ('/')
+# 
+# example: base_path = '/api/'
+base_path = '/'
+
+enable_oauth_google = false
+
+# if enable_oauth_google is true,
+# uncomment oauth_google_client_id, oauth_google_client_secret,
+# oauth_google_callback_url, and oauth_final_redirect_url
+
+# oauth_google_client_id = '123-abc456def789.apps.googleusercontent.com'
+# oauth_google_client_secret = 'ABC-DEf123_4ab-CD567'
+# oauth_google_callback_url = 'http://localhost:8080/api/oauth/google/callback'
+# oauth_final_redirect_url = 'http://localhost:8080/sign-in'
+
+storage_endpoint_url = 'http://localhost:3900'
+storage_region = "garage"
+storage_key_id = ''
+storage_secret_key = ''
+usercontent_bucket = "usercontent"
+
