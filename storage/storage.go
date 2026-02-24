@@ -2,8 +2,8 @@ package storage
 
 import (
 	"context"
-	"log"
 
+	"github.com/rs/zerolog/log"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
@@ -18,7 +18,7 @@ func InitS3Client(endpoint string, region string, accessKeyID string, secretKey 
 		config.WithRegion(region),
 	)
 	if err != nil {
-		log.Fatalf("unable to load SDK config, %v", err)
+		log.Fatal().Error(err).Msgf("InitS3Client: Unable to load S3 SDK config")
 	}
 
 	s3Client := s3.NewFromConfig(cfg, func(o *s3.Options) {
