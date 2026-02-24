@@ -24,7 +24,11 @@ func NewRouter(config qzfrAPIConfig.Config, dbPool *pgxpool.Pool, s3Client *s3.C
 	router := chi.NewRouter()
 
 	authHandler := &auth.AuthHandler{DB: dbPool}
-	restHandler := &rest.RESTHandler{DB: dbPool}
+	restHandler := &rest.RESTHandler{
+		DB: dbPool,
+		Storage: s3Client,
+		StorageUsercontentBucket: config.UsercontentBucket
+	}
 
 	router.Post(
 		"/v0/auth/sign-up",
@@ -99,6 +103,15 @@ func NewRouter(config qzfrAPIConfig.Config, dbPool *pgxpool.Pool, s3Client *s3.C
 			"/v0/search-queries",
 			restHandler.GetSearchQueries,
 		)
+
+		if s3Client != nil {
+			router.With(
+				authHandler.AuthMiddleware
+			).Post(
+				"/term-images/{termID}/{side}",
+				restHandler.UploadTermImage
+			)
+		}
 	})
 
 	return router
