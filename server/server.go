@@ -17,9 +17,10 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/vektah/gqlparser/v2/ast"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
-func NewRouter(dbPool *pgxpool.Pool, config qzfrAPIConfig.Config) http.Handler {
+func NewRouter(config qzfrAPIConfig.Config, dbPool *pgxpool.Pool, s3Client *s3.Client) http.Handler {
 	router := chi.NewRouter()
 
 	authHandler := &auth.AuthHandler{DB: dbPool}

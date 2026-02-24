@@ -137,10 +137,14 @@ VALUES ($1) RETURNING token`,
 		panic(err)
 	}
 
-	router := server.NewRouter(dbPool, config.Config{
-		BasePath:          "/",
-		EnableOAuthGoogle: false,
-	})
+	router := server.NewRouter(
+		config.Config{
+			BasePath:          "/",
+			EnableOAuthGoogle: false,
+		},
+		dbPool,
+		nil
+	)
 	testServer = httptest.NewServer(router)
 
 	code := m.Run()
