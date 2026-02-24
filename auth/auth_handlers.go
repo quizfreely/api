@@ -193,7 +193,7 @@ type TokenAndAuthedUser struct {
 	Username         *string         `db:"username"`
 	DisplayName      *string         `db:"display_name"`
 	AuthType         *model.AuthType `db:"auth_type"`
-	OauthGoogleEmail *string         `db:"oauth_google_email"`
+	OAuthGoogleEmail *string         `db:"oauth_google_email"`
 }
 
 func (ah *AuthHandler) SignIn(w http.ResponseWriter, r *http.Request) {
@@ -320,7 +320,7 @@ FROM s, u`,
 				"username":           tokenAndAuthedUser.Username,
 				"display_name":       tokenAndAuthedUser.DisplayName,
 				"auth_type":          tokenAndAuthedUser.AuthType,
-				"oauth_google_email": tokenAndAuthedUser.OauthGoogleEmail,
+				"oauth_google_email": tokenAndAuthedUser.OAuthGoogleEmail,
 			},
 		},
 	})

@@ -5,6 +5,6 @@ type AuthedUser struct {
 	Username         *string   `json:"username,omitempty" db:"username"`
 	DisplayName      *string   `json:"displayName,omitempty" db:"display_name"`
 	AuthType         *AuthType `json:"authType,omitempty" db:"auth_type"`
-	OauthGoogleEmail *string   `json:"oauthGoogleEmail,omitempty" db:"oauth_google_email"`
+	OAuthGoogleEmail *string   `json:"oauthGoogleEmail,omitempty" db:"oauth_google_email"`
 	ModPerms         *bool     `json:"modPerms,omitempty" db:"mod_perms"`
 }

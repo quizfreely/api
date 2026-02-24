@@ -15,7 +15,7 @@ import (
 	"golang.org/x/oauth2/google"
 )
 
-var googleOauthConfig *oauth2.Config
+var googleOAuthConfig *oauth2.Config
 var finalRedirectURL string
 
 func InitOAuthGoogle(config qzfrAPIConfig.Config) {
@@ -23,7 +23,7 @@ func InitOAuthGoogle(config qzfrAPIConfig.Config) {
 
 	finalRedirectURL = config.OAuthFinalRedirectURL
 
-	googleOauthConfig = &oauth2.Config{
+	googleOAuthConfig = &oauth2.Config{
 		ClientID:     config.OAuthGoogleClientID,
 		ClientSecret: config.OAuthGoogleClientSecret,
 		RedirectURL:  config.OAuthGoogleCallbackURL,
@@ -70,7 +70,7 @@ func (ah *AuthHandler) OAuthGoogleRedirect(w http.ResponseWriter, r *http.Reques
 	})
 
 	// Redirect to Google
-	redirUrl := googleOauthConfig.AuthCodeURL(state, oauth2.AccessTypeOffline)
+	redirUrl := googleOAuthConfig.AuthCodeURL(state, oauth2.AccessTypeOffline)
 	http.Redirect(w, r, redirUrl, http.StatusTemporaryRedirect)
 }
 
@@ -92,7 +92,7 @@ func (ah *AuthHandler) OAuthGoogleCallback(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	token, err := googleOauthConfig.Exchange(r.Context(), r.FormValue("code"))
+	token, err := googleOAuthConfig.Exchange(r.Context(), r.FormValue("code"))
 	if err != nil {
 		log.Warn().Err(err).Msg("Google OAuth code exchange failed")
 		redirUrl := finalRedirectURL
