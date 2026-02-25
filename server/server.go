@@ -27,7 +27,7 @@ func NewRouter(config qzfrAPIConfig.Config, dbPool *pgxpool.Pool, s3Client *s3.C
 	restHandler := &rest.RESTHandler{
 		DB: dbPool,
 		Storage: s3Client,
-		StorageUsercontentBucket: &config.UsercontentBucket,
+		UsercontentBucket: &config.UsercontentBucket,
 		UsercontentBaseURL: &config.UsercontentBaseURL,
 	}
 

@@ -205,6 +205,29 @@ func (rh *RESTHandler) UploadTermImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	
+	var oldKey *string
+	oldKeySQL := `SELECT term_image_key FROM terms WHERE id = $1`
+	if side == "def" {
+		oldKeySQL = `SELECT def_image_key FROM terms WHERE id = $1`
+	}
+	err = pgxscan.Get(
+		ctx,
+		&oldKey,
+		oldKeySQL,
+		termID,
+	)
+	if err != nil {
+		log.Error().Err(err).Msg("error getting old term/def image key from DB")
+	} else if oldKey != nil {
+		_, err = rh.Storage.DeleteObject(ctx, &s3.DeleteObjectInput{
+			Bucket: rh.UsercontentBucket,
+			Key: oldKey,
+		})
+		if err != nil {
+			log.Error().Err(err).Msg("error deleting old term/def image from S3")
+		}
+	}
+
 	sql := `UPDATE terms
 		SET term_image_key = $2
 		WHERE id = $1`
