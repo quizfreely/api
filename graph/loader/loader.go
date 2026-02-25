@@ -398,7 +398,7 @@ func NewLoaders(db *pgxpool.Pool, usercontentBaseURL *string) *Loaders {
 	// define the data loader
 	dr := &dataReader{
 		db: db,
-		usercontentBaseURL: usercontentBaseURL
+		usercontentBaseURL: usercontentBaseURL,
 	}
 	return &Loaders{
 		UserLoader:                         dataloadgen.NewLoader(dr.getUsers, dataloadgen.WithWait(time.Millisecond)),
