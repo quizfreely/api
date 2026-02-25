@@ -55,7 +55,7 @@ func main() {
 		config.DBURL,
 	)
 	if err != nil {
-		log.Fatal().Err(err).Msgf("Error creating database pool")
+		log.Fatal().Err(err).Msg("Error creating database pool")
 	}
 	defer dbPool.Close()
 
@@ -77,7 +77,7 @@ func main() {
 	)
 	log.Fatal().Err(
 		http.ListenAndServe(":"+port, router),
-	).Msgf("Error starting server")
+	).Msg("Error starting server")
 
 	startSessionCleanupJob(dbPool)
 }
