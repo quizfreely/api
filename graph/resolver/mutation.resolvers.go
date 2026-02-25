@@ -215,7 +215,7 @@ func (r *mutationResolver) UpdateTerms(ctx context.Context, studysetID string, t
 			%s
 		) AS v(id, term, def, sort_order)
 		WHERE t.id = v.id AND t.studyset_id = $1
-		RETURNING t.id, t.term, t.def, $2||t.term_image_key, $2||t.def_image_key, t.sort_order,
+		RETURNING t.id, t.term, t.def, ($2||t.term_image_key) as term_image_key, ($2||t.def_image_key) as def_image_key, t.sort_order,
 			to_char(t.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 			to_char(t.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at`,
 		strings.Join(placeholders, ","),
