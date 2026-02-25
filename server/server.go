@@ -74,7 +74,10 @@ func NewRouter(config qzfrAPIConfig.Config, dbPool *pgxpool.Pool, s3Client *s3.C
 	router.Group(func(r chi.Router) {
 		r.Use(authHandler.AuthMiddleware)
 
-		h := handler.New(graph.NewExecutableSchema(graph.Config{Resolvers: &resolver.Resolver{DB: dbPool}}))
+		h := handler.New(graph.NewExecutableSchema(graph.Config{Resolvers: &resolver.Resolver{
+			DB: dbPool,
+			UsercontentBaseURL: config.UsercontentBaseURL,
+		}}))
 
 		h.AddTransport(transport.Options{})
 		h.AddTransport(transport.GET{})

@@ -19,7 +19,8 @@ const MaxBatchMutationSize = 9000
 const MaxFolderNameLen = 1000
 
 type Resolver struct {
-	DB *pgxpool.Pool
+	DB *pgxpool.Pool,
+	UsercontentBaseURL *string,
 }
 
 func ptrToString(s *string) string {
