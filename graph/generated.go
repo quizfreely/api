@@ -283,7 +283,7 @@ type MutationResolver interface {
 	UpdateStudyset(ctx context.Context, id string, studyset *model.StudysetInput) (*model.Studyset, error)
 	CreateTerms(ctx context.Context, studysetID string, terms []*model.NewTermInput) ([]*model.Term, error)
 	UpdateTerms(ctx context.Context, studysetID string, terms []*model.TermInput) ([]*model.Term, error)
-	DeleteTerms(ctx context.Context, studysetID string, ids []string) ([]*string, error)
+	DeleteTerms(ctx context.Context, studysetID string, ids []string) ([]string, error)
 	DeleteStudyset(ctx context.Context, id string) (*string, error)
 	UpdateUser(ctx context.Context, displayName *string) (*model.AuthedUser, error)
 	UpdateTermProgress(ctx context.Context, termProgress []*model.TermProgressInput) ([]*model.TermProgress, error)
@@ -4314,9 +4314,9 @@ func (ec *executionContext) _Mutation_deleteTerms(ctx context.Context, field gra
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*string)
+	res := resTmp.([]string)
 	fc.Result = res
-	return ec.marshalOID2ᚕᚖstring(ctx, field.Selections, res)
+	return ec.marshalOID2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_deleteTerms(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -16132,17 +16132,17 @@ func (ec *executionContext) marshalOFolder2ᚖquizfreelyᚋapiᚋgraphᚋmodel�
 	return ec._Folder(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOID2ᚕᚖstring(ctx context.Context, v any) ([]*string, error) {
+func (ec *executionContext) unmarshalOID2ᚕstringᚄ(ctx context.Context, v any) ([]string, error) {
 	if v == nil {
 		return nil, nil
 	}
 	var vSlice []any
 	vSlice = graphql.CoerceList(v)
 	var err error
-	res := make([]*string, len(vSlice))
+	res := make([]string, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalOID2ᚖstring(ctx, vSlice[i])
+		res[i], err = ec.unmarshalNID2string(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -16150,13 +16150,19 @@ func (ec *executionContext) unmarshalOID2ᚕᚖstring(ctx context.Context, v any
 	return res, nil
 }
 
-func (ec *executionContext) marshalOID2ᚕᚖstring(ctx context.Context, sel ast.SelectionSet, v []*string) graphql.Marshaler {
+func (ec *executionContext) marshalOID2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	ret := make(graphql.Array, len(v))
 	for i := range v {
-		ret[i] = ec.marshalOID2ᚖstring(ctx, sel, v[i])
+		ret[i] = ec.marshalNID2string(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
 	}
 
 	return ret

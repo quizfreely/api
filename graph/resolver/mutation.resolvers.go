@@ -15,6 +15,8 @@ import (
 
 	"github.com/georgysavva/scany/v2/pgxscan"
 	pgx "github.com/jackc/pgx/v5"
+    "github.com/aws/aws-sdk-go-v2/service/s3"
+    "github.com/aws/aws-sdk-go-v2/service/s3/types"
 )
 
 // CreateStudyset is the resolver for the createStudyset field.
@@ -232,7 +234,7 @@ func (r *mutationResolver) UpdateTerms(ctx context.Context, studysetID string, t
 				studysetID,
 				r.UsercontentBaseURL,
 			},
-			values...
+			values...,
 		)...,
 	)
 	if err != nil {
@@ -247,8 +249,10 @@ func (r *mutationResolver) UpdateTerms(ctx context.Context, studysetID string, t
 }
 
 // DeleteTerms is the resolver for the deleteTerms field.
-func (r *mutationResolver) DeleteTerms(ctx context.Context, studysetID string, ids []string) ([]*string, error) {
-	if len(ids) > MaxBatchMutationSize {
+func (r *mutationResolver) DeleteTerms(ctx context.Context, studysetID string, ids []string) ([]string, error) {
+	if len(ids) == 0 {
+		return []string{}, nil
+	} else if len(ids) > MaxBatchMutationSize {
 		return nil, fmt.Errorf("too many items in a single request (max %d)", MaxBatchMutationSize)
 	}
 
@@ -273,19 +277,56 @@ func (r *mutationResolver) DeleteTerms(ctx context.Context, studysetID string, i
 		return nil, fmt.Errorf("studyset not found or not owned by user")
 	}
 
-	if len(ids) == 0 {
-		return []*string{}, nil
+	type deletedTerm struct {
+		ID string `db:"id"`
+		TermImageKey *string `db:"term_image_key"`
+		DefImageKey *string `db:"def_image_key"`
 	}
-
-	var deletedIDs []*string
-	sql := "DELETE FROM terms WHERE id = ANY($1) AND studyset_id = $2 RETURNING id"
-	err = pgxscan.Select(ctx, tx, &deletedIDs, sql, ids, studysetID)
+	var deletedTerms []deletedTerm
+	sql := "DELETE FROM terms WHERE id = ANY($1) AND studyset_id = $2 RETURNING id, term_image_key, def_image_key"
+	err = pgxscan.Select(ctx, tx, &deletedTerms, sql, ids, studysetID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to delete terms: %w", err)
 	}
 
 	if err := tx.Commit(ctx); err != nil {
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	deletedIDs := make([]string, 0, len(deletedTerms))
+	var objects []types.ObjectIdentifier
+	for _, term := range deletedTerms {
+		deletedIDs = append(deletedIDs, term.ID)
+	    if r.Storage != nil && term.TermImageKey != nil {
+	        objects = append(objects, types.ObjectIdentifier{
+	            Key: term.TermImageKey,
+	        })
+	    }
+	    if r.Storage != nil && term.DefImageKey != nil {
+	        objects = append(objects, types.ObjectIdentifier{
+	            Key: term.DefImageKey,
+	        })
+	    }
+	}
+
+	if (r.Storage != nil) {
+		for i := 0; i < len(objects); i += 1000 {
+		    end := i + 1000
+		    if end > len(objects) {
+		        end = len(objects)
+		    }
+		
+		    _, err := r.Storage.DeleteObjects(ctx, &s3.DeleteObjectsInput{
+		        Bucket: r.UsercontentBucket,
+		        Delete: &types.Delete{
+		            Objects: objects[i:end],
+		            Quiet:   aws.Bool(true),
+		        },
+		    })
+		    if err != nil {
+		        log.Error().Err(err).Msg("DeleteTerms error deleting term images from S3")
+		    }
+		}
 	}
 
 	return deletedIDs, nil

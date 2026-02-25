@@ -3,7 +3,7 @@ type Mutation {
     updateStudyset(id: ID!, studyset: StudysetInput): Studyset
     createTerms(studysetId: ID!, terms: [NewTermInput!]!): [Term]
     updateTerms(studysetId: ID!, terms: [TermInput!]!): [Term]
-    deleteTerms(studysetId: ID!, ids: [ID!]!): [ID]
+    deleteTerms(studysetId: ID!, ids: [ID!]!): [ID!]
     deleteStudyset(id: ID!): ID
     updateUser(displayName: String): AuthedUser
     updateTermProgress(termProgress: [TermProgressInput!]!): [TermProgress]
