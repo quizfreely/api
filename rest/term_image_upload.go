@@ -185,7 +185,7 @@ func (rh *RESTHandler) UploadTermImage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	hash := sha256.Sum256(buf.Bytes())
-	hashStr := hex.EncodeToString(hash[:])
+	hashStr := hex.EncodeToString(hash[:])[:16]
 	objectKey := "terms/"+termID+"/"+side+"-"+hashStr+".webp"
 
 	_, err = rh.Storage.PutObject(ctx, &s3.PutObjectInput{
