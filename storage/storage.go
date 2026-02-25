@@ -18,7 +18,7 @@ func InitS3Client(endpoint string, region string, accessKeyID string, secretKey 
 		config.WithRegion(region),
 	)
 	if err != nil {
-		log.Fatal().Error(err).Msgf("InitS3Client: Unable to load S3 SDK config")
+		log.Fatal().Err(err).Msg("InitS3Client: Unable to load S3 SDK config")
 	}
 
 	s3Client := s3.NewFromConfig(cfg, func(o *s3.Options) {

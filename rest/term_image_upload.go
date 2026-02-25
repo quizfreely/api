@@ -1,15 +1,23 @@
 package rest
 
 import (
-	"strings"
+	"bytes"
 	"image"
-    _ "image/jpeg"
-    _ "image/png"
-    _ "golang.org/x/image/webp"
+	"io"
+	"net/http"
+	"strings"
+	"crypto/sha256"
+	"encoding/hex"
+
+	"quizfreely/api/auth"
 
 	"github.com/rs/zerolog/log"
+	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
+	"github.com/disintegration/imaging"
+	"github.com/chai2010/webp"
 	"github.com/georgysavva/scany/v2/pgxscan"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
@@ -51,8 +59,8 @@ func (rh *RESTHandler) UploadTermImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	authedUser := AuthedUserContext(ctx)
-	if authedUser.ID == nil || authedUser.ID == "" {
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser.ID == nil || *authedUser.ID == "" {
 		render.Status(r, 401)
 		render.JSON(w, r, map[string]any{
 			"error": "not authenticated while trying to upload image for term",
@@ -120,7 +128,7 @@ func (rh *RESTHandler) UploadTermImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cfg, format, err := image.DecodeConfig(bytes.NewReader(raw))
+	cfg, _, err := image.DecodeConfig(bytes.NewReader(raw))
 	if err != nil {
 		render.Status(r, 400)
 		render.JSON(w, r, map[string]any{
@@ -168,6 +176,10 @@ func (rh *RESTHandler) UploadTermImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	hash := sha256.Sum256(buf.Bytes())
+	hashStr := hex.EncodeToString(hash[:])
+	objectKey := "terms/"+termID+"/"+side+"-"+hashStr+".webp"
+
 	_, err = rh.Storage.PutObject(ctx, &s3.PutObjectInput{
 		Bucket:      aws.String(rh.StorageUsercontentBucket),
 		Key:         aws.String(objectKey),
@@ -184,8 +196,36 @@ func (rh *RESTHandler) UploadTermImage(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
+	
+	sql := `UPDATE terms
+		SET term_image_key = $2
+		WHERE id = $1`
+	if side == "def" {
+		sql = `UPDATE terms
+			SET def_image_key = $2
+			WHERE id = $1`
+	}
+	_, err = rh.DB.Exec(
+		ctx,
+		sql,
+		termID,
+		objectKey,
+	)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to update term/def image key in DB")
+		render.Status(r, 500)
+		render.JSON(w, r, map[string]any{
+			"error": "failed to update term/def image key in DB",
+		})
+		return
+	}
 
-	pgxscan.Select
+	render.JSON(w, r, map[string]interface{}{
+		"error": false,
+		"data": map[string]interface{}{
+			"imageUrl": objectKey,
+		},
+	})
 }
 
 func isMIMEAllowed(m string) bool {

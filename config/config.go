@@ -16,4 +16,5 @@ type Config struct {
 	StorageKeyID            string `toml:"storage_key_id"`
 	StorageSecretKey        string `toml:"storage_secret_key"`
 	UsercontentBucket       string `toml:"usercontent_bucket"`
+	UsercontentBaseURL       string `toml:"usercontent_base_url"`
 }

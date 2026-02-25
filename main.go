@@ -60,9 +60,9 @@ func main() {
 	defer dbPool.Close()
 
 	var s3Client *s3.Client
-	if config.StorageEndpoint != "" {
+	if config.StorageEndpointURL != "" {
 		s3Client = storage.InitS3Client(
-			config.StorageEndpoint,
+			config.StorageEndpointURL,
 			config.StorageRegion,
 			config.StorageKeyID,
 			config.StorageSecretKey,

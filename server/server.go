@@ -27,7 +27,7 @@ func NewRouter(config qzfrAPIConfig.Config, dbPool *pgxpool.Pool, s3Client *s3.C
 	restHandler := &rest.RESTHandler{
 		DB: dbPool,
 		Storage: s3Client,
-		StorageUsercontentBucket: config.UsercontentBucket
+		StorageUsercontentBucket: config.UsercontentBucket,
 	}
 
 	router.Post(
@@ -106,10 +106,10 @@ func NewRouter(config qzfrAPIConfig.Config, dbPool *pgxpool.Pool, s3Client *s3.C
 
 		if s3Client != nil {
 			router.With(
-				authHandler.AuthMiddleware
+				authHandler.AuthMiddleware,
 			).Post(
 				"/term-images/{termID}/{side}",
-				restHandler.UploadTermImage
+				restHandler.UploadTermImage,
 			)
 		}
 	})

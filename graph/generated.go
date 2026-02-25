@@ -58,7 +58,7 @@ type ComplexityRoot struct {
 		DisplayName      func(childComplexity int) int
 		ID               func(childComplexity int) int
 		ModPerms         func(childComplexity int) int
-		OauthGoogleEmail func(childComplexity int) int
+		OAuthGoogleEmail func(childComplexity int) int
 		Username         func(childComplexity int) int
 	}
 
@@ -211,11 +211,13 @@ type ComplexityRoot struct {
 	Term struct {
 		CreatedAt                func(childComplexity int) int
 		Def                      func(childComplexity int) int
+		DefImageURL              func(childComplexity int) int
 		ID                       func(childComplexity int) int
 		Progress                 func(childComplexity int) int
 		ProgressHistory          func(childComplexity int) int
 		SortOrder                func(childComplexity int) int
 		Term                     func(childComplexity int) int
+		TermImageURL             func(childComplexity int) int
 		TopConfusionPairs        func(childComplexity int) int
 		TopReverseConfusionPairs func(childComplexity int) int
 		UpdatedAt                func(childComplexity int) int
@@ -397,11 +399,11 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		return e.complexity.AuthedUser.ModPerms(childComplexity), true
 
 	case "AuthedUser.oauthGoogleEmail":
-		if e.complexity.AuthedUser.OauthGoogleEmail == nil {
+		if e.complexity.AuthedUser.OAuthGoogleEmail == nil {
 			break
 		}
 
-		return e.complexity.AuthedUser.OauthGoogleEmail(childComplexity), true
+		return e.complexity.AuthedUser.OAuthGoogleEmail(childComplexity), true
 
 	case "AuthedUser.username":
 		if e.complexity.AuthedUser.Username == nil {
@@ -1321,6 +1323,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Term.Def(childComplexity), true
 
+	case "Term.defImageUrl":
+		if e.complexity.Term.DefImageURL == nil {
+			break
+		}
+
+		return e.complexity.Term.DefImageURL(childComplexity), true
+
 	case "Term.id":
 		if e.complexity.Term.ID == nil {
 			break
@@ -1355,6 +1364,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Term.Term(childComplexity), true
+
+	case "Term.termImageUrl":
+		if e.complexity.Term.TermImageURL == nil {
+			break
+		}
+
+		return e.complexity.Term.TermImageURL(childComplexity), true
 
 	case "Term.topConfusionPairs":
 		if e.complexity.Term.TopConfusionPairs == nil {
@@ -2639,7 +2655,7 @@ func (ec *executionContext) _AuthedUser_oauthGoogleEmail(ctx context.Context, fi
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.OauthGoogleEmail, nil
+		return obj.OAuthGoogleEmail, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2749,6 +2765,10 @@ func (ec *executionContext) fieldContext_FRQ_term(_ context.Context, field graph
 				return ec.fieldContext_Term_term(ctx, field)
 			case "def":
 				return ec.fieldContext_Term_def(ctx, field)
+			case "termImageUrl":
+				return ec.fieldContext_Term_termImageUrl(ctx, field)
+			case "defImageUrl":
+				return ec.fieldContext_Term_defImageUrl(ctx, field)
 			case "sortOrder":
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
@@ -3420,6 +3440,10 @@ func (ec *executionContext) fieldContext_MCQ_term(_ context.Context, field graph
 				return ec.fieldContext_Term_term(ctx, field)
 			case "def":
 				return ec.fieldContext_Term_def(ctx, field)
+			case "termImageUrl":
+				return ec.fieldContext_Term_termImageUrl(ctx, field)
+			case "defImageUrl":
+				return ec.fieldContext_Term_defImageUrl(ctx, field)
 			case "sortOrder":
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
@@ -3565,6 +3589,10 @@ func (ec *executionContext) fieldContext_MCQ_answeredTerm(_ context.Context, fie
 				return ec.fieldContext_Term_term(ctx, field)
 			case "def":
 				return ec.fieldContext_Term_def(ctx, field)
+			case "termImageUrl":
+				return ec.fieldContext_Term_termImageUrl(ctx, field)
+			case "defImageUrl":
+				return ec.fieldContext_Term_defImageUrl(ctx, field)
 			case "sortOrder":
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
@@ -3628,6 +3656,10 @@ func (ec *executionContext) fieldContext_MCQ_distractors(_ context.Context, fiel
 				return ec.fieldContext_Term_term(ctx, field)
 			case "def":
 				return ec.fieldContext_Term_def(ctx, field)
+			case "termImageUrl":
+				return ec.fieldContext_Term_termImageUrl(ctx, field)
+			case "defImageUrl":
+				return ec.fieldContext_Term_defImageUrl(ctx, field)
 			case "sortOrder":
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
@@ -3732,6 +3764,10 @@ func (ec *executionContext) fieldContext_MatchQuestion_term(_ context.Context, f
 				return ec.fieldContext_Term_term(ctx, field)
 			case "def":
 				return ec.fieldContext_Term_def(ctx, field)
+			case "termImageUrl":
+				return ec.fieldContext_Term_termImageUrl(ctx, field)
+			case "defImageUrl":
+				return ec.fieldContext_Term_defImageUrl(ctx, field)
 			case "sortOrder":
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
@@ -3877,6 +3913,10 @@ func (ec *executionContext) fieldContext_MatchQuestion_answeredTerm(_ context.Co
 				return ec.fieldContext_Term_term(ctx, field)
 			case "def":
 				return ec.fieldContext_Term_def(ctx, field)
+			case "termImageUrl":
+				return ec.fieldContext_Term_termImageUrl(ctx, field)
+			case "defImageUrl":
+				return ec.fieldContext_Term_defImageUrl(ctx, field)
 			case "sortOrder":
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
@@ -4137,6 +4177,10 @@ func (ec *executionContext) fieldContext_Mutation_createTerms(ctx context.Contex
 				return ec.fieldContext_Term_term(ctx, field)
 			case "def":
 				return ec.fieldContext_Term_def(ctx, field)
+			case "termImageUrl":
+				return ec.fieldContext_Term_termImageUrl(ctx, field)
+			case "defImageUrl":
+				return ec.fieldContext_Term_defImageUrl(ctx, field)
 			case "sortOrder":
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
@@ -4211,6 +4255,10 @@ func (ec *executionContext) fieldContext_Mutation_updateTerms(ctx context.Contex
 				return ec.fieldContext_Term_term(ctx, field)
 			case "def":
 				return ec.fieldContext_Term_def(ctx, field)
+			case "termImageUrl":
+				return ec.fieldContext_Term_termImageUrl(ctx, field)
+			case "defImageUrl":
+				return ec.fieldContext_Term_defImageUrl(ctx, field)
 			case "sortOrder":
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
@@ -5773,6 +5821,10 @@ func (ec *executionContext) fieldContext_Query_term(ctx context.Context, field g
 				return ec.fieldContext_Term_term(ctx, field)
 			case "def":
 				return ec.fieldContext_Term_def(ctx, field)
+			case "termImageUrl":
+				return ec.fieldContext_Term_termImageUrl(ctx, field)
+			case "defImageUrl":
+				return ec.fieldContext_Term_defImageUrl(ctx, field)
 			case "sortOrder":
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
@@ -7549,6 +7601,10 @@ func (ec *executionContext) fieldContext_Studyset_terms(_ context.Context, field
 				return ec.fieldContext_Term_term(ctx, field)
 			case "def":
 				return ec.fieldContext_Term_def(ctx, field)
+			case "termImageUrl":
+				return ec.fieldContext_Term_termImageUrl(ctx, field)
+			case "defImageUrl":
+				return ec.fieldContext_Term_defImageUrl(ctx, field)
 			case "sortOrder":
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
@@ -8329,6 +8385,88 @@ func (ec *executionContext) fieldContext_Term_def(_ context.Context, field graph
 	return fc, nil
 }
 
+func (ec *executionContext) _Term_termImageUrl(ctx context.Context, field graphql.CollectedField, obj *model.Term) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Term_termImageUrl(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TermImageURL, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Term_termImageUrl(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Term",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Term_defImageUrl(ctx context.Context, field graphql.CollectedField, obj *model.Term) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Term_defImageUrl(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DefImageURL, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Term_defImageUrl(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Term",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Term_sortOrder(ctx context.Context, field graphql.CollectedField, obj *model.Term) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Term_sortOrder(ctx, field)
 	if err != nil {
@@ -8769,6 +8907,10 @@ func (ec *executionContext) fieldContext_TermConfusionPair_term(_ context.Contex
 				return ec.fieldContext_Term_term(ctx, field)
 			case "def":
 				return ec.fieldContext_Term_def(ctx, field)
+			case "termImageUrl":
+				return ec.fieldContext_Term_termImageUrl(ctx, field)
+			case "defImageUrl":
+				return ec.fieldContext_Term_defImageUrl(ctx, field)
 			case "sortOrder":
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
@@ -8832,6 +8974,10 @@ func (ec *executionContext) fieldContext_TermConfusionPair_confusedTerm(_ contex
 				return ec.fieldContext_Term_term(ctx, field)
 			case "def":
 				return ec.fieldContext_Term_def(ctx, field)
+			case "termImageUrl":
+				return ec.fieldContext_Term_termImageUrl(ctx, field)
+			case "defImageUrl":
+				return ec.fieldContext_Term_defImageUrl(ctx, field)
 			case "sortOrder":
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
@@ -9797,6 +9943,10 @@ func (ec *executionContext) fieldContext_TrueFalseQuestion_term(_ context.Contex
 				return ec.fieldContext_Term_term(ctx, field)
 			case "def":
 				return ec.fieldContext_Term_def(ctx, field)
+			case "termImageUrl":
+				return ec.fieldContext_Term_termImageUrl(ctx, field)
+			case "defImageUrl":
+				return ec.fieldContext_Term_defImageUrl(ctx, field)
 			case "sortOrder":
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
@@ -9983,6 +10133,10 @@ func (ec *executionContext) fieldContext_TrueFalseQuestion_distractor(_ context.
 				return ec.fieldContext_Term_term(ctx, field)
 			case "def":
 				return ec.fieldContext_Term_def(ctx, field)
+			case "termImageUrl":
+				return ec.fieldContext_Term_termImageUrl(ctx, field)
+			case "defImageUrl":
+				return ec.fieldContext_Term_defImageUrl(ctx, field)
 			case "sortOrder":
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
@@ -14439,6 +14593,10 @@ func (ec *executionContext) _Term(ctx context.Context, sel ast.SelectionSet, obj
 			out.Values[i] = ec._Term_term(ctx, field, obj)
 		case "def":
 			out.Values[i] = ec._Term_def(ctx, field, obj)
+		case "termImageUrl":
+			out.Values[i] = ec._Term_termImageUrl(ctx, field, obj)
+		case "defImageUrl":
+			out.Values[i] = ec._Term_defImageUrl(ctx, field, obj)
 		case "sortOrder":
 			out.Values[i] = ec._Term_sortOrder(ctx, field, obj)
 		case "progress":
