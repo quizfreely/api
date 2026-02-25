@@ -53,7 +53,7 @@ func (dr *dataReader) getTermsByIDs(ctx context.Context, ids []string) ([]*model
 		ctx,
 		dr.db,
 		&terms,
-		`SELECT t.id, t.studyset_id, t.term, t.def, $2 || t.term_image_key, $2 || t.def_image_key, t.sort_order,
+		`SELECT t.id, t.studyset_id, t.term, t.def, $2||t.term_image_key, $2||t.def_image_key, t.sort_order,
 	to_char(t.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 	to_char(t.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 FROM unnest($1::uuid[]) WITH ORDINALITY AS input(id, og_order)
@@ -61,7 +61,7 @@ LEFT JOIN terms t
 	ON t.id = input.id
 ORDER BY input.og_order`,
 		ids,
-		dr.confi
+		dr.usercontentBaseURL,
 	)
 	if err != nil {
 		return nil, []error{err}
@@ -77,13 +77,14 @@ func (dr *dataReader) getTermsByStudysetIDs(ctx context.Context, studysetIDs []s
 		ctx,
 		dr.db,
 		&terms,
-		`SELECT t.id, t.studyset_id, t.term, t.def, t.sort_order,
+		`SELECT t.id, t.studyset_id, t.term, t.def, $2||t.term_image_key, $2||t.def_image_key, t.sort_order,
 	to_char(t.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 	to_char(t.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 FROM terms t
 WHERE t.studyset_id = ANY($1::uuid[])
 ORDER BY t.studyset_id, t.sort_order`,
 		studysetIDs,
+		dr.usercontentBaseURL,
 	)
 	if err != nil {
 		return nil, []error{err}
