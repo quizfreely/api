@@ -21,6 +21,7 @@ const (
 
 type dataReader struct {
 	db *pgxpool.Pool
+	usercontentBaseURL *string
 }
 
 // getUsers implements a batch function that can retrieve many users by ID,
@@ -52,7 +53,7 @@ func (dr *dataReader) getTermsByIDs(ctx context.Context, ids []string) ([]*model
 		ctx,
 		dr.db,
 		&terms,
-		`SELECT t.id, t.studyset_id, t.term, t.def, t.sort_order,
+		`SELECT t.id, t.studyset_id, t.term, t.def, $2 || t.term_image_key, $2 || t.def_image_key, t.sort_order,
 	to_char(t.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 	to_char(t.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 FROM unnest($1::uuid[]) WITH ORDINALITY AS input(id, og_order)
@@ -60,6 +61,7 @@ LEFT JOIN terms t
 	ON t.id = input.id
 ORDER BY input.og_order`,
 		ids,
+		dr.confi
 	)
 	if err != nil {
 		return nil, []error{err}
@@ -391,9 +393,12 @@ type Loaders struct {
 }
 
 // NewLoaders instantiates data loaders for the middleware
-func NewLoaders(db *pgxpool.Pool) *Loaders {
+func NewLoaders(db *pgxpool.Pool, usercontentBaseURL *string) *Loaders {
 	// define the data loader
-	dr := &dataReader{db: db}
+	dr := &dataReader{
+		db: db,
+		usercontentBaseURL: usercontentBaseURL
+	}
 	return &Loaders{
 		UserLoader:                         dataloadgen.NewLoader(dr.getUsers, dataloadgen.WithWait(time.Millisecond)),
 		TermByIDLoader:                     dataloadgen.NewLoader(dr.getTermsByIDs, dataloadgen.WithWait(time.Millisecond)),
@@ -408,10 +413,10 @@ func NewLoaders(db *pgxpool.Pool) *Loaders {
 }
 
 // Middleware injects data loaders into the context
-func Middleware(db *pgxpool.Pool, next http.Handler) http.Handler {
+func Middleware(db *pgxpool.Pool, usercontentBaseURL *string, next http.Handler) http.Handler {
 	// return a middleware that injects the loader to the request context
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		loader := NewLoaders(db)
+		loader := NewLoaders(db, usercontentBaseURL)
 		r = r.WithContext(context.WithValue(r.Context(), loadersKey, loader))
 		next.ServeHTTP(w, r)
 	})

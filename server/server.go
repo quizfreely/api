@@ -85,7 +85,7 @@ func NewRouter(config qzfrAPIConfig.Config, dbPool *pgxpool.Pool, s3Client *s3.C
 		h.Use(extension.Introspection{})
 		h.Use(extension.FixedComplexityLimit(50))
 
-		srv := loader.Middleware(dbPool, h)
+		srv := loader.Middleware(dbPool, &config.UsercontentBaseURL, h)
 
 		r.Handle(
 			"/graphiql",
