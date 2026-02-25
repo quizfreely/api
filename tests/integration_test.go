@@ -143,7 +143,7 @@ VALUES ($1) RETURNING token`,
 			EnableOAuthGoogle: false,
 		},
 		dbPool,
-		nil
+		nil,
 	)
 	testServer = httptest.NewServer(router)
 
