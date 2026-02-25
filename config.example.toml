@@ -34,7 +34,7 @@ storage_key_id = ''
 storage_secret_key = ''
 usercontent_bucket = "usercontent"
 
-# with trailing slash
+# WITH trailing slash
 # usercontent_base_url = "https://usercontent.static.quizfreely.org/"
-usercontent_base_url = "http://localhost:3902/usercontent/"
+usercontent_base_url = "http://usercontent.localhost:3902/"
 
