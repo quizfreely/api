@@ -76,7 +76,7 @@ func NewRouter(config qzfrAPIConfig.Config, dbPool *pgxpool.Pool, s3Client *s3.C
 
 		h := handler.New(graph.NewExecutableSchema(graph.Config{Resolvers: &resolver.Resolver{
 			DB: dbPool,
-			UsercontentBaseURL: config.UsercontentBaseURL,
+			UsercontentBaseURL: &config.UsercontentBaseURL,
 		}}))
 
 		h.AddTransport(transport.Options{})
