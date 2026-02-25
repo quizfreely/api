@@ -53,7 +53,7 @@ func (dr *dataReader) getTermsByIDs(ctx context.Context, ids []string) ([]*model
 		ctx,
 		dr.db,
 		&terms,
-		`SELECT t.id, t.studyset_id, t.term, t.def, ($2||t.term_image_key) as term_image_key, ($2||t.def_image_key) as def_image_key, t.sort_order,
+		`SELECT t.id, t.studyset_id, t.term, t.def, ($2||t.term_image_key) as term_image_url, ($2||t.def_image_key) as def_image_url, t.sort_order,
 	to_char(t.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 	to_char(t.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 FROM unnest($1::uuid[]) WITH ORDINALITY AS input(id, og_order)
@@ -77,7 +77,7 @@ func (dr *dataReader) getTermsByStudysetIDs(ctx context.Context, studysetIDs []s
 		ctx,
 		dr.db,
 		&terms,
-		`SELECT t.id, t.studyset_id, t.term, t.def, ($2||t.term_image_key) as term_image_key, ($2||t.def_image_key) as def_image_key, t.sort_order,
+		`SELECT t.id, t.studyset_id, t.term, t.def, ($2||t.term_image_key) as term_image_url, ($2||t.def_image_key) as def_image_url, t.sort_order,
 	to_char(t.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 	to_char(t.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 FROM terms t
