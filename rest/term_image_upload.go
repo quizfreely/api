@@ -31,6 +31,14 @@ const (
 func (rh *RESTHandler) UploadTermImage(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
+	if (rh.Storage == nil) {
+		render.Status(r, 503)
+		render.JSON(w, r, map[string]any{
+			"error": "Storage not set",
+		})
+		return
+	}
+
 	termID := chi.URLParam(r, "termID")
 	if termID == "" {
 		render.Status(r, 400)
@@ -181,7 +189,7 @@ func (rh *RESTHandler) UploadTermImage(w http.ResponseWriter, r *http.Request) {
 	objectKey := "terms/"+termID+"/"+side+"-"+hashStr+".webp"
 
 	_, err = rh.Storage.PutObject(ctx, &s3.PutObjectInput{
-		Bucket:      aws.String(rh.StorageUsercontentBucket),
+		Bucket:      rh.StorageUsercontentBucket,
 		Key:         aws.String(objectKey),
 		Body:        bytes.NewReader(buf.Bytes()),
 		ContentType: aws.String("image/webp"),
@@ -223,7 +231,7 @@ func (rh *RESTHandler) UploadTermImage(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, map[string]interface{}{
 		"error": false,
 		"data": map[string]interface{}{
-			"imageUrl": objectKey,
+			"imageUrl": *rh.UsercontentBaseURL + objectKey,
 		},
 	})
 }

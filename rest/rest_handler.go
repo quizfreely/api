@@ -8,5 +8,6 @@ import (
 type RESTHandler struct {
 	DB *pgxpool.Pool
 	Storage *s3.Client
-	StorageUsercontentBucket string
+	StorageUsercontentBucket *string
+	UsercontentBaseURL *string
 }
