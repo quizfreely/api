@@ -34,7 +34,7 @@ func (rh *RESTHandler) UploadTermImage(w http.ResponseWriter, r *http.Request) {
 	if (rh.Storage == nil) {
 		render.Status(r, 503)
 		render.JSON(w, r, map[string]any{
-			"error": "Storage not set",
+			"error": "Storage not enabled/configured",
 		})
 		return
 	}
@@ -52,17 +52,6 @@ func (rh *RESTHandler) UploadTermImage(w http.ResponseWriter, r *http.Request) {
 		render.Status(r, 400)
 		render.JSON(w, r, map[string]any{
 			"error": "Invalid term/def side in URL",
-		})
-		return
-	}
-
-	r.Body = http.MaxBytesReader(w, r.Body, maxSizeBefore)
-
-	err := r.ParseMultipartForm(maxSizeBefore)
-	if err != nil {
-		render.Status(r, 400)
-		render.JSON(w, r, map[string]any{
-			"error": "invalid multipart form",
 		})
 		return
 	}
@@ -107,23 +96,22 @@ func (rh *RESTHandler) UploadTermImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	file, _, err := r.FormFile("image")
+	r.Body = http.MaxBytesReader(w, r.Body, maxSizeBefore)
+
+	raw, err := io.ReadAll(r.Body)
 	if err != nil {
 		render.Status(r, 400)
 		render.JSON(w, r, map[string]any{
-			"error": "failed to read form file",
+			"error": "failed to read request body",
 		})
 		return
 	}
-	defer file.Close()
-
-	raw, err := io.ReadAll(file)
-	if err != nil {
-		render.Status(r, 400)
-		render.JSON(w, r, map[string]any{
-			"error": "failed to read file",
-		})
-		return
+	if len(raw) == 0 {
+	    render.Status(r, 400)
+	    render.JSON(w, r, map[string]any{
+	        "error": "empty file",
+	    })
+	    return
 	}
 	
 	/* detect actual MIME type, ignoring user-specified Content-Type */
