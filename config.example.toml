@@ -2,8 +2,6 @@ port = 8008
 
 db_url = 'postgres://quizfreely_api:PASSWORD@localhost:5432/quizfreely_db'
 
-db_migration_url = 'postgres://quizfreely_db_admin:PASSWORD@localhost:5432/quizfreely_db?sslmode=disable'
-
 # for production: pretty_log = false
 # pretty print logs for easier debugging in development
 # disable for production for better performance

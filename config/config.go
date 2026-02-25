@@ -3,7 +3,6 @@ package config
 type Config struct {
 	Port                    int    `toml:"port"`
 	DBURL                   string `toml:"db_url"`
-	DBMigrationURL          string `toml:"db_migration_url"`
 	PrettyLog               bool   `toml:"pretty_log"`
 	BasePath                string `toml:"base_path"`
 	EnableOAuthGoogle       bool   `toml:"enable_oauth_google"`
