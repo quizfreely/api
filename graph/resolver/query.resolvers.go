@@ -92,7 +92,7 @@ func (r *queryResolver) Term(ctx context.Context, id string) (*model.Term, error
 			ctx,
 			r.DB,
 			&term,
-			`SELECT terms.id, terms.term, terms.def, terms.sort_order,
+			`SELECT terms.id, terms.term, terms.def, $3||terms.term_image_key, $3||terms.def_image_key, terms.sort_order,
 		to_char(terms.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 		to_char(terms.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 FROM terms
@@ -103,19 +103,21 @@ WHERE terms.id = $1 AND (
 )`,
 			id,
 			authedUser.ID,
+			r.UsercontentBaseURL,
 		)
 	} else {
 		err = pgxscan.Get(
 			ctx,
 			r.DB,
 			&term,
-			`SELECT terms.id, terms.term, terms.def, terms.sort_order,
+			`SELECT terms.id, terms.term, terms.def, $2||terms.term_image_key, $2||terms.def_image_key, terms.sort_order,
 		to_char(terms.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 		to_char(terms.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 FROM terms
 JOIN studysets ON terms.studyset_id = studysets.id
 WHERE terms.id = $1 AND studysets.private = FALSE`,
 			id,
+			r.UsercontentBaseURL,
 		)
 	}
 	if err != nil {
