@@ -67,7 +67,7 @@ func (rh *RESTHandler) UploadTermImage(w http.ResponseWriter, r *http.Request) {
 
 	/* check if user owns term BEFORE processing image */
 	var ownsTerm bool
-	err = pgxscan.Get(
+	err := pgxscan.Get(
 		ctx,
 		rh.DB,
 		&ownsTerm,
@@ -177,7 +177,7 @@ func (rh *RESTHandler) UploadTermImage(w http.ResponseWriter, r *http.Request) {
 	objectKey := "terms/"+termID+"/"+side+"-"+hashStr+".webp"
 
 	_, err = rh.Storage.PutObject(ctx, &s3.PutObjectInput{
-		Bucket:      rh.StorageUsercontentBucket,
+		Bucket:      rh.UsercontentBucket,
 		Key:         aws.String(objectKey),
 		Body:        bytes.NewReader(buf.Bytes()),
 		ContentType: aws.String("image/webp"),
@@ -200,6 +200,7 @@ func (rh *RESTHandler) UploadTermImage(w http.ResponseWriter, r *http.Request) {
 	}
 	err = pgxscan.Get(
 		ctx,
+		rh.DB,
 		&oldKey,
 		oldKeySQL,
 		termID,

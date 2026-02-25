@@ -13,8 +13,10 @@ import (
 	"quizfreely/api/graph/model"
 	"strings"
 
+	"github.com/rs/zerolog/log"
 	"github.com/georgysavva/scany/v2/pgxscan"
 	pgx "github.com/jackc/pgx/v5"
+    "github.com/aws/aws-sdk-go-v2/aws"
     "github.com/aws/aws-sdk-go-v2/service/s3"
     "github.com/aws/aws-sdk-go-v2/service/s3/types"
 )
