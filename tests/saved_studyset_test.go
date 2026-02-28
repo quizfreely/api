@@ -12,7 +12,7 @@ func TestSaveStudysetLifecycle(t *testing.T) {
 	// 1. Setup: Create Studyset (user1)
 	createBody := map[string]interface{}{
 		"query": `mutation CreateStudyset($input: StudysetInput!) {
-			createStudyset(studyset: $input) { id }
+			createStudyset(studyset: $input, draft: false) { id }
 		}`,
 		"variables": map[string]interface{}{
 			"input": map[string]interface{}{"title": "Save Test Studyset", "private": false},

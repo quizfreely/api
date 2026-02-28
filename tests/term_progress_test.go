@@ -12,7 +12,7 @@ func TestTermProgressLifecycle(t *testing.T) {
 	// 1. Setup: user1 creates a public studyset with a term
 	createSSBody := map[string]interface{}{
 		"query": `mutation {
-			createStudyset(studyset: {title: "Public Set for Progress", private: false}) { id }
+			createStudyset(studyset: {title: "Public Set for Progress", private: false}, draft: false) { id }
 		}`,
 	}
 	req, _ := http.NewRequest(http.MethodPost, testServer.URL+"/graphql", marshal(createSSBody))
@@ -106,7 +106,7 @@ func TestTermProgressLifecycle(t *testing.T) {
 	// 5. Private Set Security: user1 marks set as private; user2 tries to update progress
 	updateSSBody := map[string]interface{}{
 		"query": `mutation UpdateSS($id: ID!) {
-			updateStudyset(id: $id, studyset: {title: "Now Private", private: true}) { id }
+			updateStudyset(id: $id, studyset: {title: "Now Private", private: true}, draft: false) { id }
 		}`,
 		"variables": map[string]interface{}{
 			"id": studysetID,

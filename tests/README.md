@@ -44,6 +44,12 @@ Tests related to studyset CRUD operations.
     4. **Delete Studyset**: `user1` deletes the studyset (Valid Auth).
     5. **Unauthorized Delete**: `user2` attempts to delete `user1`'s studyset (should fail).
 
+- **TestDraftStudysetLifecycle**:
+    1. **Create Draft**: `user1` creates a draft studyset with an empty title.
+    2. **Unauthorized View**: `user2` attempts to view `user1`'s draft (should fail).
+    3. **Publish Draft**: `user1` updates the draft to publish it with a non-empty title.
+    4. **Authorized View**: `user2` successfully views the published studyset.
+
 - **TestStudysetNoAuth**:
     1. **No Auth Creation**: anonymous user attempts to create a studyset (should fail).
     2. **No Auth Update**: anonymous user attempts to update a studyset (should fail).

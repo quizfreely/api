@@ -13,7 +13,7 @@ func TestUserStudysets(t *testing.T) {
 	// Public Studyset
 	createPublicBody := map[string]interface{}{
 		"query": `mutation CreateStudyset($studyset: StudysetInput!) {
-			createStudyset(studyset: $studyset) {
+			createStudyset(studyset: $studyset, draft: false) {
 				id
 				title
 				private
@@ -39,7 +39,7 @@ func TestUserStudysets(t *testing.T) {
 	// Private Studyset
 	createPrivateBody := map[string]interface{}{
 		"query": `mutation CreateStudyset($studyset: StudysetInput!) {
-			createStudyset(studyset: $studyset) {
+			createStudyset(studyset: $studyset, draft: false) {
 				id
 				title
 				private

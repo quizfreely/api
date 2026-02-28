@@ -12,7 +12,7 @@ func TestPracticeTestLifecycle(t *testing.T) {
 	// 1. Setup: user1 creates a public studyset
 	createSSBody := map[string]interface{}{
 		"query": `mutation {
-			createStudyset(studyset: {title: "Public Set for PT", private: false}) { id }
+			createStudyset(studyset: {title: "Public Set for PT", private: false}, draft: false) { id }
 		}`,
 	}
 	req, _ := http.NewRequest(http.MethodPost, testServer.URL+"/graphql", marshal(createSSBody))
@@ -88,7 +88,7 @@ func TestPracticeTestLifecycle(t *testing.T) {
 	// 5. Private Set Security: user1 creates a private studyset; user2 tries to record PT
 	createPrivateSSBody := map[string]interface{}{
 		"query": `mutation {
-			createStudyset(studyset: {title: "Private Set", private: true}) { id }
+			createStudyset(studyset: {title: "Private Set", private: true}, draft: false) { id }
 		}`,
 	}
 	req, _ = http.NewRequest(http.MethodPost, testServer.URL+"/graphql", marshal(createPrivateSSBody))

@@ -12,7 +12,7 @@ func TestTermLifecycle(t *testing.T) {
 	// 1. Setup: Create a studyset for user1
 	createStudysetBody := map[string]interface{}{
 		"query": `mutation {
-			createStudyset(studyset: {title: "Term Test Set", private: true}) { id }
+			createStudyset(studyset: {title: "Term Test Set", private: true}, draft: false) { id }
 		}`,
 	}
 	req, _ := http.NewRequest(http.MethodPost, testServer.URL+"/graphql", marshal(createStudysetBody))

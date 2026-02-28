@@ -197,7 +197,7 @@ func TestStudysetFolderOperations(t *testing.T) {
 	// 1. Setup: Create Studyset and Folder (user1)
 	createStudysetBody := map[string]interface{}{
 		"query": `mutation CreateStudyset($input: StudysetInput!) {
-			createStudyset(studyset: $input) { id }
+			createStudyset(studyset: $input, draft: false) { id }
 		}`,
 		"variables": map[string]interface{}{
 			"input": map[string]interface{}{"title": "Folder Test Studyset", "private": false},
@@ -310,7 +310,7 @@ func TestSharedStudysetFolderOperations(t *testing.T) {
 	// 1. Setup: Create Public Studyset (user1)
 	createStudysetBody := map[string]interface{}{
 		"query": `mutation CreateStudyset($input: StudysetInput!) {
-			createStudyset(studyset: $input) { id }
+			createStudyset(studyset: $input, draft: false) { id }
 		}`,
 		"variables": map[string]interface{}{
 			"input": map[string]interface{}{"title": "Shared Studyset", "private": false},
