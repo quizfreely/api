@@ -57,6 +57,7 @@ func (r *folderResolver) Studysets(ctx context.Context, obj *model.Folder, first
 		s.id,
 		s.user_id,
 		s.title,
+		s.draft,
 		s.private,
 		s.subject_id,
 		to_char(s.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
@@ -74,6 +75,7 @@ func (r *folderResolver) Studysets(ctx context.Context, obj *model.Folder, first
 	if !isOwner {
 		where += " AND s.private = false"
 	}
+	where += " AND s.draft = false"
 
 	// Pagination clauses
 	if isBackward {
@@ -154,6 +156,131 @@ func (r *folderResolver) Studysets(ctx context.Context, obj *model.Folder, first
 	return cursor.StudysetConnectionFrom(studysets, hasNext, hasPrevious, getCursor), nil
 }
 
+// StudysetDrafts is the resolver for the studysetDrafts field.
+func (r *folderResolver) StudysetDrafts(ctx context.Context, obj *model.Folder, first *int32, after *string, last *int32, before *string) (*model.StudysetConnection, error) {
+	authedUser := auth.AuthedUserContext(ctx)
+
+	isOwner := false
+	if authedUser != nil && obj.User != nil && obj.User.ID != nil && *authedUser.ID == *obj.User.ID {
+		isOwner = true
+	}
+	if !isOwner {
+		return &model.StudysetConnection{Edges: []*model.StudysetEdge{}, PageInfo: &model.PageInfo{}}, nil
+	}
+
+	l := 24
+	if first != nil && *first > 0 && *first < 1000 {
+		l = int(*first)
+	} else if last != nil && *last > 0 && *last < 1000 {
+		l = int(*last)
+	}
+	limit := l + 1
+
+	cursorTS, cursorID := cursor.DecodeStudysetCursor(ptrToString(after))
+	beforeCursorTS, beforeCursorID := cursor.DecodeStudysetCursor(ptrToString(before))
+
+	isBackward := beforeCursorID != ""
+	hasPrevious := false
+	if !isBackward {
+		hasPrevious = cursorTS != "" || cursorID != ""
+	}
+
+	var cursorTime, beforeCursorTime time.Time
+	if cursorTS != "" {
+		cursorTime, _ = time.Parse("2006-01-02T15:04:05.000000Z07:00", cursorTS)
+	}
+	if beforeCursorTS != "" {
+		beforeCursorTime, _ = time.Parse("2006-01-02T15:04:05.000000Z07:00", beforeCursorTS)
+	}
+
+	cols := `
+		s.id,
+		s.user_id,
+		s.title,
+		s.draft,
+		s.private,
+		s.subject_id,
+		to_char(s.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
+		to_char(s.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at,
+		to_char(f.timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.USTZH:TZM') as folder_timestamp
+	`
+	from := `
+		FROM folder_studysets f
+		JOIN studysets s ON f.studyset_id = s.id
+	`
+	where := "WHERE f.folder_id = $1 AND s.draft = true"
+	args := []interface{}{*obj.ID}
+	argIdx := 2
+
+	if isBackward {
+		if !beforeCursorTime.IsZero() {
+			where += fmt.Sprintf(" AND (f.timestamp, s.id) > ($%d, $%d::uuid)", argIdx, argIdx+1)
+			args = append(args, beforeCursorTime, beforeCursorID)
+			argIdx += 2
+		}
+		where += " ORDER BY f.timestamp ASC, s.id ASC"
+	} else {
+		if !cursorTime.IsZero() {
+			where += fmt.Sprintf(" AND (f.timestamp, s.id) < ($%d, $%d::uuid)", argIdx, argIdx+1)
+			args = append(args, cursorTime, cursorID)
+			argIdx += 2
+		}
+		where += " ORDER BY f.timestamp DESC, s.id DESC"
+	}
+
+	sql := fmt.Sprintf("SELECT %s %s %s LIMIT $%d", cols, from, where, argIdx)
+	args = append(args, limit)
+
+	type studysetWithTimestamp struct {
+		model.Studyset
+		FolderTimestamp *string `db:"folder_timestamp"`
+	}
+	var rows []*studysetWithTimestamp
+
+	err := pgxscan.Select(ctx, r.DB, &rows, sql, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch folder's studyset drafts: %w", err)
+	}
+
+	studysets := make([]*model.Studyset, len(rows))
+	timestampMap := make(map[string]string)
+	for i, r := range rows {
+		studysets[i] = &r.Studyset
+		if r.ID != nil && r.FolderTimestamp != nil {
+			timestampMap[*r.ID] = *r.FolderTimestamp
+		}
+	}
+
+	hasNext := false
+
+	if isBackward {
+		hasPrevious = len(studysets) > l
+		if hasPrevious {
+			studysets = studysets[:l]
+		}
+		for i, j := 0, len(studysets)-1; i < j; i, j = i+1, j-1 {
+			studysets[i], studysets[j] = studysets[j], studysets[i]
+		}
+		hasNext = true
+	} else {
+		hasNext = len(studysets) > l
+		if hasNext {
+			studysets = studysets[:l]
+		}
+	}
+
+	getCursor := func(s *model.Studyset) (string, string) {
+		if s.ID != nil {
+			if ts, ok := timestampMap[*s.ID]; ok {
+				return ts, *s.ID
+			}
+		}
+		return ptrToString(s.UpdatedAt), ptrToString(s.ID)
+	}
+
+	return cursor.StudysetConnectionFrom(studysets, hasNext, hasPrevious, getCursor), nil
+}
+
 // StudysetCount is the resolver for the studysetCount field.
 func (r *folderResolver) StudysetCount(ctx context.Context, obj *model.Folder) (int32, error) {
 	if obj == nil || obj.ID == nil {
@@ -172,6 +299,7 @@ func (r *folderResolver) StudysetCount(ctx context.Context, obj *model.Folder) (
 	if !isOwner {
 		sql += " AND s.private = false"
 	}
+	sql += " AND s.draft = false"
 
 	var count int32
 	err := r.DB.QueryRow(ctx, sql, *obj.ID).Scan(&count)

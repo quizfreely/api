@@ -8,6 +8,7 @@ type Query {
     recentlyUpdatedStudysets(first: Int = 24, after: String, last: Int, before: String): StudysetConnection!
     searchStudysets(q: String!, first: Int = 24, after: String, last: Int, before: String): StudysetConnection!
     myStudysets(first: Int = 24, after: String, last: Int, before: String, hideFoldered: Boolean): StudysetConnection!
+    myStudysetDrafts(first: Int = 24, after: String, last: Int, before: String, hideFoldered: Boolean): StudysetConnection!
     myFolders(first: Int = 24, after: String): FolderConnection!
     mySavedStudysets(first: Int = 24, after: String, last: Int, before: String): StudysetConnection!
     practiceTest(id: ID!): PracticeTest
@@ -16,10 +17,10 @@ type Query {
     subjectsByCategory(category: SubjectCategory): [Subject]
     allSubjects: [Subject]
     folder(id: ID!): Folder
-    studysetCount(after: String, includePrivate: Boolean = false): Int!
-    studysetUpdateCount(after: String, includePrivate: Boolean = false): Int!
+    studysetCount(after: String, includePrivate: Boolean = false, includeDrafts: Boolean = false): Int!
+    studysetUpdateCount(after: String, includePrivate: Boolean = false, includeDrafts: Boolean = false): Int!
     searchStudysetCount(q: String!): Int!
-    myStudysetCount(hideFoldered: Boolean): Int!
+    myStudysetCount(hideFoldered: Boolean, includeDrafts: Boolean = false): Int!
     mySavedStudysetCount: Int!
 }
 type PageInfo {

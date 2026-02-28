@@ -3,6 +3,7 @@ package model
 type Studyset struct {
 	ID         *string  `json:"id,omitempty"`
 	Title      *string  `json:"title,omitempty"`
+	Draft      *bool    `json:"draft,omitempty"`
 	Private    *bool    `json:"private,omitempty"`
 	SubjectID  *string  `json:"subjectId,omitempty"`
 	Subject    *Subject `json:"subject,omitempty"`

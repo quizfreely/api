@@ -13,16 +13,16 @@ import (
 	"quizfreely/api/graph/model"
 	"strings"
 
-	"github.com/rs/zerolog/log"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/georgysavva/scany/v2/pgxscan"
 	pgx "github.com/jackc/pgx/v5"
-    "github.com/aws/aws-sdk-go-v2/aws"
-    "github.com/aws/aws-sdk-go-v2/service/s3"
-    "github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/rs/zerolog/log"
 )
 
 // CreateStudyset is the resolver for the createStudyset field.
-func (r *mutationResolver) CreateStudyset(ctx context.Context, studyset model.StudysetInput, folderID *string) (*model.Studyset, error) {
+func (r *mutationResolver) CreateStudyset(ctx context.Context, studyset model.StudysetInput, draft bool, folderID *string) (*model.Studyset, error) {
 	authedUser := auth.AuthedUserContext(ctx)
 	if authedUser == nil {
 		return nil, fmt.Errorf("not authenticated")
@@ -31,6 +31,8 @@ func (r *mutationResolver) CreateStudyset(ctx context.Context, studyset model.St
 	title := "Untitled Studyset"
 	if len(studyset.Title) > 0 && len(studyset.Title) < 200 && validTitleRegex.MatchString(studyset.Title) {
 		title = studyset.Title
+	} else if draft && len(studyset.Title) == 0 {
+		title = ""
 	}
 
 	tx, err := r.DB.Begin(ctx)
@@ -40,14 +42,14 @@ func (r *mutationResolver) CreateStudyset(ctx context.Context, studyset model.St
 	defer tx.Rollback(ctx)
 
 	sql := `
-		INSERT INTO public.studysets (user_id, title, private, subject_id)
-		VALUES ($1, $2, $3, $4)
-		RETURNING id, user_id, title, private,
+		INSERT INTO public.studysets (user_id, title, private, subject_id, draft)
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING id, user_id, title, private, subject_id, draft,
 			to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 			to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 	`
 	var newStudyset model.Studyset
-	err = pgxscan.Get(ctx, tx, &newStudyset, sql, authedUser.ID, title, studyset.Private, studyset.SubjectID)
+	err = pgxscan.Get(ctx, tx, &newStudyset, sql, authedUser.ID, title, studyset.Private, studyset.SubjectID, draft)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create studyset: %w", err)
 	}
@@ -64,7 +66,7 @@ func (r *mutationResolver) CreateStudyset(ctx context.Context, studyset model.St
 }
 
 // UpdateStudyset is the resolver for the updateStudyset field.
-func (r *mutationResolver) UpdateStudyset(ctx context.Context, id string, studyset *model.StudysetInput) (*model.Studyset, error) {
+func (r *mutationResolver) UpdateStudyset(ctx context.Context, id string, studyset *model.StudysetInput, draft bool) (*model.Studyset, error) {
 	authedUser := auth.AuthedUserContext(ctx)
 	if authedUser == nil {
 		return nil, fmt.Errorf("not authenticated")
@@ -85,17 +87,19 @@ func (r *mutationResolver) UpdateStudyset(ctx context.Context, id string, studys
 	title := "Untitled Studyset"
 	if len(studyset.Title) > 0 && len(studyset.Title) < 200 && validTitleRegex.MatchString(studyset.Title) {
 		title = studyset.Title
+	} else if draft && len(studyset.Title) == 0 {
+		title = ""
 	}
 
 	sql := `
 		UPDATE public.studysets
-		SET title = $1, private = $2, subject_id = $3, updated_at = now()
-		WHERE id = $4 AND (user_id = $5 OR COALESCE($6, false) = true)
-		RETURNING id, user_id, title, private, subject_id,
+		SET title = $1, private = $2, subject_id = $3, draft = $4, updated_at = now()
+		WHERE id = $5 AND (user_id = $6 OR COALESCE($7, false) = true)
+		RETURNING id, user_id, title, private, subject_id, draft,
 			to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 			to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 	`
-	err = pgxscan.Get(ctx, tx, &updatedStudyset, sql, title, studyset.Private, studyset.SubjectID, id, authedUser.ID, authedUser.ModPerms)
+	err = pgxscan.Get(ctx, tx, &updatedStudyset, sql, title, studyset.Private, studyset.SubjectID, draft, id, authedUser.ID, authedUser.ModPerms)
 	if err != nil {
 		if pgxscan.NotFound(err) {
 			return nil, fmt.Errorf("studyset not found")
@@ -280,9 +284,9 @@ func (r *mutationResolver) DeleteTerms(ctx context.Context, studysetID string, i
 	}
 
 	type deletedTerm struct {
-		ID string `db:"id"`
+		ID           string  `db:"id"`
 		TermImageKey *string `db:"term_image_key"`
-		DefImageKey *string `db:"def_image_key"`
+		DefImageKey  *string `db:"def_image_key"`
 	}
 	var deletedTerms []deletedTerm
 	sql := "DELETE FROM terms WHERE id = ANY($1) AND studyset_id = $2 RETURNING id, term_image_key, def_image_key"
@@ -299,35 +303,35 @@ func (r *mutationResolver) DeleteTerms(ctx context.Context, studysetID string, i
 	var objects []types.ObjectIdentifier
 	for _, term := range deletedTerms {
 		deletedIDs = append(deletedIDs, term.ID)
-	    if r.Storage != nil && term.TermImageKey != nil {
-	        objects = append(objects, types.ObjectIdentifier{
-	            Key: term.TermImageKey,
-	        })
-	    }
-	    if r.Storage != nil && term.DefImageKey != nil {
-	        objects = append(objects, types.ObjectIdentifier{
-	            Key: term.DefImageKey,
-	        })
-	    }
+		if r.Storage != nil && term.TermImageKey != nil {
+			objects = append(objects, types.ObjectIdentifier{
+				Key: term.TermImageKey,
+			})
+		}
+		if r.Storage != nil && term.DefImageKey != nil {
+			objects = append(objects, types.ObjectIdentifier{
+				Key: term.DefImageKey,
+			})
+		}
 	}
 
-	if (r.Storage != nil) {
+	if r.Storage != nil {
 		for i := 0; i < len(objects); i += 1000 {
-		    end := i + 1000
-		    if end > len(objects) {
-		        end = len(objects)
-		    }
-		
-		    _, err := r.Storage.DeleteObjects(ctx, &s3.DeleteObjectsInput{
-		        Bucket: r.UsercontentBucket,
-		        Delete: &types.Delete{
-		            Objects: objects[i:end],
-		            Quiet:   aws.Bool(true),
-		        },
-		    })
-		    if err != nil {
-		        log.Error().Err(err).Msg("DeleteTerms error deleting term images from S3")
-		    }
+			end := i + 1000
+			if end > len(objects) {
+				end = len(objects)
+			}
+
+			_, err := r.Storage.DeleteObjects(ctx, &s3.DeleteObjectsInput{
+				Bucket: r.UsercontentBucket,
+				Delete: &types.Delete{
+					Objects: objects[i:end],
+					Quiet:   aws.Bool(true),
+				},
+			})
+			if err != nil {
+				log.Error().Err(err).Msg("DeleteTerms error deleting term images from S3")
+			}
 		}
 	}
 
@@ -823,16 +827,19 @@ func (r *mutationResolver) SaveStudyset(ctx context.Context, studysetID string) 
 		return nil, fmt.Errorf("not authenticated")
 	}
 
-	_, err := r.DB.Exec(
+	res, err := r.DB.Exec(
 		ctx,
 		`INSERT INTO saved_studysets (user_id, studyset_id)
 		SELECT $1, id FROM studysets
-		WHERE id = $2 AND (private = false OR user_id = $1)`,
+		WHERE id = $2 AND (private = false OR user_id = $1) AND draft = false`,
 		authedUser.ID,
 		studysetID,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to save studyset: %w", err)
+	}
+	if res.RowsAffected() == 0 {
+		return nil, fmt.Errorf("studyset not found, private, or is a draft")
 	}
 
 	yay := true

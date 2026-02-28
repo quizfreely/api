@@ -45,6 +45,7 @@ func (r *subjectResolver) Studysets(ctx context.Context, obj *model.Subject, fir
 				s.id,
 				s.user_id,
 				s.title,
+				s.draft,
 				s.private,
 				s.subject_id,
 				to_char(s.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
@@ -52,7 +53,7 @@ func (r *subjectResolver) Studysets(ctx context.Context, obj *model.Subject, fir
 			FROM studysets s
 			JOIN subjects ON s.subject_id = subjects.id
 			WHERE subjects.id = $1
-				AND s.private = false
+				AND s.private = false AND s.draft = false
 				AND (to_char(s.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM'), s.id) > ($2, $3::uuid)
 			ORDER BY s.updated_at ASC, s.id ASC
 			LIMIT $4
@@ -74,6 +75,7 @@ func (r *subjectResolver) Studysets(ctx context.Context, obj *model.Subject, fir
 				s.id,
 				s.user_id,
 				s.title,
+				s.draft,
 				s.private,
 				s.subject_id,
 				to_char(s.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
@@ -81,7 +83,7 @@ func (r *subjectResolver) Studysets(ctx context.Context, obj *model.Subject, fir
 			FROM studysets s
 			JOIN subjects ON s.subject_id = subjects.id
 			WHERE subjects.id = $1
-				AND s.private = false
+				AND s.private = false AND s.draft = false
 				AND (to_char(s.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM'), s.id) < ($2, $3::uuid)
 			ORDER BY s.updated_at DESC, s.id DESC
 			LIMIT $4
@@ -93,6 +95,7 @@ func (r *subjectResolver) Studysets(ctx context.Context, obj *model.Subject, fir
 				s.id,
 				s.user_id,
 				s.title,
+				s.draft,
 				s.private,
 				s.subject_id,
 				to_char(s.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
@@ -100,7 +103,7 @@ func (r *subjectResolver) Studysets(ctx context.Context, obj *model.Subject, fir
 			FROM studysets s
 			JOIN subjects ON s.subject_id = subjects.id
 			WHERE subjects.id = $1
-				AND s.private = false
+				AND s.private = false AND s.draft = false
 			ORDER BY s.updated_at DESC, s.id DESC
 			LIMIT $2
 		`
@@ -136,7 +139,7 @@ func (r *subjectResolver) StudysetCount(ctx context.Context, obj *model.Subject)
 	// So we should do the same here.
 
 	var count int32
-	err := r.DB.QueryRow(ctx, "SELECT count(*) FROM studysets WHERE subject_id = $1 AND private = false", *obj.ID).Scan(&count)
+	err := r.DB.QueryRow(ctx, "SELECT count(*) FROM studysets WHERE subject_id = $1 AND private = false AND draft = false", *obj.ID).Scan(&count)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count subject studysets: %w", err)
 	}

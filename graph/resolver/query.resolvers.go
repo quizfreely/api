@@ -35,19 +35,19 @@ func (r *queryResolver) Studyset(ctx context.Context, id string) (*model.Studyse
 	var err error
 	if authedUser != nil {
 		sql := `
-			SELECT id, user_id, title, private, subject_id,
+			SELECT id, user_id, title, private, subject_id, draft,
 				to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 				to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 			FROM public.studysets
-			WHERE id = $1 AND (private = false OR (private = true AND user_id = $2))`
+			WHERE id = $1 AND ((private = false AND draft = false) OR user_id = $2)`
 		err = pgxscan.Get(ctx, r.DB, &studyset, sql, id, authedUser.ID)
 	} else {
 		sql := `
-			SELECT id, user_id, title, private,
+			SELECT id, user_id, title, private, draft,
 				to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 				to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 			FROM public.studysets
-			WHERE id = $1 AND private = false`
+			WHERE id = $1 AND private = false AND draft = false`
 		err = pgxscan.Get(ctx, r.DB, &studyset, sql, id)
 	}
 	if err != nil {
@@ -170,11 +170,12 @@ func (r *queryResolver) RecentlyCreatedStudysets(ctx context.Context, first *int
 				user_id,
 				title,
 				private,
+				draft,
 				subject_id,
 				to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 				to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 			FROM public.studysets
-			WHERE private = false
+			WHERE private = false AND draft = false
 				AND (to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM'), id) > ($1, $2::uuid)
 			ORDER BY created_at ASC, id ASC
 			LIMIT $3
@@ -211,11 +212,12 @@ func (r *queryResolver) RecentlyCreatedStudysets(ctx context.Context, first *int
 				user_id,
 				title,
 				private,
+				draft,
 				subject_id,
 				to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 				to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 			FROM public.studysets
-			WHERE private = false
+			WHERE private = false AND draft = false
 				AND (to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM'), id) < ($1, $2::uuid)
 			ORDER BY created_at DESC, id DESC
 			LIMIT $3
@@ -229,11 +231,12 @@ func (r *queryResolver) RecentlyCreatedStudysets(ctx context.Context, first *int
 				user_id,
 				title,
 				private,
+				draft,
 				subject_id,
 				to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 				to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 			FROM public.studysets
-			WHERE private = false
+			WHERE private = false AND draft = false
 			ORDER BY created_at DESC, id DESC
 			LIMIT $1
 		`
@@ -295,11 +298,12 @@ func (r *queryResolver) RecentlyUpdatedStudysets(ctx context.Context, first *int
 				user_id,
 				title,
 				private,
+				draft,
 				subject_id,
 				to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 				to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 			FROM public.studysets
-			WHERE private = false
+			WHERE private = false AND draft = false
 				AND (to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM'), id) > ($1, $2::uuid)
 			ORDER BY updated_at ASC, id ASC
 			LIMIT $3
@@ -328,11 +332,12 @@ func (r *queryResolver) RecentlyUpdatedStudysets(ctx context.Context, first *int
 				user_id,
 				title,
 				private,
+				draft,
 				subject_id,
 				to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 				to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 			FROM public.studysets
-			WHERE private = false
+			WHERE private = false AND draft = false
 				AND (to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM'), id) < ($1, $2::uuid)
 			ORDER BY updated_at DESC, id DESC
 			LIMIT $3
@@ -346,11 +351,12 @@ func (r *queryResolver) RecentlyUpdatedStudysets(ctx context.Context, first *int
 				user_id,
 				title,
 				private,
+				draft,
 				subject_id,
 				to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 				to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 			FROM public.studysets
-			WHERE private = false
+			WHERE private = false AND draft = false
 			ORDER BY updated_at DESC, id DESC
 			LIMIT $1
 		`
@@ -423,6 +429,7 @@ func (r *queryResolver) SearchStudysets(ctx context.Context, q string, first *in
 		user_id,
 		title,
 		private,
+		draft,
 		subject_id,
 		to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 		to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at,
@@ -433,7 +440,7 @@ func (r *queryResolver) SearchStudysets(ctx context.Context, q string, first *in
 		sql := `
 			SELECT ` + selectCols + `
 			FROM public.studysets
-			WHERE lower($1) <% lower(title) AND private = false
+			WHERE lower($1) <% lower(title) AND private = false AND draft = false
 				AND (word_similarity(lower($1), lower(title)), to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM'), id) > ($2::float4, $3, $4::uuid)
 			ORDER BY score ASC, created_at ASC, id ASC
 			LIMIT $5
@@ -454,7 +461,7 @@ func (r *queryResolver) SearchStudysets(ctx context.Context, q string, first *in
 		sql := `
 			SELECT ` + selectCols + `
 			FROM public.studysets
-			WHERE lower($1) <% lower(title) AND private = false
+			WHERE lower($1) <% lower(title) AND private = false AND draft = false
 				AND (word_similarity(lower($1), lower(title)), to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM'), id) < ($2::float4, $3, $4::uuid)
 			ORDER BY score DESC, created_at DESC, id DESC
 			LIMIT $5
@@ -466,7 +473,7 @@ func (r *queryResolver) SearchStudysets(ctx context.Context, q string, first *in
 		sql := `
 			SELECT ` + selectCols + `
 			FROM public.studysets
-			WHERE lower($1) <% lower(title) AND private = false
+			WHERE lower($1) <% lower(title) AND private = false AND draft = false
 			ORDER BY score DESC, created_at DESC, id DESC
 			LIMIT $2
 		`
@@ -557,12 +564,12 @@ func (r *queryResolver) MyStudysets(ctx context.Context, first *int32, after *st
 	var err error
 
 	// Common columns for selectivity
-	cols := `id, user_id, title, private, subject_id,
+	cols := `id, user_id, title, private, subject_id, draft,
 				to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 				to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at`
 
 	// Where clause fragments
-	whereBase := `WHERE user_id = $1`
+	whereBase := `WHERE user_id = $1 AND draft = false`
 	if hideFoldered != nil && *hideFoldered {
 		whereBase += ` AND id NOT IN (SELECT fs.studyset_id FROM folder_studysets fs WHERE fs.user_id = $1)`
 	}
@@ -607,6 +614,98 @@ func (r *queryResolver) MyStudysets(ctx context.Context, first *int32, after *st
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch my studysets: %w", err)
+	}
+
+	hasNext := false
+	if isBackward {
+		hasNext = true
+	} else {
+		hasNext = len(studysets) > l
+		if hasNext {
+			studysets = studysets[:l]
+		}
+	}
+	getCursor := func(s *model.Studyset) (string, string) {
+		return ptrToString(s.UpdatedAt), ptrToString(s.ID)
+	}
+	return cursor.StudysetConnectionFrom(studysets, hasNext, hasPrevious, getCursor), nil
+}
+
+// MyStudysetDrafts is the resolver for the myStudysetDrafts field.
+func (r *queryResolver) MyStudysetDrafts(ctx context.Context, first *int32, after *string, last *int32, before *string, hideFoldered *bool) (*model.StudysetConnection, error) {
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil {
+		return nil, fmt.Errorf("not authenticated")
+	}
+
+	l := 240
+	if first != nil && *first > 0 && *first < 1000 {
+		l = int(*first)
+	} else if last != nil && *last > 0 && *last < 1000 {
+		l = int(*last)
+	}
+	limit := l + 1
+
+	cursorTS, cursorID := cursor.DecodeStudysetCursor(ptrToString(after))
+	beforeCursorTS, beforeCursorID := cursor.DecodeStudysetCursor(ptrToString(before))
+
+	isBackward := beforeCursorID != ""
+	hasPrevious := false
+	if !isBackward {
+		hasPrevious = cursorTS != "" || cursorID != ""
+	}
+
+	var studysets []*model.Studyset
+	var err error
+
+	cols := `id, user_id, title, private, subject_id, draft,
+				to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
+				to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at`
+
+	whereBase := `WHERE user_id = $1 AND draft = true`
+	if hideFoldered != nil && *hideFoldered {
+		whereBase += ` AND id NOT IN (SELECT fs.studyset_id FROM folder_studysets fs WHERE fs.user_id = $1)`
+	}
+
+	if isBackward {
+		sql := fmt.Sprintf(`
+			SELECT %s
+			FROM public.studysets
+			%s AND (to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM'), id) > ($2, $3::uuid)
+			ORDER BY updated_at ASC, id ASC
+			LIMIT $4
+		`, cols, whereBase)
+		err = pgxscan.Select(ctx, r.DB, &studysets, sql, authedUser.ID, beforeCursorTS, beforeCursorID, limit)
+		if err == nil {
+			hasPrevious = len(studysets) > l
+			if hasPrevious {
+				studysets = studysets[:l]
+			}
+			for i, j := 0, len(studysets)-1; i < j; i, j = i+1, j-1 {
+				studysets[i], studysets[j] = studysets[j], studysets[i]
+			}
+		}
+	} else if cursorID != "" {
+		sql := fmt.Sprintf(`
+			SELECT %s
+			FROM public.studysets
+			%s AND (to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM'), id) < ($2, $3::uuid)
+			ORDER BY updated_at DESC, id DESC
+			LIMIT $4
+		`, cols, whereBase)
+		err = pgxscan.Select(ctx, r.DB, &studysets, sql, authedUser.ID, cursorTS, cursorID, limit)
+	} else {
+		sql := fmt.Sprintf(`
+			SELECT %s
+			FROM public.studysets
+			%s
+			ORDER BY updated_at DESC, id DESC
+			LIMIT $2
+		`, cols, whereBase)
+		err = pgxscan.Select(ctx, r.DB, &studysets, sql, authedUser.ID, limit)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch my studyset drafts: %w", err)
 	}
 
 	hasNext := false
@@ -725,6 +824,7 @@ func (r *queryResolver) MySavedStudysets(ctx context.Context, first *int32, afte
 				s.id,
 				s.user_id,
 				s.title,
+				s.draft,
 				s.private,
 				s.subject_id,
 				to_char(s.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
@@ -733,7 +833,7 @@ func (r *queryResolver) MySavedStudysets(ctx context.Context, first *int32, afte
 			FROM saved_studysets
 			JOIN studysets s ON saved_studysets.studyset_id = s.id
 			WHERE saved_studysets.user_id = $1
-				AND s.private = false
+				AND s.private = false AND s.draft = false
 				AND (to_char(saved_studysets.timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM'), s.id) > ($2, $3::uuid)
 			ORDER BY saved_studysets.timestamp ASC, s.id ASC
 			LIMIT $4
@@ -755,6 +855,7 @@ func (r *queryResolver) MySavedStudysets(ctx context.Context, first *int32, afte
 				s.id,
 				s.user_id,
 				s.title,
+				s.draft,
 				s.private,
 				s.subject_id,
 				to_char(s.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
@@ -763,7 +864,7 @@ func (r *queryResolver) MySavedStudysets(ctx context.Context, first *int32, afte
 			FROM saved_studysets
 			JOIN studysets s ON saved_studysets.studyset_id = s.id
 			WHERE saved_studysets.user_id = $1
-				AND s.private = false
+				AND s.private = false AND s.draft = false
 				AND (to_char(saved_studysets.timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM'), s.id) < ($2, $3::uuid)
 			ORDER BY saved_studysets.timestamp DESC, s.id DESC
 			LIMIT $4
@@ -775,6 +876,7 @@ func (r *queryResolver) MySavedStudysets(ctx context.Context, first *int32, afte
 				s.id,
 				s.user_id,
 				s.title,
+				s.draft,
 				s.private,
 				s.subject_id,
 				to_char(s.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
@@ -783,7 +885,7 @@ func (r *queryResolver) MySavedStudysets(ctx context.Context, first *int32, afte
 			FROM saved_studysets
 			JOIN studysets s ON saved_studysets.studyset_id = s.id
 			WHERE saved_studysets.user_id = $1
-				AND s.private = false
+				AND s.private = false AND s.draft = false
 			ORDER BY saved_studysets.timestamp DESC, s.id DESC
 			LIMIT $2
 		`
@@ -955,15 +1057,19 @@ func (r *queryResolver) Folder(ctx context.Context, id string) (*model.Folder, e
 }
 
 // StudysetCount is the resolver for the studysetCount field.
-func (r *queryResolver) StudysetCount(ctx context.Context, after *string, includePrivate *bool) (int32, error) {
+func (r *queryResolver) StudysetCount(ctx context.Context, after *string, includePrivate *bool, includeDrafts *bool) (int32, error) {
 	incPrivate := false
 	if includePrivate != nil {
 		incPrivate = *includePrivate
 	}
+	incDrafts := false
+	if includeDrafts != nil {
+		incDrafts = *includeDrafts
+	}
 
 	if after == nil {
 		var count int32
-		err := r.DB.QueryRow(ctx, "SELECT COUNT(*) FROM studysets WHERE (private = false OR $1 = true)", incPrivate).Scan(&count)
+		err := r.DB.QueryRow(ctx, "SELECT COUNT(*) FROM studysets WHERE (private = false OR $1 = true) AND (draft = false OR $2 = true)", incPrivate, incDrafts).Scan(&count)
 		if err != nil {
 			return 0, fmt.Errorf("failed to fetch total studysets: %w", err)
 		}
@@ -976,7 +1082,7 @@ func (r *queryResolver) StudysetCount(ctx context.Context, after *string, includ
 	}
 
 	var count int32
-	err = r.DB.QueryRow(ctx, "SELECT COUNT(*) FROM studysets WHERE (private = false OR $1 = true) AND created_at > $2", incPrivate, afterTime).Scan(&count)
+	err = r.DB.QueryRow(ctx, "SELECT COUNT(*) FROM studysets WHERE (private = false OR $1 = true) AND (draft = false OR $2 = true) AND created_at > $3", incPrivate, incDrafts, afterTime).Scan(&count)
 	if err != nil {
 		return 0, fmt.Errorf("failed to fetch studysets after date: %w", err)
 	}
@@ -984,15 +1090,19 @@ func (r *queryResolver) StudysetCount(ctx context.Context, after *string, includ
 }
 
 // StudysetUpdateCount is the resolver for the studysetUpdateCount field.
-func (r *queryResolver) StudysetUpdateCount(ctx context.Context, after *string, includePrivate *bool) (int32, error) {
+func (r *queryResolver) StudysetUpdateCount(ctx context.Context, after *string, includePrivate *bool, includeDrafts *bool) (int32, error) {
 	incPrivate := false
 	if includePrivate != nil {
 		incPrivate = *includePrivate
 	}
+	incDrafts := false
+	if includeDrafts != nil {
+		incDrafts = *includeDrafts
+	}
 
 	if after == nil {
 		var count int32
-		err := r.DB.QueryRow(ctx, "SELECT COUNT(*) FROM studysets WHERE (private = false OR $1 = true)", incPrivate).Scan(&count)
+		err := r.DB.QueryRow(ctx, "SELECT COUNT(*) FROM studysets WHERE (private = false OR $1 = true) AND (draft = false OR $2 = true)", incPrivate, incDrafts).Scan(&count)
 		if err != nil {
 			return 0, fmt.Errorf("failed to fetch total studysets: %w", err)
 		}
@@ -1005,7 +1115,7 @@ func (r *queryResolver) StudysetUpdateCount(ctx context.Context, after *string, 
 	}
 
 	var count int32
-	err = r.DB.QueryRow(ctx, "SELECT COUNT(*) FROM studysets WHERE (private = false OR $1 = true) AND updated_at > $2", incPrivate, afterTime).Scan(&count)
+	err = r.DB.QueryRow(ctx, "SELECT COUNT(*) FROM studysets WHERE (private = false OR $1 = true) AND (draft = false OR $2 = true) AND updated_at > $3", incPrivate, incDrafts, afterTime).Scan(&count)
 	if err != nil {
 		return 0, fmt.Errorf("failed to fetch studysets updated after date: %w", err)
 	}
@@ -1026,7 +1136,7 @@ func (r *queryResolver) SearchStudysetCount(ctx context.Context, q string) (int3
 	sql := `
 		SELECT COUNT(*)
 		FROM public.studysets
-		WHERE lower($1) <% lower(title) AND private = false
+		WHERE lower($1) <% lower(title) AND private = false AND draft = false
 	`
 	err := r.DB.QueryRow(ctx, sql, q).Scan(&count)
 	if err != nil {
@@ -1036,13 +1146,19 @@ func (r *queryResolver) SearchStudysetCount(ctx context.Context, q string) (int3
 }
 
 // MyStudysetCount is the resolver for the myStudysetCount field.
-func (r *queryResolver) MyStudysetCount(ctx context.Context, hideFoldered *bool) (int32, error) {
+func (r *queryResolver) MyStudysetCount(ctx context.Context, hideFoldered *bool, includeDrafts *bool) (int32, error) {
 	authedUser := auth.AuthedUserContext(ctx)
 	if authedUser == nil {
 		return 0, fmt.Errorf("not authenticated")
 	}
 
-	sql := `SELECT COUNT(*) FROM studysets WHERE user_id = $1`
+	incDrafts := false
+	if includeDrafts != nil {
+		incDrafts = *includeDrafts
+	}
+
+	sql := `SELECT COUNT(*) FROM studysets WHERE user_id = $1 AND (draft = false OR $2 = true)`
+	args := []interface{}{authedUser.ID, incDrafts}
 
 	if hideFoldered != nil && *hideFoldered {
 		sql += ` AND NOT EXISTS (
@@ -1052,7 +1168,7 @@ func (r *queryResolver) MyStudysetCount(ctx context.Context, hideFoldered *bool)
 	}
 
 	var count int32
-	err := r.DB.QueryRow(ctx, sql, authedUser.ID).Scan(&count)
+	err := r.DB.QueryRow(ctx, sql, args...).Scan(&count)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count my studysets: %w", err)
 	}
@@ -1073,7 +1189,7 @@ func (r *queryResolver) MySavedStudysetCount(ctx context.Context) (int32, error)
 		FROM saved_studysets
 		JOIN studysets s ON saved_studysets.studyset_id = s.id
 		WHERE saved_studysets.user_id = $1
-			AND s.private = false
+			AND s.private = false AND s.draft = false
 	`
 	var count int32
 	err := r.DB.QueryRow(ctx, sql, authedUser.ID).Scan(&count)

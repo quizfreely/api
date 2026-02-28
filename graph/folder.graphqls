@@ -12,6 +12,7 @@ type Folder {
     id: ID
     name: String
     studysets(first: Int = 24, after: String, last: Int, before: String): StudysetConnection!
+    studysetDrafts(first: Int = 24, after: String, last: Int, before: String): StudysetConnection!
     studysetCount: Int!
     user: User
 }

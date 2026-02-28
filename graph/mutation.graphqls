@@ -1,6 +1,6 @@
 type Mutation {
-    createStudyset(studyset: StudysetInput!, folderId: ID): Studyset
-    updateStudyset(id: ID!, studyset: StudysetInput): Studyset
+    createStudyset(studyset: StudysetInput!, draft: Boolean!, folderId: ID): Studyset
+    updateStudyset(id: ID!, studyset: StudysetInput, draft: Boolean!): Studyset
     createTerms(studysetId: ID!, terms: [NewTermInput!]!): [Term]
     updateTerms(studysetId: ID!, terms: [TermInput!]!): [Term]
     deleteTerms(studysetId: ID!, ids: [ID!]!): [ID!]

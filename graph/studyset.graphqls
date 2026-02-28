@@ -9,6 +9,7 @@ type StudysetConnection {
 type Studyset {
     id: ID
     title: String
+    draft: Boolean
     private: Boolean
     subject: Subject
     createdAt: String

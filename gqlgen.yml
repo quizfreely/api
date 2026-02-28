@@ -193,6 +193,8 @@ models:
     fields:
       studysets:
         resolver: true
+      studysetDrafts:
+        resolver: true
       studysetCount:
         resolver: true
   Subject:
@@ -201,7 +203,6 @@ models:
         resolver: true
       studysetCount:
         resolver: true
-
   User:
     fields:
       studysets:

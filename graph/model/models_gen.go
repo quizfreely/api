@@ -26,11 +26,12 @@ type FRQInput struct {
 }
 
 type Folder struct {
-	ID            *string             `json:"id,omitempty"`
-	Name          *string             `json:"name,omitempty"`
-	Studysets     *StudysetConnection `json:"studysets"`
-	StudysetCount int32               `json:"studysetCount"`
-	User          *User               `json:"user,omitempty"`
+	ID             *string             `json:"id,omitempty"`
+	Name           *string             `json:"name,omitempty"`
+	Studysets      *StudysetConnection `json:"studysets"`
+	StudysetDrafts *StudysetConnection `json:"studysetDrafts"`
+	StudysetCount  int32               `json:"studysetCount"`
+	User           *User               `json:"user,omitempty"`
 }
 
 type FolderConnection struct {

@@ -57,11 +57,11 @@ func (r *userResolver) Studysets(ctx context.Context, obj *model.User, first *in
 	studysets := []*model.Studyset{}
 	var err error
 
-	cols := `id, user_id, title, private, subject_id,
+	cols := `id, user_id, title, draft, private, subject_id,
 			to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 			to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at`
 
-	whereClause := "WHERE user_id = $1"
+	whereClause := "WHERE user_id = $1 AND draft = false"
 	if !canSeePrivate {
 		whereClause += " AND private = false"
 	}
@@ -150,7 +150,7 @@ func (r *userResolver) StudysetCount(ctx context.Context, obj *model.User, inclu
 		}
 	}
 
-	sql := "SELECT count(*) FROM studysets WHERE user_id = $1"
+	sql := "SELECT count(*) FROM studysets WHERE user_id = $1 AND draft = false"
 	if !canSeePrivate {
 		sql += " AND private = false"
 	}

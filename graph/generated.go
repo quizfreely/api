@@ -71,11 +71,12 @@ type ComplexityRoot struct {
 	}
 
 	Folder struct {
-		ID            func(childComplexity int) int
-		Name          func(childComplexity int) int
-		StudysetCount func(childComplexity int) int
-		Studysets     func(childComplexity int, first *int32, after *string, last *int32, before *string) int
-		User          func(childComplexity int) int
+		ID             func(childComplexity int) int
+		Name           func(childComplexity int) int
+		StudysetCount  func(childComplexity int) int
+		StudysetDrafts func(childComplexity int, first *int32, after *string, last *int32, before *string) int
+		Studysets      func(childComplexity int, first *int32, after *string, last *int32, before *string) int
+		User           func(childComplexity int) int
 	}
 
 	FolderConnection struct {
@@ -107,7 +108,7 @@ type ComplexityRoot struct {
 
 	Mutation struct {
 		CreateFolder             func(childComplexity int, name string) int
-		CreateStudyset           func(childComplexity int, studyset model.StudysetInput, folderID *string) int
+		CreateStudyset           func(childComplexity int, studyset model.StudysetInput, draft bool, folderID *string) int
 		CreateTerms              func(childComplexity int, studysetID string, terms []*model.NewTermInput) int
 		DeleteFolder             func(childComplexity int, id string) int
 		DeleteStudyset           func(childComplexity int, id string) int
@@ -120,7 +121,7 @@ type ComplexityRoot struct {
 		SetStudysetFolder        func(childComplexity int, studysetID string, folderID string) int
 		UnsaveStudyset           func(childComplexity int, studysetID string) int
 		UpdatePracticeTest       func(childComplexity int, input *model.PracticeTestInput) int
-		UpdateStudyset           func(childComplexity int, id string, studyset *model.StudysetInput) int
+		UpdateStudyset           func(childComplexity int, id string, studyset *model.StudysetInput, draft bool) int
 		UpdateTermProgress       func(childComplexity int, termProgress []*model.TermProgressInput) int
 		UpdateTerms              func(childComplexity int, studysetID string, terms []*model.TermInput) int
 		UpdateUser               func(childComplexity int, displayName *string) int
@@ -150,7 +151,8 @@ type ComplexityRoot struct {
 		MyFolders                func(childComplexity int, first *int32, after *string) int
 		MySavedStudysetCount     func(childComplexity int) int
 		MySavedStudysets         func(childComplexity int, first *int32, after *string, last *int32, before *string) int
-		MyStudysetCount          func(childComplexity int, hideFoldered *bool) int
+		MyStudysetCount          func(childComplexity int, hideFoldered *bool, includeDrafts *bool) int
+		MyStudysetDrafts         func(childComplexity int, first *int32, after *string, last *int32, before *string, hideFoldered *bool) int
 		MyStudysets              func(childComplexity int, first *int32, after *string, last *int32, before *string, hideFoldered *bool) int
 		PracticeTest             func(childComplexity int, id string) int
 		RecentlyCreatedStudysets func(childComplexity int, first *int32, after *string, last *int32, before *string) int
@@ -158,8 +160,8 @@ type ComplexityRoot struct {
 		SearchStudysetCount      func(childComplexity int, q string) int
 		SearchStudysets          func(childComplexity int, q string, first *int32, after *string, last *int32, before *string) int
 		Studyset                 func(childComplexity int, id string) int
-		StudysetCount            func(childComplexity int, after *string, includePrivate *bool) int
-		StudysetUpdateCount      func(childComplexity int, after *string, includePrivate *bool) int
+		StudysetCount            func(childComplexity int, after *string, includePrivate *bool, includeDrafts *bool) int
+		StudysetUpdateCount      func(childComplexity int, after *string, includePrivate *bool, includeDrafts *bool) int
 		Subject                  func(childComplexity int, id string) int
 		SubjectsByCategory       func(childComplexity int, category *model.SubjectCategory) int
 		SubjectsByKeyword        func(childComplexity int, keyword *string) int
@@ -177,6 +179,7 @@ type ComplexityRoot struct {
 
 	Studyset struct {
 		CreatedAt     func(childComplexity int) int
+		Draft         func(childComplexity int) int
 		Folder        func(childComplexity int) int
 		ID            func(childComplexity int) int
 		PracticeTests func(childComplexity int) int
@@ -276,11 +279,12 @@ type ComplexityRoot struct {
 
 type FolderResolver interface {
 	Studysets(ctx context.Context, obj *model.Folder, first *int32, after *string, last *int32, before *string) (*model.StudysetConnection, error)
+	StudysetDrafts(ctx context.Context, obj *model.Folder, first *int32, after *string, last *int32, before *string) (*model.StudysetConnection, error)
 	StudysetCount(ctx context.Context, obj *model.Folder) (int32, error)
 }
 type MutationResolver interface {
-	CreateStudyset(ctx context.Context, studyset model.StudysetInput, folderID *string) (*model.Studyset, error)
-	UpdateStudyset(ctx context.Context, id string, studyset *model.StudysetInput) (*model.Studyset, error)
+	CreateStudyset(ctx context.Context, studyset model.StudysetInput, draft bool, folderID *string) (*model.Studyset, error)
+	UpdateStudyset(ctx context.Context, id string, studyset *model.StudysetInput, draft bool) (*model.Studyset, error)
 	CreateTerms(ctx context.Context, studysetID string, terms []*model.NewTermInput) ([]*model.Term, error)
 	UpdateTerms(ctx context.Context, studysetID string, terms []*model.TermInput) ([]*model.Term, error)
 	DeleteTerms(ctx context.Context, studysetID string, ids []string) ([]string, error)
@@ -308,6 +312,7 @@ type QueryResolver interface {
 	RecentlyUpdatedStudysets(ctx context.Context, first *int32, after *string, last *int32, before *string) (*model.StudysetConnection, error)
 	SearchStudysets(ctx context.Context, q string, first *int32, after *string, last *int32, before *string) (*model.StudysetConnection, error)
 	MyStudysets(ctx context.Context, first *int32, after *string, last *int32, before *string, hideFoldered *bool) (*model.StudysetConnection, error)
+	MyStudysetDrafts(ctx context.Context, first *int32, after *string, last *int32, before *string, hideFoldered *bool) (*model.StudysetConnection, error)
 	MyFolders(ctx context.Context, first *int32, after *string) (*model.FolderConnection, error)
 	MySavedStudysets(ctx context.Context, first *int32, after *string, last *int32, before *string) (*model.StudysetConnection, error)
 	PracticeTest(ctx context.Context, id string) (*model.PracticeTest, error)
@@ -316,10 +321,10 @@ type QueryResolver interface {
 	SubjectsByCategory(ctx context.Context, category *model.SubjectCategory) ([]*model.Subject, error)
 	AllSubjects(ctx context.Context) ([]*model.Subject, error)
 	Folder(ctx context.Context, id string) (*model.Folder, error)
-	StudysetCount(ctx context.Context, after *string, includePrivate *bool) (int32, error)
-	StudysetUpdateCount(ctx context.Context, after *string, includePrivate *bool) (int32, error)
+	StudysetCount(ctx context.Context, after *string, includePrivate *bool, includeDrafts *bool) (int32, error)
+	StudysetUpdateCount(ctx context.Context, after *string, includePrivate *bool, includeDrafts *bool) (int32, error)
 	SearchStudysetCount(ctx context.Context, q string) (int32, error)
-	MyStudysetCount(ctx context.Context, hideFoldered *bool) (int32, error)
+	MyStudysetCount(ctx context.Context, hideFoldered *bool, includeDrafts *bool) (int32, error)
 	MySavedStudysetCount(ctx context.Context) (int32, error)
 }
 type StudysetResolver interface {
@@ -468,6 +473,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Folder.StudysetCount(childComplexity), true
 
+	case "Folder.studysetDrafts":
+		if e.complexity.Folder.StudysetDrafts == nil {
+			break
+		}
+
+		args, err := ec.field_Folder_studysetDrafts_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Folder.StudysetDrafts(childComplexity, args["first"].(*int32), args["after"].(*string), args["last"].(*int32), args["before"].(*string)), true
+
 	case "Folder.studysets":
 		if e.complexity.Folder.Studysets == nil {
 			break
@@ -614,7 +631,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreateStudyset(childComplexity, args["studyset"].(model.StudysetInput), args["folderId"].(*string)), true
+		return e.complexity.Mutation.CreateStudyset(childComplexity, args["studyset"].(model.StudysetInput), args["draft"].(bool), args["folderId"].(*string)), true
 
 	case "Mutation.createTerms":
 		if e.complexity.Mutation.CreateTerms == nil {
@@ -770,7 +787,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateStudyset(childComplexity, args["id"].(string), args["studyset"].(*model.StudysetInput)), true
+		return e.complexity.Mutation.UpdateStudyset(childComplexity, args["id"].(string), args["studyset"].(*model.StudysetInput), args["draft"].(bool)), true
 
 	case "Mutation.updateTermProgress":
 		if e.complexity.Mutation.UpdateTermProgress == nil {
@@ -952,7 +969,19 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.MyStudysetCount(childComplexity, args["hideFoldered"].(*bool)), true
+		return e.complexity.Query.MyStudysetCount(childComplexity, args["hideFoldered"].(*bool), args["includeDrafts"].(*bool)), true
+
+	case "Query.myStudysetDrafts":
+		if e.complexity.Query.MyStudysetDrafts == nil {
+			break
+		}
+
+		args, err := ec.field_Query_myStudysetDrafts_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.MyStudysetDrafts(childComplexity, args["first"].(*int32), args["after"].(*string), args["last"].(*int32), args["before"].(*string), args["hideFoldered"].(*bool)), true
 
 	case "Query.myStudysets":
 		if e.complexity.Query.MyStudysets == nil {
@@ -1048,7 +1077,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.StudysetCount(childComplexity, args["after"].(*string), args["includePrivate"].(*bool)), true
+		return e.complexity.Query.StudysetCount(childComplexity, args["after"].(*string), args["includePrivate"].(*bool), args["includeDrafts"].(*bool)), true
 
 	case "Query.studysetUpdateCount":
 		if e.complexity.Query.StudysetUpdateCount == nil {
@@ -1060,7 +1089,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.StudysetUpdateCount(childComplexity, args["after"].(*string), args["includePrivate"].(*bool)), true
+		return e.complexity.Query.StudysetUpdateCount(childComplexity, args["after"].(*string), args["includePrivate"].(*bool), args["includeDrafts"].(*bool)), true
 
 	case "Query.subject":
 		if e.complexity.Query.Subject == nil {
@@ -1163,6 +1192,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Studyset.CreatedAt(childComplexity), true
+
+	case "Studyset.draft":
+		if e.complexity.Studyset.Draft == nil {
+			break
+		}
+
+		return e.complexity.Studyset.Draft(childComplexity), true
 
 	case "Studyset.folder":
 		if e.complexity.Studyset.Folder == nil {
@@ -1789,6 +1825,32 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
 // region    ***************************** args.gotpl *****************************
 
+func (ec *executionContext) field_Folder_studysetDrafts_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint32)
+	if err != nil {
+		return nil, err
+	}
+	args["first"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOString2ᚖstring)
+	if err != nil {
+		return nil, err
+	}
+	args["after"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint32)
+	if err != nil {
+		return nil, err
+	}
+	args["last"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOString2ᚖstring)
+	if err != nil {
+		return nil, err
+	}
+	args["before"] = arg3
+	return args, nil
+}
+
 func (ec *executionContext) field_Folder_studysets_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -1834,11 +1896,16 @@ func (ec *executionContext) field_Mutation_createStudyset_args(ctx context.Conte
 		return nil, err
 	}
 	args["studyset"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "folderId", ec.unmarshalOID2ᚖstring)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "draft", ec.unmarshalNBoolean2bool)
 	if err != nil {
 		return nil, err
 	}
-	args["folderId"] = arg1
+	args["draft"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "folderId", ec.unmarshalOID2ᚖstring)
+	if err != nil {
+		return nil, err
+	}
+	args["folderId"] = arg2
 	return args, nil
 }
 
@@ -2007,6 +2074,11 @@ func (ec *executionContext) field_Mutation_updateStudyset_args(ctx context.Conte
 		return nil, err
 	}
 	args["studyset"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "draft", ec.unmarshalNBoolean2bool)
+	if err != nil {
+		return nil, err
+	}
+	args["draft"] = arg2
 	return args, nil
 }
 
@@ -2120,6 +2192,42 @@ func (ec *executionContext) field_Query_myStudysetCount_args(ctx context.Context
 		return nil, err
 	}
 	args["hideFoldered"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "includeDrafts", ec.unmarshalOBoolean2ᚖbool)
+	if err != nil {
+		return nil, err
+	}
+	args["includeDrafts"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_myStudysetDrafts_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint32)
+	if err != nil {
+		return nil, err
+	}
+	args["first"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOString2ᚖstring)
+	if err != nil {
+		return nil, err
+	}
+	args["after"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint32)
+	if err != nil {
+		return nil, err
+	}
+	args["last"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOString2ᚖstring)
+	if err != nil {
+		return nil, err
+	}
+	args["before"] = arg3
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "hideFoldered", ec.unmarshalOBoolean2ᚖbool)
+	if err != nil {
+		return nil, err
+	}
+	args["hideFoldered"] = arg4
 	return args, nil
 }
 
@@ -2272,6 +2380,11 @@ func (ec *executionContext) field_Query_studysetCount_args(ctx context.Context, 
 		return nil, err
 	}
 	args["includePrivate"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "includeDrafts", ec.unmarshalOBoolean2ᚖbool)
+	if err != nil {
+		return nil, err
+	}
+	args["includeDrafts"] = arg2
 	return args, nil
 }
 
@@ -2288,6 +2401,11 @@ func (ec *executionContext) field_Query_studysetUpdateCount_args(ctx context.Con
 		return nil, err
 	}
 	args["includePrivate"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "includeDrafts", ec.unmarshalOBoolean2ᚖbool)
+	if err != nil {
+		return nil, err
+	}
+	args["includeDrafts"] = arg2
 	return args, nil
 }
 
@@ -3097,6 +3215,67 @@ func (ec *executionContext) fieldContext_Folder_studysets(ctx context.Context, f
 	return fc, nil
 }
 
+func (ec *executionContext) _Folder_studysetDrafts(ctx context.Context, field graphql.CollectedField, obj *model.Folder) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Folder_studysetDrafts(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Folder().StudysetDrafts(rctx, obj, fc.Args["first"].(*int32), fc.Args["after"].(*string), fc.Args["last"].(*int32), fc.Args["before"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.StudysetConnection)
+	fc.Result = res
+	return ec.marshalNStudysetConnection2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐStudysetConnection(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Folder_studysetDrafts(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Folder",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "edges":
+				return ec.fieldContext_StudysetConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_StudysetConnection_pageInfo(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type StudysetConnection", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Folder_studysetDrafts_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Folder_studysetCount(ctx context.Context, field graphql.CollectedField, obj *model.Folder) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Folder_studysetCount(ctx, field)
 	if err != nil {
@@ -3343,6 +3522,8 @@ func (ec *executionContext) fieldContext_FolderEdge_node(_ context.Context, fiel
 				return ec.fieldContext_Folder_name(ctx, field)
 			case "studysets":
 				return ec.fieldContext_Folder_studysets(ctx, field)
+			case "studysetDrafts":
+				return ec.fieldContext_Folder_studysetDrafts(ctx, field)
 			case "studysetCount":
 				return ec.fieldContext_Folder_studysetCount(ctx, field)
 			case "user":
@@ -3993,7 +4174,7 @@ func (ec *executionContext) _Mutation_createStudyset(ctx context.Context, field 
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateStudyset(rctx, fc.Args["studyset"].(model.StudysetInput), fc.Args["folderId"].(*string))
+		return ec.resolvers.Mutation().CreateStudyset(rctx, fc.Args["studyset"].(model.StudysetInput), fc.Args["draft"].(bool), fc.Args["folderId"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4019,6 +4200,8 @@ func (ec *executionContext) fieldContext_Mutation_createStudyset(ctx context.Con
 				return ec.fieldContext_Studyset_id(ctx, field)
 			case "title":
 				return ec.fieldContext_Studyset_title(ctx, field)
+			case "draft":
+				return ec.fieldContext_Studyset_draft(ctx, field)
 			case "private":
 				return ec.fieldContext_Studyset_private(ctx, field)
 			case "subject":
@@ -4071,7 +4254,7 @@ func (ec *executionContext) _Mutation_updateStudyset(ctx context.Context, field 
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpdateStudyset(rctx, fc.Args["id"].(string), fc.Args["studyset"].(*model.StudysetInput))
+		return ec.resolvers.Mutation().UpdateStudyset(rctx, fc.Args["id"].(string), fc.Args["studyset"].(*model.StudysetInput), fc.Args["draft"].(bool))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4097,6 +4280,8 @@ func (ec *executionContext) fieldContext_Mutation_updateStudyset(ctx context.Con
 				return ec.fieldContext_Studyset_id(ctx, field)
 			case "title":
 				return ec.fieldContext_Studyset_title(ctx, field)
+			case "draft":
+				return ec.fieldContext_Studyset_draft(ctx, field)
 			case "private":
 				return ec.fieldContext_Studyset_private(ctx, field)
 			case "subject":
@@ -4767,6 +4952,8 @@ func (ec *executionContext) fieldContext_Mutation_createFolder(ctx context.Conte
 				return ec.fieldContext_Folder_name(ctx, field)
 			case "studysets":
 				return ec.fieldContext_Folder_studysets(ctx, field)
+			case "studysetDrafts":
+				return ec.fieldContext_Folder_studysetDrafts(ctx, field)
 			case "studysetCount":
 				return ec.fieldContext_Folder_studysetCount(ctx, field)
 			case "user":
@@ -4831,6 +5018,8 @@ func (ec *executionContext) fieldContext_Mutation_renameFolder(ctx context.Conte
 				return ec.fieldContext_Folder_name(ctx, field)
 			case "studysets":
 				return ec.fieldContext_Folder_studysets(ctx, field)
+			case "studysetDrafts":
+				return ec.fieldContext_Folder_studysetDrafts(ctx, field)
 			case "studysetCount":
 				return ec.fieldContext_Folder_studysetCount(ctx, field)
 			case "user":
@@ -5677,6 +5866,8 @@ func (ec *executionContext) fieldContext_Query_studyset(ctx context.Context, fie
 				return ec.fieldContext_Studyset_id(ctx, field)
 			case "title":
 				return ec.fieldContext_Studyset_title(ctx, field)
+			case "draft":
+				return ec.fieldContext_Studyset_draft(ctx, field)
 			case "private":
 				return ec.fieldContext_Studyset_private(ctx, field)
 			case "subject":
@@ -6095,6 +6286,67 @@ func (ec *executionContext) fieldContext_Query_myStudysets(ctx context.Context, 
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_myStudysets_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_myStudysetDrafts(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_myStudysetDrafts(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().MyStudysetDrafts(rctx, fc.Args["first"].(*int32), fc.Args["after"].(*string), fc.Args["last"].(*int32), fc.Args["before"].(*string), fc.Args["hideFoldered"].(*bool))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.StudysetConnection)
+	fc.Result = res
+	return ec.marshalNStudysetConnection2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐStudysetConnection(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_myStudysetDrafts(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "edges":
+				return ec.fieldContext_StudysetConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_StudysetConnection_pageInfo(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type StudysetConnection", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_myStudysetDrafts_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -6576,6 +6828,8 @@ func (ec *executionContext) fieldContext_Query_folder(ctx context.Context, field
 				return ec.fieldContext_Folder_name(ctx, field)
 			case "studysets":
 				return ec.fieldContext_Folder_studysets(ctx, field)
+			case "studysetDrafts":
+				return ec.fieldContext_Folder_studysetDrafts(ctx, field)
 			case "studysetCount":
 				return ec.fieldContext_Folder_studysetCount(ctx, field)
 			case "user":
@@ -6612,7 +6866,7 @@ func (ec *executionContext) _Query_studysetCount(ctx context.Context, field grap
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().StudysetCount(rctx, fc.Args["after"].(*string), fc.Args["includePrivate"].(*bool))
+		return ec.resolvers.Query().StudysetCount(rctx, fc.Args["after"].(*string), fc.Args["includePrivate"].(*bool), fc.Args["includeDrafts"].(*bool))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6667,7 +6921,7 @@ func (ec *executionContext) _Query_studysetUpdateCount(ctx context.Context, fiel
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().StudysetUpdateCount(rctx, fc.Args["after"].(*string), fc.Args["includePrivate"].(*bool))
+		return ec.resolvers.Query().StudysetUpdateCount(rctx, fc.Args["after"].(*string), fc.Args["includePrivate"].(*bool), fc.Args["includeDrafts"].(*bool))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6777,7 +7031,7 @@ func (ec *executionContext) _Query_myStudysetCount(ctx context.Context, field gr
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().MyStudysetCount(rctx, fc.Args["hideFoldered"].(*bool))
+		return ec.resolvers.Query().MyStudysetCount(rctx, fc.Args["hideFoldered"].(*bool), fc.Args["includeDrafts"].(*bool))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7330,6 +7584,47 @@ func (ec *executionContext) fieldContext_Studyset_title(_ context.Context, field
 	return fc, nil
 }
 
+func (ec *executionContext) _Studyset_draft(ctx context.Context, field graphql.CollectedField, obj *model.Studyset) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Studyset_draft(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Draft, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Studyset_draft(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Studyset",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Studyset_private(ctx context.Context, field graphql.CollectedField, obj *model.Studyset) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Studyset_private(ctx, field)
 	if err != nil {
@@ -7805,6 +8100,8 @@ func (ec *executionContext) fieldContext_Studyset_folder(_ context.Context, fiel
 				return ec.fieldContext_Folder_name(ctx, field)
 			case "studysets":
 				return ec.fieldContext_Folder_studysets(ctx, field)
+			case "studysetDrafts":
+				return ec.fieldContext_Folder_studysetDrafts(ctx, field)
 			case "studysetCount":
 				return ec.fieldContext_Folder_studysetCount(ctx, field)
 			case "user":
@@ -7963,6 +8260,8 @@ func (ec *executionContext) fieldContext_StudysetEdge_node(_ context.Context, fi
 				return ec.fieldContext_Studyset_id(ctx, field)
 			case "title":
 				return ec.fieldContext_Studyset_title(ctx, field)
+			case "draft":
+				return ec.fieldContext_Studyset_draft(ctx, field)
 			case "private":
 				return ec.fieldContext_Studyset_private(ctx, field)
 			case "subject":
@@ -13109,6 +13408,42 @@ func (ec *executionContext) _Folder(ctx context.Context, sel ast.SelectionSet, o
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "studysetDrafts":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Folder_studysetDrafts(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "studysetCount":
 			field := field
 
@@ -13758,6 +14093,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "myStudysetDrafts":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_myStudysetDrafts(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "myFolders":
 			field := field
 
@@ -14116,6 +14473,8 @@ func (ec *executionContext) _Studyset(ctx context.Context, sel ast.SelectionSet,
 			out.Values[i] = ec._Studyset_id(ctx, field, obj)
 		case "title":
 			out.Values[i] = ec._Studyset_title(ctx, field, obj)
+		case "draft":
+			out.Values[i] = ec._Studyset_draft(ctx, field, obj)
 		case "private":
 			out.Values[i] = ec._Studyset_private(ctx, field, obj)
 		case "subject":
