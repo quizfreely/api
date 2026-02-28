@@ -1,4 +1,4 @@
-\restrict cIhuSPrfBpa3LDSqvfwk5Lcgy42y6m06n18hcKfknG4akn9Y1fmcRe4sL5FO7Tf
+\restrict eMZf1G4jZ9XqWGOxfeZ0YwFBwB4KGSiWwBweWZrGxnlad68m5TnQOTRMw9oZLf4
 
 -- Dumped from database version 18.2
 -- Dumped by pg_dump version 18.2
@@ -195,7 +195,8 @@ CREATE TABLE public.studysets (
     terms_count integer,
     tsvector_title tsvector GENERATED ALWAYS AS (to_tsvector('english'::regconfig, title)) STORED,
     subject_id text,
-    created_at timestamp with time zone DEFAULT now()
+    created_at timestamp with time zone DEFAULT now(),
+    draft boolean DEFAULT false NOT NULL
 );
 
 
@@ -629,7 +630,7 @@ ALTER TABLE ONLY public.terms
 -- PostgreSQL database dump complete
 --
 
-\unrestrict cIhuSPrfBpa3LDSqvfwk5Lcgy42y6m06n18hcKfknG4akn9Y1fmcRe4sL5FO7Tf
+\unrestrict eMZf1G4jZ9XqWGOxfeZ0YwFBwB4KGSiWwBweWZrGxnlad68m5TnQOTRMw9oZLf4
 
 
 --
@@ -658,4 +659,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('202510122101'),
     ('202510292200'),
     ('202602101650'),
-    ('202602241455');
+    ('202602241455'),
+    ('202602281700');
