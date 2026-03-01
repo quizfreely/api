@@ -575,7 +575,12 @@ func (r *mutationResolver) RecordConfusedTerms(ctx context.Context, confusedTerm
 	)
 	placeholders := make([]string, 0, len(confusedTerms))
 
+	sameTermAndConfusedTerm := false
 	for i, ct := range confusedTerms {
+		if *ct.TermID == *ct.ConfusedTermID {
+			sameTermAndConfusedTerm = true
+			continue
+		}
 		placeholders = append(
 			placeholders,
 			fmt.Sprintf(
@@ -616,6 +621,9 @@ DO UPDATE SET confused_count = term_confusion_pairs.confused_count + EXCLUDED.co
 	}
 
 	success = true
+	if sameTermAndConfusedTerm {
+		return &success, errors.New("Confusion pairs with same term and confused term were not inserted")
+	}
 	return &success, nil
 }
 
