@@ -98,7 +98,7 @@ func (r *queryResolver) Term(ctx context.Context, id string) (*model.Term, error
 FROM terms
 JOIN studysets ON terms.studyset_id = studysets.id
 WHERE terms.id = $1 AND (
-    	studysets.private = FALSE OR
+    	(studysets.private = FALSE AND studysets.draft = FALSE) OR
 		studysets.user_id = $2
 )`,
 			id,
@@ -115,7 +115,7 @@ WHERE terms.id = $1 AND (
 		to_char(terms.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 FROM terms
 JOIN studysets ON terms.studyset_id = studysets.id
-WHERE terms.id = $1 AND studysets.private = FALSE`,
+WHERE terms.id = $1 AND studysets.private = FALSE AND studysets.draft = FALSE`,
 			id,
 			r.UsercontentBaseURL,
 		)
