@@ -20,7 +20,7 @@ const (
 )
 
 type dataReader struct {
-	db *pgxpool.Pool
+	db                 *pgxpool.Pool
 	usercontentBaseURL *string
 }
 
@@ -47,6 +47,12 @@ ORDER BY input.og_order`,
 }
 
 func (dr *dataReader) getTermsByIDs(ctx context.Context, ids []string) ([]*model.Term, []error) {
+	authedUser := auth.AuthedUserContext(ctx)
+	var authedUserID *string
+	if authedUser != nil {
+		authedUserID = authedUser.ID
+	}
+
 	var terms []*model.Term
 
 	err := pgxscan.Select(
@@ -57,11 +63,16 @@ func (dr *dataReader) getTermsByIDs(ctx context.Context, ids []string) ([]*model
 	to_char(t.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 	to_char(t.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 FROM unnest($1::uuid[]) WITH ORDINALITY AS input(id, og_order)
-LEFT JOIN terms t
-	ON t.id = input.id
+LEFT JOIN (
+	SELECT t.*
+	FROM terms t
+	JOIN studysets s ON t.studyset_id = s.id
+	WHERE (s.private = false AND s.draft = false) OR s.user_id = $3
+) t ON t.id = input.id
 ORDER BY input.og_order`,
 		ids,
 		dr.usercontentBaseURL,
+		authedUserID,
 	)
 	if err != nil {
 		return nil, []error{err}
@@ -71,6 +82,12 @@ ORDER BY input.og_order`,
 }
 
 func (dr *dataReader) getTermsByStudysetIDs(ctx context.Context, studysetIDs []string) ([][]*model.Term, []error) {
+	authedUser := auth.AuthedUserContext(ctx)
+	var authedUserID *string
+	if authedUser != nil {
+		authedUserID = authedUser.ID
+	}
+
 	var terms []*model.Term
 
 	err := pgxscan.Select(
@@ -81,10 +98,12 @@ func (dr *dataReader) getTermsByStudysetIDs(ctx context.Context, studysetIDs []s
 	to_char(t.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 	to_char(t.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 FROM terms t
-WHERE t.studyset_id = ANY($1::uuid[])
+JOIN studysets s ON t.studyset_id = s.id
+WHERE t.studyset_id = ANY($1::uuid[]) AND ((s.private = false AND s.draft = false) OR s.user_id = $3)
 ORDER BY t.studyset_id, t.sort_order`,
 		studysetIDs,
 		dr.usercontentBaseURL,
+		authedUserID,
 	)
 	if err != nil {
 		return nil, []error{err}
@@ -108,6 +127,12 @@ ORDER BY t.studyset_id, t.sort_order`,
 }
 
 func (dr *dataReader) getTermsCountByStudysetIDs(ctx context.Context, studysetIDs []string) ([]*int32, []error) {
+	authedUser := auth.AuthedUserContext(ctx)
+	var authedUserID *string
+	if authedUser != nil {
+		authedUserID = authedUser.ID
+	}
+
 	type countResult struct {
 		StudysetID string `db:"studyset_id"`
 		Count      int32  `db:"term_count"`
@@ -119,11 +144,13 @@ func (dr *dataReader) getTermsCountByStudysetIDs(ctx context.Context, studysetID
 		ctx,
 		dr.db,
 		&results,
-		`SELECT studyset_id, COUNT(*) AS term_count
-         FROM terms
-         WHERE studyset_id = ANY($1::uuid[])
-         GROUP BY studyset_id`,
+		`SELECT t.studyset_id, COUNT(t.*) AS term_count
+         FROM terms t
+         JOIN studysets s ON t.studyset_id = s.id
+         WHERE t.studyset_id = ANY($1::uuid[]) AND ((s.private = false AND s.draft = false) OR s.user_id = $2)
+         GROUP BY t.studyset_id`,
 		studysetIDs,
+		authedUserID,
 	)
 	if err != nil {
 		return nil, []error{err}
@@ -397,7 +424,7 @@ type Loaders struct {
 func NewLoaders(db *pgxpool.Pool, usercontentBaseURL *string) *Loaders {
 	// define the data loader
 	dr := &dataReader{
-		db: db,
+		db:                 db,
 		usercontentBaseURL: usercontentBaseURL,
 	}
 	return &Loaders{
