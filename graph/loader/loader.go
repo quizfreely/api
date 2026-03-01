@@ -178,6 +178,9 @@ func (dr *dataReader) getTermsCountByStudysetIDs(ctx context.Context, studysetID
 
 func (dr *dataReader) getTermsProgress(ctx context.Context, termIDs []string) ([]*model.TermProgress, []error) {
 	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil || authedUser.ID == nil {
+		return nil, nil
+	}
 
 	rows, err := dr.db.Query(
 		ctx,
@@ -224,6 +227,9 @@ ORDER BY input.og_order`,
 
 func (dr *dataReader) getTermsProgressHistory(ctx context.Context, termIDs []string) ([][]*model.TermProgressHistory, []error) {
 	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil || authedUser.ID == nil {
+		return nil, nil
+	}
 
 	var termProgressHistory []*model.TermProgressHistory
 
@@ -267,6 +273,9 @@ ORDER BY input.og_order ASC, tph.timestamp DESC`,
 
 func (dr *dataReader) getTermsTopConfusionPairs(ctx context.Context, termIDs []string) ([][]*model.TermConfusionPair, []error) {
 	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil || authedUser.ID == nil {
+		return nil, nil
+	}
 
 	var confusionPairs []*model.TermConfusionPair
 
@@ -317,6 +326,9 @@ ORDER BY term_id, confused_count DESC`,
 
 func (dr *dataReader) getTermsTopReverseConfusionPairs(ctx context.Context, termIDs []string) ([][]*model.TermConfusionPair, []error) {
 	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil || authedUser.ID == nil {
+		return nil, nil
+	}
 
 	var confusionPairs []*model.TermConfusionPair
 
@@ -367,6 +379,9 @@ ORDER BY confused_term_id, confused_count DESC`,
 
 func (dr *dataReader) getPracticeTestsByStudysetIDs(ctx context.Context, studysetIDs []string) ([][]*model.PracticeTest, []error) {
 	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil || authedUser.ID == nil {
+		return nil, nil
+	}
 
 	var practiceTests []*model.PracticeTest
 
