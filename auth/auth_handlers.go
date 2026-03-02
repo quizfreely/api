@@ -423,18 +423,6 @@ func (ah *AuthHandler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err != nil {
-		log.Error().Err(err).Msg("Database err while setting auth context in DeleteAccount")
-		render.Status(r, 500)
-		render.JSON(w, r, map[string]interface{}{
-			"error": map[string]interface{}{
-				"statusCode": 500,
-				"message":    "Database error while deleting account",
-			},
-		})
-		return
-	}
-
 	// Delete user, with password confirmation depending on auth type
 	if authedUser.AuthType != nil && *authedUser.AuthType == model.AuthTypeOauthGoogle {
 		_, err = tx.Exec(r.Context(), "delete from auth.users where id = $1", authedUser.ID)
