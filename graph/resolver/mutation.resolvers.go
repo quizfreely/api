@@ -345,13 +345,75 @@ func (r *mutationResolver) DeleteStudyset(ctx context.Context, id string) (*stri
 		return nil, fmt.Errorf("not authenticated")
 	}
 
+	tx, err := r.DB.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	type deletedTerm struct {
+		TermImageKey *string `db:"term_image_key"`
+		DefImageKey  *string `db:"def_image_key"`
+	}
+	var deletedTerms []deletedTerm
+
+	// Get term images before we delete the studyset (which deletes terms via CASCADE)
+	sql := `
+		SELECT t.term_image_key, t.def_image_key
+		FROM terms t
+		JOIN studysets s ON t.studyset_id = s.id
+		WHERE s.id = $1 AND s.user_id = $2 AND (t.term_image_key IS NOT NULL OR t.def_image_key IS NOT NULL)
+	`
+	err = pgxscan.Select(ctx, tx, &deletedTerms, sql, id, authedUser.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get term images: %w", err)
+	}
+
 	var deletedID string
-	err := r.DB.QueryRow(ctx, "DELETE FROM public.studysets WHERE id = $1 AND user_id = $2 RETURNING id", id, authedUser.ID).Scan(&deletedID)
+	err = tx.QueryRow(ctx, "DELETE FROM public.studysets WHERE id = $1 AND user_id = $2 RETURNING id", id, authedUser.ID).Scan(&deletedID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, fmt.Errorf("studyset not found")
 		}
 		return nil, fmt.Errorf("failed to delete studyset: %w", err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	var objects []types.ObjectIdentifier
+	for _, term := range deletedTerms {
+		if r.Storage != nil && term.TermImageKey != nil {
+			objects = append(objects, types.ObjectIdentifier{
+				Key: term.TermImageKey,
+			})
+		}
+		if r.Storage != nil && term.DefImageKey != nil {
+			objects = append(objects, types.ObjectIdentifier{
+				Key: term.DefImageKey,
+			})
+		}
+	}
+
+	if r.Storage != nil && len(objects) > 0 {
+		for i := 0; i < len(objects); i += 1000 {
+			end := i + 1000
+			if end > len(objects) {
+				end = len(objects)
+			}
+
+			_, err := r.Storage.DeleteObjects(ctx, &s3.DeleteObjectsInput{
+				Bucket: r.UsercontentBucket,
+				Delete: &types.Delete{
+					Objects: objects[i:end],
+					Quiet:   aws.Bool(true),
+				},
+			})
+			if err != nil {
+				log.Error().Err(err).Msg("DeleteStudyset error deleting term images from S3")
+			}
+		}
 	}
 
 	return &deletedID, nil
