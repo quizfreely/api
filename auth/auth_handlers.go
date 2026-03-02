@@ -423,8 +423,6 @@ func (ah *AuthHandler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Set auth context before deleting user
-	_, err = tx.Exec(r.Context(), "select set_config('qzfr_api.scope', 'auth', true)")
 	if err != nil {
 		log.Error().Err(err).Msg("Database err while setting auth context in DeleteAccount")
 		render.Status(r, 500)
