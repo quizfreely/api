@@ -1,4 +1,4 @@
-\restrict eMZf1G4jZ9XqWGOxfeZ0YwFBwB4KGSiWwBweWZrGxnlad68m5TnQOTRMw9oZLf4
+\restrict UfXzCzGUAx403fl5aFx0cWWTiHcE26SDZeedOXlc0DgZayxhGctYSoQjuuZllzq
 
 -- Dumped from database version 18.2
 -- Dumped by pg_dump version 18.2
@@ -238,6 +238,17 @@ CREATE TABLE public.term_confusion_pairs (
 
 
 --
+-- Name: term_images; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.term_images (
+    object_key text NOT NULL,
+    def_side boolean NOT NULL,
+    term_id uuid
+);
+
+
+--
 -- Name: term_progress; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -287,9 +298,7 @@ CREATE TABLE public.terms (
     studyset_id uuid NOT NULL,
     sort_order integer NOT NULL,
     created_at timestamp with time zone DEFAULT now(),
-    updated_at timestamp with time zone DEFAULT now(),
-    term_image_key text,
-    def_image_key text
+    updated_at timestamp with time zone DEFAULT now()
 );
 
 
@@ -419,6 +428,14 @@ ALTER TABLE ONLY public.subjects
 
 ALTER TABLE ONLY public.term_confusion_pairs
     ADD CONSTRAINT term_confusion_pairs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: term_images term_images_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.term_images
+    ADD CONSTRAINT term_images_pkey PRIMARY KEY (object_key);
 
 
 --
@@ -587,6 +604,14 @@ ALTER TABLE ONLY public.term_confusion_pairs
 
 
 --
+-- Name: term_images term_images_term_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.term_images
+    ADD CONSTRAINT term_images_term_id_fkey FOREIGN KEY (term_id) REFERENCES public.terms(id) ON DELETE SET NULL;
+
+
+--
 -- Name: term_progress_history term_progress_history_term_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -630,7 +655,7 @@ ALTER TABLE ONLY public.terms
 -- PostgreSQL database dump complete
 --
 
-\unrestrict eMZf1G4jZ9XqWGOxfeZ0YwFBwB4KGSiWwBweWZrGxnlad68m5TnQOTRMw9oZLf4
+\unrestrict UfXzCzGUAx403fl5aFx0cWWTiHcE26SDZeedOXlc0DgZayxhGctYSoQjuuZllzq
 
 
 --
@@ -660,4 +685,6 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('202510292200'),
     ('202602101650'),
     ('202602241455'),
-    ('202602281700');
+    ('202602281700'),
+    ('202603021759'),
+    ('202603021910');
