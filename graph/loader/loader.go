@@ -59,7 +59,7 @@ func (dr *dataReader) getTermsByIDs(ctx context.Context, ids []string) ([]*model
 		ctx,
 		dr.db,
 		&terms,
-		`SELECT t.id, t.studyset_id, t.term, t.def, ($2||t.term_image_key) as term_image_url, ($2||t.def_image_key) as def_image_url, t.sort_order,
+		`SELECT t.id, t.studyset_id, t.term, t.def, t.sort_order,
 	to_char(t.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 	to_char(t.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 FROM unnest($1::uuid[]) WITH ORDINALITY AS input(id, og_order)
@@ -67,11 +67,10 @@ LEFT JOIN (
 	SELECT t.*
 	FROM terms t
 	JOIN studysets s ON t.studyset_id = s.id
-	WHERE (s.private = false AND s.draft = false) OR s.user_id = $3
+	WHERE (s.private = false AND s.draft = false) OR s.user_id = $2
 ) t ON t.id = input.id
 ORDER BY input.og_order`,
 		ids,
-		dr.usercontentBaseURL,
 		authedUserID,
 	)
 	if err != nil {
@@ -94,15 +93,14 @@ func (dr *dataReader) getTermsByStudysetIDs(ctx context.Context, studysetIDs []s
 		ctx,
 		dr.db,
 		&terms,
-		`SELECT t.id, t.studyset_id, t.term, t.def, ($2||t.term_image_key) as term_image_url, ($2||t.def_image_key) as def_image_url, t.sort_order,
+		`SELECT t.id, t.studyset_id, t.term, t.def, t.sort_order,
 	to_char(t.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 	to_char(t.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 FROM terms t
 JOIN studysets s ON t.studyset_id = s.id
-WHERE t.studyset_id = ANY($1::uuid[]) AND ((s.private = false AND s.draft = false) OR s.user_id = $3)
+WHERE t.studyset_id = ANY($1::uuid[]) AND ((s.private = false AND s.draft = false) OR s.user_id = $2)
 ORDER BY t.studyset_id, t.sort_order`,
 		studysetIDs,
-		dr.usercontentBaseURL,
 		authedUserID,
 	)
 	if err != nil {
