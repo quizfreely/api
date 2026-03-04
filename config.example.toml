@@ -37,4 +37,3 @@ usercontent_bucket = "usercontent"
 # WITH trailing slash
 # usercontent_base_url = "https://usercontent.static.quizfreely.org/"
 usercontent_base_url = "http://usercontent.localhost:3902/"
-

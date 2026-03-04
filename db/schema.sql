@@ -1,4 +1,4 @@
-\restrict UfXzCzGUAx403fl5aFx0cWWTiHcE26SDZeedOXlc0DgZayxhGctYSoQjuuZllzq
+\restrict pqOTQG2VyR3ehQ86KWmo9jWVJNXEjcpEVXLXGV1X7b3Rz3Qv1lKIhJo8bhveLy9
 
 -- Dumped from database version 18.2
 -- Dumped by pg_dump version 18.2
@@ -439,6 +439,14 @@ ALTER TABLE ONLY public.term_images
 
 
 --
+-- Name: term_images term_images_unique_term_id_and_def_side; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.term_images
+    ADD CONSTRAINT term_images_unique_term_id_and_def_side UNIQUE (term_id, def_side);
+
+
+--
 -- Name: term_progress_history term_progress_history_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -655,7 +663,7 @@ ALTER TABLE ONLY public.terms
 -- PostgreSQL database dump complete
 --
 
-\unrestrict UfXzCzGUAx403fl5aFx0cWWTiHcE26SDZeedOXlc0DgZayxhGctYSoQjuuZllzq
+\unrestrict pqOTQG2VyR3ehQ86KWmo9jWVJNXEjcpEVXLXGV1X7b3Rz3Qv1lKIhJo8bhveLy9
 
 
 --
@@ -687,4 +695,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('202602241455'),
     ('202602281700'),
     ('202603021759'),
-    ('202603021910');
+    ('202603021910'),
+    ('202603031915');

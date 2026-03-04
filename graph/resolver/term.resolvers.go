@@ -12,6 +12,15 @@ import (
 	"quizfreely/api/graph/model"
 )
 
+// TermDefImages is the resolver for the termDefImages field.
+func (r *termResolver) TermDefImages(ctx context.Context, obj *model.Term) (*model.TermDefImages, error) {
+	if obj.ID == nil {
+		return nil, nil
+	}
+
+	return loader.GetTermDefImageURLsByTermID(ctx, *obj.ID)
+}
+
 // Progress is the resolver for the progress field.
 func (r *termResolver) Progress(ctx context.Context, obj *model.Term) (*model.TermProgress, error) {
 	authedUser := auth.AuthedUserContext(ctx)

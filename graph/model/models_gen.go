@@ -154,6 +154,11 @@ type TermConfusionPairInput struct {
 	ConfusedAt            *string     `json:"confusedAt,omitempty"`
 }
 
+type TermDefImages struct {
+	TermImageURL *string `json:"termImageUrl,omitempty"`
+	DefImageURL  *string `json:"defImageUrl,omitempty"`
+}
+
 type TermInput struct {
 	ID        string  `json:"id"`
 	Term      *string `json:"term,omitempty"`

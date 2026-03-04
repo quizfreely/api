@@ -183,6 +183,8 @@ models:
         resolver: true
       topReverseConfusionPairs:
         resolver: true
+      termDefImages:
+        resolver: true
   TermConfusionPair:
     fields:
       term:
