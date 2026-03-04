@@ -10,7 +10,6 @@ import (
 	"regexp"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
 // ✅ This regex is NOT vulnerable to ReDoS because there's no repetition operator. It does not contain any quantifiers, nested groups, or alternation. It's a single character class.
@@ -21,9 +20,6 @@ const MaxFolderNameLen = 1000
 
 type Resolver struct {
 	DB *pgxpool.Pool
-	Storage *s3.Client
-	UsercontentBucket *string
-	UsercontentBaseURL *string
 }
 
 func ptrToString(s *string) string {
