@@ -3,21 +3,21 @@ package server
 import (
 	"net/http"
 	"quizfreely/api/auth"
+	qzfrAPIConfig "quizfreely/api/config"
 	"quizfreely/api/graph"
 	"quizfreely/api/graph/loader"
 	"quizfreely/api/graph/resolver"
 	"quizfreely/api/rest"
-	qzfrAPIConfig "quizfreely/api/config"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/extension"
 	"github.com/99designs/gqlgen/graphql/handler/lru"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/vektah/gqlparser/v2/ast"
-	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
 func NewRouter(config qzfrAPIConfig.Config, dbPool *pgxpool.Pool, s3Client *s3.Client) http.Handler {
@@ -25,9 +25,9 @@ func NewRouter(config qzfrAPIConfig.Config, dbPool *pgxpool.Pool, s3Client *s3.C
 
 	authHandler := &auth.AuthHandler{DB: dbPool}
 	restHandler := &rest.RESTHandler{
-		DB: dbPool,
-		Storage: s3Client,
-		UsercontentBucket: &config.UsercontentBucket,
+		DB:                 dbPool,
+		Storage:            s3Client,
+		UsercontentBucket:  &config.UsercontentBucket,
 		UsercontentBaseURL: &config.UsercontentBaseURL,
 	}
 
@@ -76,9 +76,6 @@ func NewRouter(config qzfrAPIConfig.Config, dbPool *pgxpool.Pool, s3Client *s3.C
 
 		h := handler.New(graph.NewExecutableSchema(graph.Config{Resolvers: &resolver.Resolver{
 			DB: dbPool,
-			Storage: s3Client,
-			UsercontentBucket: &config.UsercontentBucket,
-			UsercontentBaseURL: &config.UsercontentBaseURL,
 		}}))
 
 		h.AddTransport(transport.Options{})

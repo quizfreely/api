@@ -13,11 +13,15 @@ import (
 	"quizfreely/api/server"
 	"quizfreely/api/storage"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pelletier/go-toml/v2"
+	"github.com/robfig/cron/v3"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
 func main() {
@@ -79,19 +83,76 @@ func main() {
 		http.ListenAndServe(":"+port, router),
 	).Msg("Error starting server")
 
-	startSessionCleanupJob(dbPool)
+	c := cron.New()
+	c.AddFunc(config.SessionCleanupCronSpec, func() {
+		sessionCleanupJob(dbPool)
+	})
+	c.AddFunc(config.TermImageCleanupCronSpec, func() {
+		termImageCleanupJob(dbPool, s3Client, config.UsercontentBucket)
+	})
 }
 
-func startSessionCleanupJob(dbPool *pgxpool.Pool) {
-	ticker := time.NewTicker(24 * time.Hour) // Once per day
-	go func() {
-		for range ticker.C {
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
-			_, err := dbPool.Exec(ctx, "DELETE FROM auth.sessions WHERE expire_at < now()")
-			if err != nil {
-				log.Error().Err(err).Msg("Failed to clean up expired sessions")
-			}
-			cancel()
+func sessionCleanupJob(dbPool *pgxpool.Pool) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	defer cancel()
+
+	_, err := dbPool.Exec(ctx, "DELETE FROM auth.sessions WHERE expire_at < now()")
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to clean up expired sessions")
+	}
+}
+
+func termImageCleanupJob(dbPool *pgxpool.Pool, storage *s3.Client, usercontentBucket string) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	defer cancel()
+
+	var keys []string
+	err := pgxscan.Select(
+		ctx,
+		dbPool,
+		&keys,
+		"SELECT object_key FROM term_images WHERE term_id IS NULL;",
+	)
+	if err != nil {
+		log.Error().Err(err).Msg("DB err while getting keys to clean up term images")
+	}
+
+	objects := make([]types.ObjectIdentifier, len(keys))
+	for i, key := range keys {
+		objects[i] = types.ObjectIdentifier{
+			Key: aws.String(key),
 		}
-	}()
+	}
+
+	for i := 0; i < len(keys); i += 1000 {
+		end := i + 1000
+		if end > len(keys) {
+			end = len(keys)
+		}
+
+		output, err := storage.DeleteObjects(ctx, &s3.DeleteObjectsInput{
+			Bucket: &usercontentBucket,
+			Delete: &types.Delete{
+				Objects: objects[i:end],
+				Quiet:   aws.Bool(true),
+			},
+		})
+		if err != nil {
+			log.Error().Err(err).Msg("error deleting term images from S3 in term image cleanup job")
+		}
+
+		deletedKeys := make([]string, 0, len(output.Deleted))
+		for _, deletedObject := range output.Deleted {
+			if deletedObject.Key == nil {
+				continue
+			}
+
+			deletedKeys = append(deletedKeys, *deletedObject.Key)
+		}
+		_, err = dbPool.Exec(
+			ctx,
+			"DELETE FROM term_images WHERE object_key = ANY($1::uuid[])",
+			deletedKeys,
+		)
+	}
 }
