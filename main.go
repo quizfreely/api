@@ -90,6 +90,7 @@ func main() {
 	c.AddFunc(config.TermImageCleanupCronSpec, func() {
 		termImageCleanupJob(dbPool, s3Client, config.UsercontentBucket)
 	})
+	c.Start()
 }
 
 func sessionCleanupJob(dbPool *pgxpool.Pool) {
