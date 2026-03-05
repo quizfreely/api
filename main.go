@@ -47,7 +47,7 @@ func main() {
 
 	if config.PrettyLog {
 		log.Logger = log.Output(
-			zerolog.ConsoleWriter{Out: os.Stderr},
+			zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: "15:04"},
 		)
 	} else {
 		zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
@@ -75,14 +75,6 @@ func main() {
 
 	router := server.NewRouter(config, dbPool, s3Client)
 
-	port := strconv.Itoa(config.Port)
-	log.Info().Msg(
-		"http://localhost:" + port + "/graphiql for GraphiQL",
-	)
-	log.Fatal().Err(
-		http.ListenAndServe(":"+port, router),
-	).Msg("Error starting server")
-
 	c := cron.New()
 	c.AddFunc(config.SessionCleanupCronSpec, func() {
 		sessionCleanupJob(dbPool)
@@ -91,12 +83,22 @@ func main() {
 		termImageCleanupJob(dbPool, s3Client, config.UsercontentBucket)
 	})
 	c.Start()
+	/* start cron jobs BEFORE starting server because http.ListenAndServe (below) is blocking */
+
+	port := strconv.Itoa(config.Port)
+	log.Info().Msg(
+		"http://localhost:" + port + "/graphiql for GraphiQL",
+	)
+	log.Fatal().Err(
+		http.ListenAndServe(":"+port, router),
+	).Msg("Error starting server")
 }
 
 func sessionCleanupJob(dbPool *pgxpool.Pool) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
 
+	log.Info().Msg("Running sessionCleanupJob")
 	_, err := dbPool.Exec(ctx, "DELETE FROM auth.sessions WHERE expire_at < now()")
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to clean up expired sessions")
@@ -107,6 +109,7 @@ func termImageCleanupJob(dbPool *pgxpool.Pool, storage *s3.Client, usercontentBu
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
 
+	log.Info().Msg("Running termImageCleanupJob")
 	var keys []string
 	err := pgxscan.Select(
 		ctx,
@@ -140,6 +143,7 @@ func termImageCleanupJob(dbPool *pgxpool.Pool, storage *s3.Client, usercontentBu
 		})
 		if err != nil {
 			log.Error().Err(err).Msg("error deleting term images from S3 in term image cleanup job")
+			continue
 		}
 
 		deletedKeys := make([]string, 0, len(output.Deleted))
@@ -150,10 +154,16 @@ func termImageCleanupJob(dbPool *pgxpool.Pool, storage *s3.Client, usercontentBu
 
 			deletedKeys = append(deletedKeys, *deletedObject.Key)
 		}
-		_, err = dbPool.Exec(
-			ctx,
-			"DELETE FROM term_images WHERE object_key = ANY($1::uuid[])",
-			deletedKeys,
-		)
+
+		if len(deletedKeys) > 0 {
+			_, err = dbPool.Exec(
+				ctx,
+				"DELETE FROM term_images WHERE object_key = ANY($1::uuid[])",
+				deletedKeys,
+			)
+			if err != nil {
+				log.Error().Err(err).Msg("DB err deleting rows from term_images after successful delete from S3")
+			}
+		}
 	}
 }
