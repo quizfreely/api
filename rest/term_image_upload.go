@@ -2,36 +2,36 @@ package rest
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"image"
 	"io"
 	"net/http"
 	"strings"
-	"crypto/sha256"
-	"encoding/hex"
 
 	"quizfreely/api/auth"
 
-	"github.com/rs/zerolog/log"
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/render"
-	"github.com/disintegration/imaging"
-	"github.com/chai2010/webp"
-	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/chai2010/webp"
+	"github.com/disintegration/imaging"
+	"github.com/georgysavva/scany/v2/pgxscan"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/render"
+	"github.com/rs/zerolog/log"
 )
 
 const (
-	maxSizeBefore = 10 << 20 /* 10 MB */
-	maxPixelsBefore = 20_000_000 /* 20 MP */
+	maxSizeBefore       = 10 << 20   /* 10 MB */
+	maxPixelsBefore     = 20_000_000 /* 20 MP */
 	maxWidthHeightAfter = 1200
-	webpQualityAfter = 80
+	webpQualityAfter    = 80
 )
 
 func (rh *RESTHandler) UploadTermImage(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	if (rh.Storage == nil) {
+	if rh.Storage == nil {
 		render.Status(r, 503)
 		render.JSON(w, r, map[string]any{
 			"error": "Storage not enabled/configured",
@@ -107,13 +107,13 @@ func (rh *RESTHandler) UploadTermImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if len(raw) == 0 {
-	    render.Status(r, 400)
-	    render.JSON(w, r, map[string]any{
-	        "error": "empty file",
-	    })
-	    return
+		render.Status(r, 400)
+		render.JSON(w, r, map[string]any{
+			"error": "empty file",
+		})
+		return
 	}
-	
+
 	/* detect actual MIME type, ignoring user-specified Content-Type */
 	mime := http.DetectContentType(raw[:512])
 	if !isMIMEAllowed(mime) {
@@ -141,7 +141,7 @@ func (rh *RESTHandler) UploadTermImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if cfg.Width * cfg.Height > maxPixelsBefore {
+	if cfg.Width*cfg.Height > maxPixelsBefore {
 		render.Status(r, 400)
 		render.JSON(w, r, map[string]any{
 			"error": "image too large",
@@ -174,13 +174,13 @@ func (rh *RESTHandler) UploadTermImage(w http.ResponseWriter, r *http.Request) {
 
 	hash := sha256.Sum256(buf.Bytes())
 	hashStr := hex.EncodeToString(hash[:])[:16]
-	objectKey := "terms/"+termID+"/"+side+"-"+hashStr+".webp"
+	objectKey := "terms/" + termID + "/" + side + "-" + hashStr + ".webp"
 
 	_, err = rh.Storage.PutObject(ctx, &s3.PutObjectInput{
-		Bucket:      rh.UsercontentBucket,
-		Key:         aws.String(objectKey),
-		Body:        bytes.NewReader(buf.Bytes()),
-		ContentType: aws.String("image/webp"),
+		Bucket:       rh.UsercontentBucket,
+		Key:          aws.String(objectKey),
+		Body:         bytes.NewReader(buf.Bytes()),
+		ContentType:  aws.String("image/webp"),
 		CacheControl: aws.String("public, max-age=31536000, immutable"),
 	})
 
@@ -192,50 +192,33 @@ func (rh *RESTHandler) UploadTermImage(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	
-	var oldKey *string
-	oldKeySQL := `SELECT term_image_key FROM terms WHERE id = $1`
-	if side == "def" {
-		oldKeySQL = `SELECT def_image_key FROM terms WHERE id = $1`
-	}
-	err = pgxscan.Get(
+
+	_, err = rh.DB.Exec(
 		ctx,
-		rh.DB,
-		&oldKey,
-		oldKeySQL,
+		"UPDATE term_images SET term_id = NULL WHERE term_id = $1 AND def_side = $2",
 		termID,
+		side == "def",
 	)
 	if err != nil {
-		log.Error().Err(err).Msg("error getting old term/def image key from DB")
-	} else if oldKey != nil {
-		_, err = rh.Storage.DeleteObject(ctx, &s3.DeleteObjectInput{
-			Bucket: rh.UsercontentBucket,
-			Key: oldKey,
+		log.Error().Err(err).Msg("failed to update old term/def image key in DB")
+		render.Status(r, 500)
+		render.JSON(w, r, map[string]any{
+			"error": "failed to update old term/def image key in DB",
 		})
-		if err != nil {
-			log.Error().Err(err).Msg("error deleting old term/def image from S3")
-		}
-	}
-
-	sql := `UPDATE terms
-		SET term_image_key = $2
-		WHERE id = $1`
-	if side == "def" {
-		sql = `UPDATE terms
-			SET def_image_key = $2
-			WHERE id = $1`
+		return
 	}
 	_, err = rh.DB.Exec(
 		ctx,
-		sql,
-		termID,
+		"INSERT INTO term_images (object_key, term_id, def_side) values ($1, $2, $3)",
 		objectKey,
+		termID,
+		side == "def",
 	)
 	if err != nil {
-		log.Error().Err(err).Msg("failed to update term/def image key in DB")
+		log.Error().Err(err).Msg("failed to insert term/def image key in DB")
 		render.Status(r, 500)
 		render.JSON(w, r, map[string]any{
-			"error": "failed to update term/def image key in DB",
+			"error": "failed to insert term/def image key in DB",
 		})
 		return
 	}
@@ -260,4 +243,3 @@ func isMIMEAllowed(m string) bool {
 		return false
 	}
 }
-
