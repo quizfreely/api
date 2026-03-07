@@ -441,7 +441,8 @@ func (dr *dataReader) getTermDefImageURLsByTermIDs(ctx context.Context, ids []st
 		LEFT JOIN (
    			SELECT ti.*
    			FROM term_images ti
-   			JOIN studysets s ON ti.studyset_id = s.id
+   			JOIN terms t ON ti.term_id = t.id
+   			JOIN studysets s ON t.studyset_id = s.id
    			WHERE (s.private = false AND s.draft = false)
       		OR s.user_id = $2
 		) ti ON ti.term_id = input.id
