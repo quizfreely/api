@@ -2,7 +2,8 @@ type Term {
     id: ID
     term: String
     def: String
-    termDefImages: TermDefImages
+    term_image_url: String
+    def_image_url: String
     sortOrder: Int
     progress: TermProgress
     progressHistory: [TermProgressHistory]
@@ -70,8 +71,4 @@ input TermConfusionPairInput {
     answeredWith: AnswerWith
     confusedCountIncrease: Int
     confusedAt: String
-}
-type TermDefImages {
-    termImageUrl: String
-    defImageUrl: String
 }

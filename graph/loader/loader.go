@@ -59,7 +59,7 @@ func (dr *dataReader) getTermsByIDs(ctx context.Context, ids []string) ([]*model
 		ctx,
 		dr.db,
 		&terms,
-		`SELECT t.id, t.studyset_id, t.term, t.def, t.sort_order,
+		`SELECT t.id, t.studyset_id, t.term, t.def, ($3||t.term_image_key) as term_image_url, ($3||t.def_image_key) as def_image_url, t.sort_order,
 	to_char(t.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 	to_char(t.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 FROM unnest($1::uuid[]) WITH ORDINALITY AS input(id, og_order)
@@ -72,6 +72,7 @@ LEFT JOIN (
 ORDER BY input.og_order`,
 		ids,
 		authedUserID,
+		dr.usercontentBaseURL,
 	)
 	if err != nil {
 		return nil, []error{err}
@@ -93,7 +94,7 @@ func (dr *dataReader) getTermsByStudysetIDs(ctx context.Context, studysetIDs []s
 		ctx,
 		dr.db,
 		&terms,
-		`SELECT t.id, t.studyset_id, t.term, t.def, t.sort_order,
+		`SELECT t.id, t.studyset_id, t.term, t.def, ($3||t.term_image_key) as term_image_url, ($3||t.def_image_key) as def_image_url, t.sort_order,
 	to_char(t.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 	to_char(t.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 FROM terms t
@@ -102,6 +103,7 @@ WHERE t.studyset_id = ANY($1::uuid[]) AND ((s.private = false AND s.draft = fals
 ORDER BY t.studyset_id, t.sort_order`,
 		studysetIDs,
 		authedUserID,
+		dr.usercontentBaseURL,
 	)
 	if err != nil {
 		return nil, []error{err}
@@ -420,72 +422,6 @@ ORDER BY input.og_order ASC, pt.timestamp DESC`,
 	return orderedPracticeTests, nil
 }
 
-func (dr *dataReader) getTermDefImageURLsByTermIDs(ctx context.Context, ids []string) ([]*model.TermDefImages, []error) {
-	authedUser := auth.AuthedUserContext(ctx)
-	var authedUserID *string
-	if authedUser != nil {
-		authedUserID = authedUser.ID
-	}
-
-	var rows []struct {
-		TermID   string
-		ImageURL *string
-		DefSide  *bool
-	}
-	err := pgxscan.Select(
-		ctx,
-		dr.db,
-		&rows,
-		`SELECT input.id AS term_id, ($3||ti.object_key) as image_url, ti.def_side
-		FROM unnest($1::uuid[]) WITH ORDINALITY AS input(id, og_order)
-		LEFT JOIN (
-   			SELECT ti.*
-   			FROM term_images ti
-   			JOIN terms t ON ti.term_id = t.id
-   			JOIN studysets s ON t.studyset_id = s.id
-   			WHERE (s.private = false AND s.draft = false)
-      		OR s.user_id = $2
-		) ti ON ti.term_id = input.id
-		ORDER BY input.og_order`,
-		ids,
-		authedUserID,
-		dr.usercontentBaseURL,
-	)
-	if err != nil {
-		return nil, []error{err}
-	}
-
-	var terms []*model.TermDefImages
-	for index, row := range rows {
-		if index-1 >= 0 && row.TermID == rows[index-1].TermID {
-			if row.DefSide != nil && *row.DefSide {
-				terms[len(terms)-1].DefImageURL = row.ImageURL
-			} else if row.DefSide != nil {
-				terms[len(terms)-1].TermImageURL = row.ImageURL
-			}
-		}
-
-		if row.DefSide != nil && *row.DefSide {
-			terms = append(terms, &model.TermDefImages{
-				TermImageURL: nil,
-				DefImageURL:  row.ImageURL,
-			})
-		} else if row.DefSide != nil {
-			terms = append(terms, &model.TermDefImages{
-				TermImageURL: row.ImageURL,
-				DefImageURL:  nil,
-			})
-		} else {
-			terms = append(terms, &model.TermDefImages{
-				TermImageURL: nil,
-				DefImageURL:  nil,
-			})
-		}
-	}
-
-	return terms, nil
-}
-
 // Loaders wrap your data loaders to inject via middleware
 type Loaders struct {
 	UserLoader                         *dataloadgen.Loader[string, *model.User]
@@ -497,7 +433,6 @@ type Loaders struct {
 	TermTopConfusionPairsLoader        *dataloadgen.Loader[string, []*model.TermConfusionPair]
 	TermTopReverseConfusionPairsLoader *dataloadgen.Loader[string, []*model.TermConfusionPair]
 	PracticeTestByStudysetIDLoader     *dataloadgen.Loader[string, []*model.PracticeTest]
-	TermDefImageURLsByTermIDLoader     *dataloadgen.Loader[string, *model.TermDefImages]
 }
 
 // NewLoaders instantiates data loaders for the middleware
@@ -517,7 +452,6 @@ func NewLoaders(db *pgxpool.Pool, usercontentBaseURL *string) *Loaders {
 		TermTopConfusionPairsLoader:        dataloadgen.NewLoader(dr.getTermsTopConfusionPairs, dataloadgen.WithWait(time.Millisecond)),
 		TermTopReverseConfusionPairsLoader: dataloadgen.NewLoader(dr.getTermsTopReverseConfusionPairs, dataloadgen.WithWait(time.Millisecond)),
 		PracticeTestByStudysetIDLoader:     dataloadgen.NewLoader(dr.getPracticeTestsByStudysetIDs, dataloadgen.WithWait(time.Millisecond)),
-		TermDefImageURLsByTermIDLoader:     dataloadgen.NewLoader(dr.getTermDefImageURLsByTermIDs, dataloadgen.WithWait(time.Millisecond)),
 	}
 }
 
@@ -640,12 +574,3 @@ func GetPracticeTestsByStudysetIDs(ctx context.Context, studysetIDs []string) ([
 	return loaders.PracticeTestByStudysetIDLoader.LoadAll(ctx, studysetIDs)
 }
 
-func GetTermDefImageURLsByTermID(ctx context.Context, id string) (*model.TermDefImages, error) {
-	loaders := For(ctx)
-	return loaders.TermDefImageURLsByTermIDLoader.Load(ctx, id)
-}
-
-func GetTermDefImageURLsByTermIDs(ctx context.Context, ids []string) ([]*model.TermDefImages, error) {
-	loaders := For(ctx)
-	return loaders.TermDefImageURLsByTermIDLoader.LoadAll(ctx, ids)
-}

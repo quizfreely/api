@@ -20,6 +20,7 @@ const MaxFolderNameLen = 1000
 
 type Resolver struct {
 	DB *pgxpool.Pool
+	UsercontentBaseURL *string
 }
 
 func ptrToString(s *string) string {

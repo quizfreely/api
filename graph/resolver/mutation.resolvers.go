@@ -144,15 +144,16 @@ func (r *mutationResolver) CreateTerms(ctx context.Context, studysetID string, t
 	values := make([]interface{}, 0, len(terms)*4)
 	placeholders := make([]string, 0, len(terms))
 
+	values = append(values, r.UsercontentBaseURL)
 	for i, t := range terms {
-		placeholders = append(placeholders, fmt.Sprintf("($%d,$%d,$%d,$%d)", i*4+1, i*4+2, i*4+3, i*4+4))
+		placeholders = append(placeholders, fmt.Sprintf("($%d,$%d,$%d,$%d)", i*4+2, i*4+3, i*4+4, i*4+5))
 		values = append(values, studysetID, t.Term, t.Def, t.SortOrder)
 	}
 
 	sql := fmt.Sprintf(`
 		INSERT INTO terms (studyset_id, term, def, sort_order)
 		VALUES %s
-		RETURNING id, term, def, sort_order,
+		RETURNING id, term, def, ($1||t.term_image_key) as term_image_url, ($1||t.def_image_key) as def_image_url, sort_order,
 			to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 			to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 	`, strings.Join(placeholders, ","))
@@ -207,7 +208,7 @@ func (r *mutationResolver) UpdateTerms(ctx context.Context, studysetID string, t
 	for i, t := range terms {
 		placeholders = append(placeholders, fmt.Sprintf(
 			"($%d::uuid, $%d::text, $%d::text, $%d::int)",
-			i*4+2, i*4+3, i*4+4, i*4+5,
+			i*4+3, i*4+4, i*4+5, i*4+6,
 		))
 		values = append(values, t.ID, t.Term, t.Def, t.SortOrder)
 	}
@@ -219,7 +220,7 @@ func (r *mutationResolver) UpdateTerms(ctx context.Context, studysetID string, t
 			%s
 		) AS v(id, term, def, sort_order)
 		WHERE t.id = v.id AND t.studyset_id = $1
-		RETURNING t.id, t.term, t.def, t.sort_order,
+		RETURNING t.id, t.term, t.def, ($2||t.term_image_key) as term_image_url, ($2||t.def_image_key) as def_image_url, t.sort_order,
 			to_char(t.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 			to_char(t.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at`,
 		strings.Join(placeholders, ","),
@@ -232,7 +233,7 @@ func (r *mutationResolver) UpdateTerms(ctx context.Context, studysetID string, t
 		&updatedTerms,
 		sql,
 		append(
-			[]interface{}{studysetID},
+			[]interface{}{studysetID, r.UsercontentBaseURL},
 			values...,
 		)...,
 	)
