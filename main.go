@@ -115,7 +115,12 @@ func termImageCleanupJob(dbPool *pgxpool.Pool, storage *s3.Client, usercontentBu
 		ctx,
 		dbPool,
 		&keys,
-		"SELECT object_key FROM term_images WHERE term_id IS NULL;",
+		`SELECT object_key
+		FROM images i
+		WHERE NOT EXISTS(
+			SELECT 1 FROM terms t
+			WHERE t.term_image_key = i.object_key OR t.def_image_key = i.object_key
+		)`,
 	)
 	if err != nil {
 		log.Error().Err(err).Msg("DB err while getting keys to clean up term images")
@@ -158,7 +163,7 @@ func termImageCleanupJob(dbPool *pgxpool.Pool, storage *s3.Client, usercontentBu
 		if len(deletedKeys) > 0 {
 			_, err = dbPool.Exec(
 				ctx,
-				"DELETE FROM term_images WHERE object_key = ANY($1::uuid[])",
+				"DELETE FROM images WHERE object_key = ANY($1)",
 				deletedKeys,
 			)
 			if err != nil {

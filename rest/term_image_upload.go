@@ -173,8 +173,8 @@ func (rh *RESTHandler) UploadTermImage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	hash := sha256.Sum256(buf.Bytes())
-	hashStr := hex.EncodeToString(hash[:])[:16]
-	objectKey := "terms/" + termID + "/" + side + "-" + hashStr + ".webp"
+	hashStr := hex.EncodeToString(hash[:])[:32]
+	objectKey := "images/" + hashStr[:2] + "/" + hashStr[2:4] + "/" + hashStr + ".webp"
 
 	_, err = rh.Storage.PutObject(ctx, &s3.PutObjectInput{
 		Bucket:       rh.UsercontentBucket,
@@ -195,30 +195,33 @@ func (rh *RESTHandler) UploadTermImage(w http.ResponseWriter, r *http.Request) {
 
 	_, err = rh.DB.Exec(
 		ctx,
-		"UPDATE term_images SET term_id = NULL WHERE term_id = $1 AND def_side = $2",
-		termID,
-		side == "def",
+		"INSERT INTO images (object_key) VALUES ($1) ON CONFLICT DO NOTHING",
+		objectKey,
 	)
 	if err != nil {
-		log.Error().Err(err).Msg("failed to update old term/def image key in DB")
+		log.Error().Err(err).Msg("failed to insert image object key in DB")
 		render.Status(r, 500)
 		render.JSON(w, r, map[string]any{
-			"error": "failed to update old term/def image key in DB",
+			"error": "failed to insert image object key in DB",
 		})
 		return
 	}
+
+	sql := "UPDATE terms SET term_image_key = $1 WHERE term_id = $2"
+	if side == "def" {
+		sql = "UPDATE terms SET def_image_key = $1 WHERE term_id = $2"
+	}
 	_, err = rh.DB.Exec(
 		ctx,
-		"INSERT INTO term_images (object_key, term_id, def_side) values ($1, $2, $3)",
+		sql
 		objectKey,
 		termID,
-		side == "def",
 	)
 	if err != nil {
-		log.Error().Err(err).Msg("failed to insert term/def image key in DB")
+		log.Error().Err(err).Msg("failed to update term/def image key in DB")
 		render.Status(r, 500)
 		render.JSON(w, r, map[string]any{
-			"error": "failed to insert term/def image key in DB",
+			"error": "failed to update term/def image key in DB",
 		})
 		return
 	}
