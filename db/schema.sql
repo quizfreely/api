@@ -1,4 +1,4 @@
-\restrict pqOTQG2VyR3ehQ86KWmo9jWVJNXEjcpEVXLXGV1X7b3Rz3Qv1lKIhJo8bhveLy9
+\restrict mE1VNBR8Ay4xTrrSOyy2oh3hBPABjaRaaacQX3E6B5QjuSpfy2u95t2M7IgSReY
 
 -- Dumped from database version 18.2
 -- Dumped by pg_dump version 18.2
@@ -147,6 +147,15 @@ CREATE TABLE public.folders (
 
 
 --
+-- Name: images; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.images (
+    object_key text NOT NULL
+);
+
+
+--
 -- Name: practice_tests; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -238,17 +247,6 @@ CREATE TABLE public.term_confusion_pairs (
 
 
 --
--- Name: term_images; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.term_images (
-    object_key text NOT NULL,
-    def_side boolean NOT NULL,
-    term_id uuid
-);
-
-
---
 -- Name: term_progress; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -298,7 +296,9 @@ CREATE TABLE public.terms (
     studyset_id uuid NOT NULL,
     sort_order integer NOT NULL,
     created_at timestamp with time zone DEFAULT now(),
-    updated_at timestamp with time zone DEFAULT now()
+    updated_at timestamp with time zone DEFAULT now(),
+    term_image_key text,
+    def_image_key text
 );
 
 
@@ -367,6 +367,14 @@ ALTER TABLE ONLY public.folders
 
 
 --
+-- Name: images images_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.images
+    ADD CONSTRAINT images_pkey PRIMARY KEY (object_key);
+
+
+--
 -- Name: practice_tests practice_tests_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -431,22 +439,6 @@ ALTER TABLE ONLY public.term_confusion_pairs
 
 
 --
--- Name: term_images term_images_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.term_images
-    ADD CONSTRAINT term_images_pkey PRIMARY KEY (object_key);
-
-
---
--- Name: term_images term_images_unique_term_id_and_def_side; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.term_images
-    ADD CONSTRAINT term_images_unique_term_id_and_def_side UNIQUE (term_id, def_side);
-
-
---
 -- Name: term_progress_history term_progress_history_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -476,6 +468,20 @@ ALTER TABLE ONLY public.term_progress
 
 ALTER TABLE ONLY public.terms
     ADD CONSTRAINT terms_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: idx_terms_def_image_key; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_terms_def_image_key ON public.terms USING btree (def_image_key);
+
+
+--
+-- Name: idx_terms_term_image_key; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_terms_term_image_key ON public.terms USING btree (term_image_key);
 
 
 --
@@ -612,14 +618,6 @@ ALTER TABLE ONLY public.term_confusion_pairs
 
 
 --
--- Name: term_images term_images_term_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.term_images
-    ADD CONSTRAINT term_images_term_id_fkey FOREIGN KEY (term_id) REFERENCES public.terms(id) ON DELETE SET NULL;
-
-
---
 -- Name: term_progress_history term_progress_history_term_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -652,6 +650,14 @@ ALTER TABLE ONLY public.term_progress
 
 
 --
+-- Name: terms terms_def_image_key_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.terms
+    ADD CONSTRAINT terms_def_image_key_fkey FOREIGN KEY (def_image_key) REFERENCES public.images(object_key);
+
+
+--
 -- Name: terms terms_studyset_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -660,10 +666,18 @@ ALTER TABLE ONLY public.terms
 
 
 --
+-- Name: terms terms_term_image_key_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.terms
+    ADD CONSTRAINT terms_term_image_key_fkey FOREIGN KEY (term_image_key) REFERENCES public.images(object_key);
+
+
+--
 -- PostgreSQL database dump complete
 --
 
-\unrestrict pqOTQG2VyR3ehQ86KWmo9jWVJNXEjcpEVXLXGV1X7b3Rz3Qv1lKIhJo8bhveLy9
+\unrestrict mE1VNBR8Ay4xTrrSOyy2oh3hBPABjaRaaacQX3E6B5QjuSpfy2u95t2M7IgSReY
 
 
 --
@@ -696,4 +710,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('202602281700'),
     ('202603021759'),
     ('202603021910'),
-    ('202603031915');
+    ('202603031915'),
+    ('202603071210');

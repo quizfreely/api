@@ -2,8 +2,8 @@ type Term {
     id: ID
     term: String
     def: String
-    term_image_url: String
-    def_image_url: String
+    termImageUrl: String
+    defImageUrl: String
     sortOrder: Int
     progress: TermProgress
     progressHistory: [TermProgressHistory]

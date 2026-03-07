@@ -153,7 +153,7 @@ func (r *mutationResolver) CreateTerms(ctx context.Context, studysetID string, t
 	sql := fmt.Sprintf(`
 		INSERT INTO terms (studyset_id, term, def, sort_order)
 		VALUES %s
-		RETURNING id, term, def, ($1||t.term_image_key) as term_image_url, ($1||t.def_image_key) as def_image_url, sort_order,
+		RETURNING id, term, def, ($1||term_image_key) as term_image_url, ($1||def_image_key) as def_image_url, sort_order,
 			to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 			to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 	`, strings.Join(placeholders, ","))
