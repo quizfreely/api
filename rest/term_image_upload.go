@@ -213,7 +213,7 @@ func (rh *RESTHandler) UploadTermImage(w http.ResponseWriter, r *http.Request) {
 	}
 	_, err = rh.DB.Exec(
 		ctx,
-		sql
+		sql,
 		objectKey,
 		termID,
 	)
