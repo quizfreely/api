@@ -214,12 +214,13 @@ type ComplexityRoot struct {
 	Term struct {
 		CreatedAt                func(childComplexity int) int
 		Def                      func(childComplexity int) int
+		DefImageURL              func(childComplexity int) int
 		ID                       func(childComplexity int) int
 		Progress                 func(childComplexity int) int
 		ProgressHistory          func(childComplexity int) int
 		SortOrder                func(childComplexity int) int
 		Term                     func(childComplexity int) int
-		TermDefImages            func(childComplexity int) int
+		TermImageURL             func(childComplexity int) int
 		TopConfusionPairs        func(childComplexity int) int
 		TopReverseConfusionPairs func(childComplexity int) int
 		UpdatedAt                func(childComplexity int) int
@@ -232,11 +233,6 @@ type ComplexityRoot struct {
 		ID             func(childComplexity int) int
 		LastConfusedAt func(childComplexity int) int
 		Term           func(childComplexity int) int
-	}
-
-	TermDefImages struct {
-		DefImageURL  func(childComplexity int) int
-		TermImageURL func(childComplexity int) int
 	}
 
 	TermProgress struct {
@@ -346,8 +342,6 @@ type SubjectResolver interface {
 	StudysetCount(ctx context.Context, obj *model.Subject) (int32, error)
 }
 type TermResolver interface {
-	TermDefImages(ctx context.Context, obj *model.Term) (*model.TermDefImages, error)
-
 	Progress(ctx context.Context, obj *model.Term) (*model.TermProgress, error)
 	ProgressHistory(ctx context.Context, obj *model.Term) ([]*model.TermProgressHistory, error)
 	TopConfusionPairs(ctx context.Context, obj *model.Term) ([]*model.TermConfusionPair, error)
@@ -1365,6 +1359,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Term.Def(childComplexity), true
 
+	case "Term.def_image_url":
+		if e.complexity.Term.DefImageURL == nil {
+			break
+		}
+
+		return e.complexity.Term.DefImageURL(childComplexity), true
+
 	case "Term.id":
 		if e.complexity.Term.ID == nil {
 			break
@@ -1400,12 +1401,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Term.Term(childComplexity), true
 
-	case "Term.termDefImages":
-		if e.complexity.Term.TermDefImages == nil {
+	case "Term.term_image_url":
+		if e.complexity.Term.TermImageURL == nil {
 			break
 		}
 
-		return e.complexity.Term.TermDefImages(childComplexity), true
+		return e.complexity.Term.TermImageURL(childComplexity), true
 
 	case "Term.topConfusionPairs":
 		if e.complexity.Term.TopConfusionPairs == nil {
@@ -1469,20 +1470,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.TermConfusionPair.Term(childComplexity), true
-
-	case "TermDefImages.defImageUrl":
-		if e.complexity.TermDefImages.DefImageURL == nil {
-			break
-		}
-
-		return e.complexity.TermDefImages.DefImageURL(childComplexity), true
-
-	case "TermDefImages.termImageUrl":
-		if e.complexity.TermDefImages.TermImageURL == nil {
-			break
-		}
-
-		return e.complexity.TermDefImages.TermImageURL(childComplexity), true
 
 	case "TermProgress.defCorrectCount":
 		if e.complexity.TermProgress.DefCorrectCount == nil {
@@ -2896,8 +2883,10 @@ func (ec *executionContext) fieldContext_FRQ_term(_ context.Context, field graph
 				return ec.fieldContext_Term_term(ctx, field)
 			case "def":
 				return ec.fieldContext_Term_def(ctx, field)
-			case "termDefImages":
-				return ec.fieldContext_Term_termDefImages(ctx, field)
+			case "term_image_url":
+				return ec.fieldContext_Term_term_image_url(ctx, field)
+			case "def_image_url":
+				return ec.fieldContext_Term_def_image_url(ctx, field)
 			case "sortOrder":
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
@@ -3632,8 +3621,10 @@ func (ec *executionContext) fieldContext_MCQ_term(_ context.Context, field graph
 				return ec.fieldContext_Term_term(ctx, field)
 			case "def":
 				return ec.fieldContext_Term_def(ctx, field)
-			case "termDefImages":
-				return ec.fieldContext_Term_termDefImages(ctx, field)
+			case "term_image_url":
+				return ec.fieldContext_Term_term_image_url(ctx, field)
+			case "def_image_url":
+				return ec.fieldContext_Term_def_image_url(ctx, field)
 			case "sortOrder":
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
@@ -3779,8 +3770,10 @@ func (ec *executionContext) fieldContext_MCQ_answeredTerm(_ context.Context, fie
 				return ec.fieldContext_Term_term(ctx, field)
 			case "def":
 				return ec.fieldContext_Term_def(ctx, field)
-			case "termDefImages":
-				return ec.fieldContext_Term_termDefImages(ctx, field)
+			case "term_image_url":
+				return ec.fieldContext_Term_term_image_url(ctx, field)
+			case "def_image_url":
+				return ec.fieldContext_Term_def_image_url(ctx, field)
 			case "sortOrder":
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
@@ -3844,8 +3837,10 @@ func (ec *executionContext) fieldContext_MCQ_distractors(_ context.Context, fiel
 				return ec.fieldContext_Term_term(ctx, field)
 			case "def":
 				return ec.fieldContext_Term_def(ctx, field)
-			case "termDefImages":
-				return ec.fieldContext_Term_termDefImages(ctx, field)
+			case "term_image_url":
+				return ec.fieldContext_Term_term_image_url(ctx, field)
+			case "def_image_url":
+				return ec.fieldContext_Term_def_image_url(ctx, field)
 			case "sortOrder":
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
@@ -3950,8 +3945,10 @@ func (ec *executionContext) fieldContext_MatchQuestion_term(_ context.Context, f
 				return ec.fieldContext_Term_term(ctx, field)
 			case "def":
 				return ec.fieldContext_Term_def(ctx, field)
-			case "termDefImages":
-				return ec.fieldContext_Term_termDefImages(ctx, field)
+			case "term_image_url":
+				return ec.fieldContext_Term_term_image_url(ctx, field)
+			case "def_image_url":
+				return ec.fieldContext_Term_def_image_url(ctx, field)
 			case "sortOrder":
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
@@ -4097,8 +4094,10 @@ func (ec *executionContext) fieldContext_MatchQuestion_answeredTerm(_ context.Co
 				return ec.fieldContext_Term_term(ctx, field)
 			case "def":
 				return ec.fieldContext_Term_def(ctx, field)
-			case "termDefImages":
-				return ec.fieldContext_Term_termDefImages(ctx, field)
+			case "term_image_url":
+				return ec.fieldContext_Term_term_image_url(ctx, field)
+			case "def_image_url":
+				return ec.fieldContext_Term_def_image_url(ctx, field)
 			case "sortOrder":
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
@@ -4363,8 +4362,10 @@ func (ec *executionContext) fieldContext_Mutation_createTerms(ctx context.Contex
 				return ec.fieldContext_Term_term(ctx, field)
 			case "def":
 				return ec.fieldContext_Term_def(ctx, field)
-			case "termDefImages":
-				return ec.fieldContext_Term_termDefImages(ctx, field)
+			case "term_image_url":
+				return ec.fieldContext_Term_term_image_url(ctx, field)
+			case "def_image_url":
+				return ec.fieldContext_Term_def_image_url(ctx, field)
 			case "sortOrder":
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
@@ -4439,8 +4440,10 @@ func (ec *executionContext) fieldContext_Mutation_updateTerms(ctx context.Contex
 				return ec.fieldContext_Term_term(ctx, field)
 			case "def":
 				return ec.fieldContext_Term_def(ctx, field)
-			case "termDefImages":
-				return ec.fieldContext_Term_termDefImages(ctx, field)
+			case "term_image_url":
+				return ec.fieldContext_Term_term_image_url(ctx, field)
+			case "def_image_url":
+				return ec.fieldContext_Term_def_image_url(ctx, field)
 			case "sortOrder":
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
@@ -6009,8 +6012,10 @@ func (ec *executionContext) fieldContext_Query_term(ctx context.Context, field g
 				return ec.fieldContext_Term_term(ctx, field)
 			case "def":
 				return ec.fieldContext_Term_def(ctx, field)
-			case "termDefImages":
-				return ec.fieldContext_Term_termDefImages(ctx, field)
+			case "term_image_url":
+				return ec.fieldContext_Term_term_image_url(ctx, field)
+			case "def_image_url":
+				return ec.fieldContext_Term_def_image_url(ctx, field)
 			case "sortOrder":
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
@@ -7891,8 +7896,10 @@ func (ec *executionContext) fieldContext_Studyset_terms(_ context.Context, field
 				return ec.fieldContext_Term_term(ctx, field)
 			case "def":
 				return ec.fieldContext_Term_def(ctx, field)
-			case "termDefImages":
-				return ec.fieldContext_Term_termDefImages(ctx, field)
+			case "term_image_url":
+				return ec.fieldContext_Term_term_image_url(ctx, field)
+			case "def_image_url":
+				return ec.fieldContext_Term_def_image_url(ctx, field)
 			case "sortOrder":
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
@@ -8677,8 +8684,8 @@ func (ec *executionContext) fieldContext_Term_def(_ context.Context, field graph
 	return fc, nil
 }
 
-func (ec *executionContext) _Term_termDefImages(ctx context.Context, field graphql.CollectedField, obj *model.Term) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Term_termDefImages(ctx, field)
+func (ec *executionContext) _Term_term_image_url(ctx context.Context, field graphql.CollectedField, obj *model.Term) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Term_term_image_url(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -8691,7 +8698,7 @@ func (ec *executionContext) _Term_termDefImages(ctx context.Context, field graph
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Term().TermDefImages(rctx, obj)
+		return obj.TermImageURL, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8700,25 +8707,60 @@ func (ec *executionContext) _Term_termDefImages(ctx context.Context, field graph
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.TermDefImages)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalOTermDefImages2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermDefImages(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Term_termDefImages(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Term_term_image_url(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Term",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "termImageUrl":
-				return ec.fieldContext_TermDefImages_termImageUrl(ctx, field)
-			case "defImageUrl":
-				return ec.fieldContext_TermDefImages_defImageUrl(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type TermDefImages", field.Name)
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Term_def_image_url(ctx context.Context, field graphql.CollectedField, obj *model.Term) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Term_def_image_url(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DefImageURL, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Term_def_image_url(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Term",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -9164,8 +9206,10 @@ func (ec *executionContext) fieldContext_TermConfusionPair_term(_ context.Contex
 				return ec.fieldContext_Term_term(ctx, field)
 			case "def":
 				return ec.fieldContext_Term_def(ctx, field)
-			case "termDefImages":
-				return ec.fieldContext_Term_termDefImages(ctx, field)
+			case "term_image_url":
+				return ec.fieldContext_Term_term_image_url(ctx, field)
+			case "def_image_url":
+				return ec.fieldContext_Term_def_image_url(ctx, field)
 			case "sortOrder":
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
@@ -9229,8 +9273,10 @@ func (ec *executionContext) fieldContext_TermConfusionPair_confusedTerm(_ contex
 				return ec.fieldContext_Term_term(ctx, field)
 			case "def":
 				return ec.fieldContext_Term_def(ctx, field)
-			case "termDefImages":
-				return ec.fieldContext_Term_termDefImages(ctx, field)
+			case "term_image_url":
+				return ec.fieldContext_Term_term_image_url(ctx, field)
+			case "def_image_url":
+				return ec.fieldContext_Term_def_image_url(ctx, field)
 			case "sortOrder":
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
@@ -9365,88 +9411,6 @@ func (ec *executionContext) _TermConfusionPair_lastConfusedAt(ctx context.Contex
 func (ec *executionContext) fieldContext_TermConfusionPair_lastConfusedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "TermConfusionPair",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TermDefImages_termImageUrl(ctx context.Context, field graphql.CollectedField, obj *model.TermDefImages) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TermDefImages_termImageUrl(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TermImageURL, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TermDefImages_termImageUrl(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TermDefImages",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TermDefImages_defImageUrl(ctx context.Context, field graphql.CollectedField, obj *model.TermDefImages) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TermDefImages_defImageUrl(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.DefImageURL, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TermDefImages_defImageUrl(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TermDefImages",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -10278,8 +10242,10 @@ func (ec *executionContext) fieldContext_TrueFalseQuestion_term(_ context.Contex
 				return ec.fieldContext_Term_term(ctx, field)
 			case "def":
 				return ec.fieldContext_Term_def(ctx, field)
-			case "termDefImages":
-				return ec.fieldContext_Term_termDefImages(ctx, field)
+			case "term_image_url":
+				return ec.fieldContext_Term_term_image_url(ctx, field)
+			case "def_image_url":
+				return ec.fieldContext_Term_def_image_url(ctx, field)
 			case "sortOrder":
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
@@ -10466,8 +10432,10 @@ func (ec *executionContext) fieldContext_TrueFalseQuestion_distractor(_ context.
 				return ec.fieldContext_Term_term(ctx, field)
 			case "def":
 				return ec.fieldContext_Term_def(ctx, field)
-			case "termDefImages":
-				return ec.fieldContext_Term_termDefImages(ctx, field)
+			case "term_image_url":
+				return ec.fieldContext_Term_term_image_url(ctx, field)
+			case "def_image_url":
+				return ec.fieldContext_Term_def_image_url(ctx, field)
 			case "sortOrder":
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
@@ -14984,39 +14952,10 @@ func (ec *executionContext) _Term(ctx context.Context, sel ast.SelectionSet, obj
 			out.Values[i] = ec._Term_term(ctx, field, obj)
 		case "def":
 			out.Values[i] = ec._Term_def(ctx, field, obj)
-		case "termDefImages":
-			field := field
-
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Term_termDefImages(ctx, field, obj)
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "term_image_url":
+			out.Values[i] = ec._Term_term_image_url(ctx, field, obj)
+		case "def_image_url":
+			out.Values[i] = ec._Term_def_image_url(ctx, field, obj)
 		case "sortOrder":
 			out.Values[i] = ec._Term_sortOrder(ctx, field, obj)
 		case "progress":
@@ -15263,44 +15202,6 @@ func (ec *executionContext) _TermConfusionPair(ctx context.Context, sel ast.Sele
 			out.Values[i] = ec._TermConfusionPair_confusedCount(ctx, field, obj)
 		case "lastConfusedAt":
 			out.Values[i] = ec._TermConfusionPair_lastConfusedAt(ctx, field, obj)
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
-var termDefImagesImplementors = []string{"TermDefImages"}
-
-func (ec *executionContext) _TermDefImages(ctx context.Context, sel ast.SelectionSet, obj *model.TermDefImages) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, termDefImagesImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("TermDefImages")
-		case "termImageUrl":
-			out.Values[i] = ec._TermDefImages_termImageUrl(ctx, field, obj)
-		case "defImageUrl":
-			out.Values[i] = ec._TermDefImages_defImageUrl(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -17055,13 +16956,6 @@ func (ec *executionContext) unmarshalOTermConfusionPairInput2ᚖquizfreelyᚋapi
 	}
 	res, err := ec.unmarshalInputTermConfusionPairInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalOTermDefImages2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermDefImages(ctx context.Context, sel ast.SelectionSet, v *model.TermDefImages) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._TermDefImages(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOTermInput2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermInput(ctx context.Context, v any) ([]*model.TermInput, error) {

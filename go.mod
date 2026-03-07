@@ -16,6 +16,7 @@ require (
 	github.com/go-chi/render v1.0.3
 	github.com/jackc/pgx/v5 v5.7.5
 	github.com/pelletier/go-toml/v2 v2.2.4
+	github.com/robfig/cron/v3 v3.0.0
 	github.com/rs/zerolog v1.34.0
 	github.com/stretchr/testify v1.11.1
 	github.com/testcontainers/testcontainers-go v0.40.0
@@ -90,7 +91,6 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
-	github.com/robfig/cron/v3 v3.0.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/shirou/gopsutil/v4 v4.25.6 // indirect
 	github.com/sirupsen/logrus v1.9.4 // indirect
