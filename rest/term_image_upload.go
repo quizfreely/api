@@ -57,7 +57,7 @@ func (rh *RESTHandler) UploadTermImage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	authedUser := auth.AuthedUserContext(ctx)
-	if authedUser.ID == nil || *authedUser.ID == "" {
+	if authedUser == nil || authedUser.ID == nil || *authedUser.ID == "" {
 		render.Status(r, 401)
 		render.JSON(w, r, map[string]any{
 			"error": "not authenticated while trying to upload image for term",
@@ -207,9 +207,9 @@ func (rh *RESTHandler) UploadTermImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sql := "UPDATE terms SET term_image_key = $1 WHERE term_id = $2"
+	sql := "UPDATE terms SET term_image_key = $1 WHERE id = $2"
 	if side == "def" {
-		sql = "UPDATE terms SET def_image_key = $1 WHERE term_id = $2"
+		sql = "UPDATE terms SET def_image_key = $1 WHERE id = $2"
 	}
 	_, err = rh.DB.Exec(
 		ctx,
@@ -245,4 +245,63 @@ func isMIMEAllowed(m string) bool {
 	default:
 		return false
 	}
+}
+
+func (rh *RESTHandler) RemoveTermImage(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	termID := chi.URLParam(r, "termID")
+	if termID == "" {
+		render.Status(r, 400)
+		render.JSON(w, r, map[string]any{
+			"error": "Missing termID in URL",
+		})
+		return
+	}
+	side := chi.URLParam(r, "side")
+	if side != "term" && side != "def" {
+		render.Status(r, 400)
+		render.JSON(w, r, map[string]any{
+			"error": "Invalid term/def side in URL",
+		})
+		return
+	}
+
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil || authedUser.ID == nil || *authedUser.ID == "" {
+		render.Status(r, 401)
+		render.JSON(w, r, map[string]any{
+			"error": "not authenticated while trying to remove image from term",
+		})
+		return
+	}
+
+	sql := `UPDATE terms t SET term_image_key = null
+		WHERE id = $1 AND EXISTS (
+			SELECT 1 FROM studysets s WHERE s.id = t.studyset_id AND s.user_id = $2
+		)`
+	if side == "def" {
+		sql = `UPDATE terms t SET def_image_key = null
+			WHERE id = $1 AND EXISTS (
+				SELECT 1 FROM studysets s WHERE s.id = t.studyset_id AND s.user_id = $2
+			)`
+	}
+	_, err = rh.DB.Exec(
+		ctx,
+		sql,
+		termID,
+		authedUser.ID,
+	)
+	if err != nil {
+		log.Error().Err(err).Msg("RemoveTermImage: DB error updating term's image key")
+		render.Status(r, 500)
+		render.JSON(w, r, map[string]any{
+			"error": "DB error updating term's image key",
+		})
+		return
+	}
+
+	render.JSON(w, r, map[string]interface{}{
+		"error": false,
+	})
 }

@@ -1359,7 +1359,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Term.Def(childComplexity), true
 
-	case "Term.def_image_url":
+	case "Term.defImageUrl":
 		if e.complexity.Term.DefImageURL == nil {
 			break
 		}
@@ -1401,7 +1401,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Term.Term(childComplexity), true
 
-	case "Term.term_image_url":
+	case "Term.termImageUrl":
 		if e.complexity.Term.TermImageURL == nil {
 			break
 		}
@@ -2883,10 +2883,10 @@ func (ec *executionContext) fieldContext_FRQ_term(_ context.Context, field graph
 				return ec.fieldContext_Term_term(ctx, field)
 			case "def":
 				return ec.fieldContext_Term_def(ctx, field)
-			case "term_image_url":
-				return ec.fieldContext_Term_term_image_url(ctx, field)
-			case "def_image_url":
-				return ec.fieldContext_Term_def_image_url(ctx, field)
+			case "termImageUrl":
+				return ec.fieldContext_Term_termImageUrl(ctx, field)
+			case "defImageUrl":
+				return ec.fieldContext_Term_defImageUrl(ctx, field)
 			case "sortOrder":
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
@@ -3621,10 +3621,10 @@ func (ec *executionContext) fieldContext_MCQ_term(_ context.Context, field graph
 				return ec.fieldContext_Term_term(ctx, field)
 			case "def":
 				return ec.fieldContext_Term_def(ctx, field)
-			case "term_image_url":
-				return ec.fieldContext_Term_term_image_url(ctx, field)
-			case "def_image_url":
-				return ec.fieldContext_Term_def_image_url(ctx, field)
+			case "termImageUrl":
+				return ec.fieldContext_Term_termImageUrl(ctx, field)
+			case "defImageUrl":
+				return ec.fieldContext_Term_defImageUrl(ctx, field)
 			case "sortOrder":
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
@@ -3770,10 +3770,10 @@ func (ec *executionContext) fieldContext_MCQ_answeredTerm(_ context.Context, fie
 				return ec.fieldContext_Term_term(ctx, field)
 			case "def":
 				return ec.fieldContext_Term_def(ctx, field)
-			case "term_image_url":
-				return ec.fieldContext_Term_term_image_url(ctx, field)
-			case "def_image_url":
-				return ec.fieldContext_Term_def_image_url(ctx, field)
+			case "termImageUrl":
+				return ec.fieldContext_Term_termImageUrl(ctx, field)
+			case "defImageUrl":
+				return ec.fieldContext_Term_defImageUrl(ctx, field)
 			case "sortOrder":
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
@@ -3837,10 +3837,10 @@ func (ec *executionContext) fieldContext_MCQ_distractors(_ context.Context, fiel
 				return ec.fieldContext_Term_term(ctx, field)
 			case "def":
 				return ec.fieldContext_Term_def(ctx, field)
-			case "term_image_url":
-				return ec.fieldContext_Term_term_image_url(ctx, field)
-			case "def_image_url":
-				return ec.fieldContext_Term_def_image_url(ctx, field)
+			case "termImageUrl":
+				return ec.fieldContext_Term_termImageUrl(ctx, field)
+			case "defImageUrl":
+				return ec.fieldContext_Term_defImageUrl(ctx, field)
 			case "sortOrder":
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
@@ -3945,10 +3945,10 @@ func (ec *executionContext) fieldContext_MatchQuestion_term(_ context.Context, f
 				return ec.fieldContext_Term_term(ctx, field)
 			case "def":
 				return ec.fieldContext_Term_def(ctx, field)
-			case "term_image_url":
-				return ec.fieldContext_Term_term_image_url(ctx, field)
-			case "def_image_url":
-				return ec.fieldContext_Term_def_image_url(ctx, field)
+			case "termImageUrl":
+				return ec.fieldContext_Term_termImageUrl(ctx, field)
+			case "defImageUrl":
+				return ec.fieldContext_Term_defImageUrl(ctx, field)
 			case "sortOrder":
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
@@ -4094,10 +4094,10 @@ func (ec *executionContext) fieldContext_MatchQuestion_answeredTerm(_ context.Co
 				return ec.fieldContext_Term_term(ctx, field)
 			case "def":
 				return ec.fieldContext_Term_def(ctx, field)
-			case "term_image_url":
-				return ec.fieldContext_Term_term_image_url(ctx, field)
-			case "def_image_url":
-				return ec.fieldContext_Term_def_image_url(ctx, field)
+			case "termImageUrl":
+				return ec.fieldContext_Term_termImageUrl(ctx, field)
+			case "defImageUrl":
+				return ec.fieldContext_Term_defImageUrl(ctx, field)
 			case "sortOrder":
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
@@ -4362,10 +4362,10 @@ func (ec *executionContext) fieldContext_Mutation_createTerms(ctx context.Contex
 				return ec.fieldContext_Term_term(ctx, field)
 			case "def":
 				return ec.fieldContext_Term_def(ctx, field)
-			case "term_image_url":
-				return ec.fieldContext_Term_term_image_url(ctx, field)
-			case "def_image_url":
-				return ec.fieldContext_Term_def_image_url(ctx, field)
+			case "termImageUrl":
+				return ec.fieldContext_Term_termImageUrl(ctx, field)
+			case "defImageUrl":
+				return ec.fieldContext_Term_defImageUrl(ctx, field)
 			case "sortOrder":
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
@@ -4440,10 +4440,10 @@ func (ec *executionContext) fieldContext_Mutation_updateTerms(ctx context.Contex
 				return ec.fieldContext_Term_term(ctx, field)
 			case "def":
 				return ec.fieldContext_Term_def(ctx, field)
-			case "term_image_url":
-				return ec.fieldContext_Term_term_image_url(ctx, field)
-			case "def_image_url":
-				return ec.fieldContext_Term_def_image_url(ctx, field)
+			case "termImageUrl":
+				return ec.fieldContext_Term_termImageUrl(ctx, field)
+			case "defImageUrl":
+				return ec.fieldContext_Term_defImageUrl(ctx, field)
 			case "sortOrder":
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
@@ -6012,10 +6012,10 @@ func (ec *executionContext) fieldContext_Query_term(ctx context.Context, field g
 				return ec.fieldContext_Term_term(ctx, field)
 			case "def":
 				return ec.fieldContext_Term_def(ctx, field)
-			case "term_image_url":
-				return ec.fieldContext_Term_term_image_url(ctx, field)
-			case "def_image_url":
-				return ec.fieldContext_Term_def_image_url(ctx, field)
+			case "termImageUrl":
+				return ec.fieldContext_Term_termImageUrl(ctx, field)
+			case "defImageUrl":
+				return ec.fieldContext_Term_defImageUrl(ctx, field)
 			case "sortOrder":
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
@@ -7896,10 +7896,10 @@ func (ec *executionContext) fieldContext_Studyset_terms(_ context.Context, field
 				return ec.fieldContext_Term_term(ctx, field)
 			case "def":
 				return ec.fieldContext_Term_def(ctx, field)
-			case "term_image_url":
-				return ec.fieldContext_Term_term_image_url(ctx, field)
-			case "def_image_url":
-				return ec.fieldContext_Term_def_image_url(ctx, field)
+			case "termImageUrl":
+				return ec.fieldContext_Term_termImageUrl(ctx, field)
+			case "defImageUrl":
+				return ec.fieldContext_Term_defImageUrl(ctx, field)
 			case "sortOrder":
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
@@ -8684,8 +8684,8 @@ func (ec *executionContext) fieldContext_Term_def(_ context.Context, field graph
 	return fc, nil
 }
 
-func (ec *executionContext) _Term_term_image_url(ctx context.Context, field graphql.CollectedField, obj *model.Term) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Term_term_image_url(ctx, field)
+func (ec *executionContext) _Term_termImageUrl(ctx context.Context, field graphql.CollectedField, obj *model.Term) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Term_termImageUrl(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -8712,7 +8712,7 @@ func (ec *executionContext) _Term_term_image_url(ctx context.Context, field grap
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Term_term_image_url(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Term_termImageUrl(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Term",
 		Field:      field,
@@ -8725,8 +8725,8 @@ func (ec *executionContext) fieldContext_Term_term_image_url(_ context.Context, 
 	return fc, nil
 }
 
-func (ec *executionContext) _Term_def_image_url(ctx context.Context, field graphql.CollectedField, obj *model.Term) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Term_def_image_url(ctx, field)
+func (ec *executionContext) _Term_defImageUrl(ctx context.Context, field graphql.CollectedField, obj *model.Term) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Term_defImageUrl(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -8753,7 +8753,7 @@ func (ec *executionContext) _Term_def_image_url(ctx context.Context, field graph
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Term_def_image_url(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Term_defImageUrl(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Term",
 		Field:      field,
@@ -9206,10 +9206,10 @@ func (ec *executionContext) fieldContext_TermConfusionPair_term(_ context.Contex
 				return ec.fieldContext_Term_term(ctx, field)
 			case "def":
 				return ec.fieldContext_Term_def(ctx, field)
-			case "term_image_url":
-				return ec.fieldContext_Term_term_image_url(ctx, field)
-			case "def_image_url":
-				return ec.fieldContext_Term_def_image_url(ctx, field)
+			case "termImageUrl":
+				return ec.fieldContext_Term_termImageUrl(ctx, field)
+			case "defImageUrl":
+				return ec.fieldContext_Term_defImageUrl(ctx, field)
 			case "sortOrder":
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
@@ -9273,10 +9273,10 @@ func (ec *executionContext) fieldContext_TermConfusionPair_confusedTerm(_ contex
 				return ec.fieldContext_Term_term(ctx, field)
 			case "def":
 				return ec.fieldContext_Term_def(ctx, field)
-			case "term_image_url":
-				return ec.fieldContext_Term_term_image_url(ctx, field)
-			case "def_image_url":
-				return ec.fieldContext_Term_def_image_url(ctx, field)
+			case "termImageUrl":
+				return ec.fieldContext_Term_termImageUrl(ctx, field)
+			case "defImageUrl":
+				return ec.fieldContext_Term_defImageUrl(ctx, field)
 			case "sortOrder":
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
@@ -10242,10 +10242,10 @@ func (ec *executionContext) fieldContext_TrueFalseQuestion_term(_ context.Contex
 				return ec.fieldContext_Term_term(ctx, field)
 			case "def":
 				return ec.fieldContext_Term_def(ctx, field)
-			case "term_image_url":
-				return ec.fieldContext_Term_term_image_url(ctx, field)
-			case "def_image_url":
-				return ec.fieldContext_Term_def_image_url(ctx, field)
+			case "termImageUrl":
+				return ec.fieldContext_Term_termImageUrl(ctx, field)
+			case "defImageUrl":
+				return ec.fieldContext_Term_defImageUrl(ctx, field)
 			case "sortOrder":
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
@@ -10432,10 +10432,10 @@ func (ec *executionContext) fieldContext_TrueFalseQuestion_distractor(_ context.
 				return ec.fieldContext_Term_term(ctx, field)
 			case "def":
 				return ec.fieldContext_Term_def(ctx, field)
-			case "term_image_url":
-				return ec.fieldContext_Term_term_image_url(ctx, field)
-			case "def_image_url":
-				return ec.fieldContext_Term_def_image_url(ctx, field)
+			case "termImageUrl":
+				return ec.fieldContext_Term_termImageUrl(ctx, field)
+			case "defImageUrl":
+				return ec.fieldContext_Term_defImageUrl(ctx, field)
 			case "sortOrder":
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
@@ -14952,10 +14952,10 @@ func (ec *executionContext) _Term(ctx context.Context, sel ast.SelectionSet, obj
 			out.Values[i] = ec._Term_term(ctx, field, obj)
 		case "def":
 			out.Values[i] = ec._Term_def(ctx, field, obj)
-		case "term_image_url":
-			out.Values[i] = ec._Term_term_image_url(ctx, field, obj)
-		case "def_image_url":
-			out.Values[i] = ec._Term_def_image_url(ctx, field, obj)
+		case "termImageUrl":
+			out.Values[i] = ec._Term_termImageUrl(ctx, field, obj)
+		case "defImageUrl":
+			out.Values[i] = ec._Term_defImageUrl(ctx, field, obj)
 		case "sortOrder":
 			out.Values[i] = ec._Term_sortOrder(ctx, field, obj)
 		case "progress":

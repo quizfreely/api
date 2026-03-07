@@ -35,8 +35,9 @@ storage_secret_key = ''
 usercontent_bucket = "usercontent"
 
 # WITH trailing slash
-# usercontent_base_url = "https://usercontent.static.quizfreely.org/"
-usercontent_base_url = "http://usercontent.localhost:3902/"
+# prod example: usercontent_base_url = "https://usercontent.static.quizfreely.org/"
+# dev example: usercontent_base_url = "http://usercontent.localhost:3902/"
+usercontent_base_url = "http://localhost:8080/usercontent/"
 
 session_cleanup_cron_spec = "0 0 * * *"
 term_image_cleanup_cron_spec = "10 0 * * *"

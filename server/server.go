@@ -116,6 +116,12 @@ func NewRouter(config qzfrAPIConfig.Config, dbPool *pgxpool.Pool, s3Client *s3.C
 				restHandler.UploadTermImage,
 			)
 		}
+		router.With(
+			authHandler.AuthMiddleware,
+		).Delete(
+			"/term-images/{termID}/{side}",
+			restHandler.RemoveTermImage,
+		)
 	})
 
 	return router
