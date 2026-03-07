@@ -286,7 +286,7 @@ func (rh *RESTHandler) RemoveTermImage(w http.ResponseWriter, r *http.Request) {
 				SELECT 1 FROM studysets s WHERE s.id = t.studyset_id AND s.user_id = $2
 			)`
 	}
-	_, err = rh.DB.Exec(
+	_, err := rh.DB.Exec(
 		ctx,
 		sql,
 		termID,
