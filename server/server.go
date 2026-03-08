@@ -86,7 +86,7 @@ func NewRouter(config qzfrAPIConfig.Config, dbPool *pgxpool.Pool, s3Client *s3.C
 		h.SetQueryCache(lru.New[*ast.QueryDocument](1000))
 
 		h.Use(extension.Introspection{})
-		h.Use(extension.FixedComplexityLimit(50))
+		h.Use(extension.FixedComplexityLimit(100))
 
 		srv := loader.Middleware(dbPool, &config.UsercontentBaseURL, h)
 
