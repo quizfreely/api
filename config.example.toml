@@ -36,7 +36,7 @@ usercontent_bucket = "usercontent"
 
 # WITH trailing slash
 # prod example: usercontent_base_url = "https://usercontent.static.quizfreely.org/"
-# dev example: usercontent_base_url = "http://usercontent.localhost:3902/"
+# dev example: usercontent_base_url = "http://usercontent.web.garage.localhost:3902/"
 usercontent_base_url = "http://localhost:8080/usercontent/"
 
 session_cleanup_cron_spec = "0 0 * * *"
