@@ -1,5 +1,5 @@
 type Query {
-    authed: Boolean
+    authed: Boolean!
     authedUser: AuthedUser
     studyset(id: ID!): Studyset
     user(id: ID!): User
@@ -13,9 +13,9 @@ type Query {
     mySavedStudysets(first: Int = 24, after: String, last: Int, before: String): StudysetConnection!
     practiceTest(id: ID!): PracticeTest
     subject(id: String!): Subject
-    subjectsByKeyword(keyword: String): [Subject]
-    subjectsByCategory(category: SubjectCategory): [Subject]
-    allSubjects: [Subject]
+    subjectsByKeyword(keyword: String): [Subject!]
+    subjectsByCategory(category: SubjectCategory): [Subject!]
+    allSubjects: [Subject!]
     folder(id: ID!): Folder
     studysetCount(after: String, includePrivate: Boolean = false, includeDrafts: Boolean = false): Int!
     studysetUpdateCount(after: String, includePrivate: Boolean = false, includeDrafts: Boolean = false): Int!
@@ -34,12 +34,12 @@ enum AnswerWith {
     DEF
 }
 type PracticeTest {
-    id: ID
-    timestamp: String
-    studysetId: ID
+    id: ID!
+    timestamp: String!
+    studysetId: ID!
     questionsCorrect: Int
     questionsTotal: Int
-    questions: [Question]
+    questions: [Question!]
 }
 enum QuestionType {
     MCQ

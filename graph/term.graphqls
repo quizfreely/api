@@ -1,10 +1,10 @@
 type Term {
-    id: ID
+    id: ID!
     term: String
     def: String
     termImageUrl: String
     defImageUrl: String
-    sortOrder: Int
+    sortOrder: Int!
     progress: TermProgress
     progressHistory: [TermProgressHistory]
     topConfusionPairs: [TermConfusionPair]
@@ -24,23 +24,23 @@ input TermInput {
     sortOrder: Int
 }
 type TermProgress {
-    id: ID
+    id: ID!
     termFirstReviewedAt: String
     termLastReviewedAt: String
     termReviewCount: Int
     defFirstReviewedAt: String
     defLastReviewedAt: String
     defReviewCount: Int
-    termCorrectCount: Int
-    termIncorrectCount: Int
-    defCorrectCount: Int
-    defIncorrectCount: Int
+    termCorrectCount: Int!
+    termIncorrectCount: Int!
+    defCorrectCount: Int!
+    defIncorrectCount: Int!
     termLeitnerSystemBox: Int
     defLeitnerSystemBox: Int
 }
 type TermProgressHistory {
-    id: ID
-    timestamp: String,
+    id: ID!
+    timestamp: String!
     termCorrectCount: Int
     termIncorrectCount: Int
     defCorrectCount: Int
@@ -58,12 +58,12 @@ input TermProgressInput {
     defIncorrectIncrease: Int
 }
 type TermConfusionPair {
-    id: ID
-    term: Term
-    confusedTerm: Term
-    answeredWith: AnswerWith
+    id: ID!
+    term: Term!
+    confusedTerm: Term!
+    answeredWith: AnswerWith!
     confusedCount: Int
-    lastConfusedAt: String
+    lastConfusedAt: String!
 }
 input TermConfusionPairInput {
     termId: ID

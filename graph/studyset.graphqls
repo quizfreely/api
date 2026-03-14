@@ -7,10 +7,10 @@ type StudysetConnection {
     pageInfo: PageInfo!
 }
 type Studyset {
-    id: ID
-    title: String
-    draft: Boolean
-    private: Boolean
+    id: ID!
+    title: String!
+    draft: Boolean!
+    private: Boolean!
     subject: Subject
     createdAt: String
     updatedAt: String

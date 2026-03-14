@@ -2,11 +2,11 @@ type Mutation {
     createStudyset(studyset: StudysetInput!, draft: Boolean!, folderId: ID): Studyset
     updateStudyset(id: ID!, studyset: StudysetInput, draft: Boolean!): Studyset
     createTerms(studysetId: ID!, terms: [NewTermInput!]!): [Term]
-    updateTerms(studysetId: ID!, terms: [TermInput!]!): [Term]
+    updateTerms(studysetId: ID!, terms: [TermInput!]!): [Term!]
     deleteTerms(studysetId: ID!, ids: [ID!]!): [ID!]
     deleteStudyset(id: ID!): ID
     updateUser(displayName: String): AuthedUser
-    updateTermProgress(termProgress: [TermProgressInput!]!): [TermProgress]
+    updateTermProgress(termProgress: [TermProgressInput!]!): [TermProgress!]
     recordConfusedTerms(confusedTerms: [TermConfusionPairInput]): Boolean
     recordPracticeTest(input: PracticeTestInput): PracticeTest
     updatePracticeTest(input: PracticeTestInput): PracticeTest
@@ -24,7 +24,7 @@ input PracticeTestInput {
     studysetId: ID
     questionsCorrect: Int
     questionsTotal: Int
-    questions: [QuestionInput]
+    questions: [QuestionInput!]
 }
 input QuestionInput {
     questionType: QuestionType

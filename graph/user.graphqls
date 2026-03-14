@@ -1,7 +1,7 @@
 type User {
-    id: ID
+    id: ID!
     username: String
-    displayName: String
+    displayName: String!
     studysets(
         first: Int = 24,
         after: String,
@@ -12,12 +12,12 @@ type User {
     studysetCount(includePrivate: Boolean = false): Int!
 }
 type AuthedUser {
-    id: ID
+    id: ID!
     username: String
-    displayName: String
-    authType: AuthType
+    displayName: String!
+    authType: AuthType!
     oauthGoogleEmail: String
-    modPerms: Boolean
+    modPerms: Boolean!
 }
 enum AuthType {
     USERNAME_PASSWORD

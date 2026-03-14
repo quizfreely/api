@@ -16,7 +16,7 @@ import (
 
 // Studysets is the resolver for the studysets field.
 func (r *subjectResolver) Studysets(ctx context.Context, obj *model.Subject, first *int32, after *string, last *int32, before *string) (*model.StudysetConnection, error) {
-	if obj == nil || obj.ID == nil {
+	if obj == nil || obj.ID == "" {
 		return nil, nil
 	}
 
@@ -58,7 +58,7 @@ func (r *subjectResolver) Studysets(ctx context.Context, obj *model.Subject, fir
 			ORDER BY s.updated_at ASC, s.id ASC
 			LIMIT $4
 		`
-		err = pgxscan.Select(ctx, r.DB, &studysets, sql, *obj.ID, beforeCursorTS, beforeCursorID, limit)
+		err = pgxscan.Select(ctx, r.DB, &studysets, sql, obj.ID, beforeCursorTS, beforeCursorID, limit)
 		if err == nil {
 			hasPrevious = len(studysets) > l
 			if hasPrevious {
@@ -88,7 +88,7 @@ func (r *subjectResolver) Studysets(ctx context.Context, obj *model.Subject, fir
 			ORDER BY s.updated_at DESC, s.id DESC
 			LIMIT $4
 		`
-		err = pgxscan.Select(ctx, r.DB, &studysets, sql, *obj.ID, cursorTS, cursorID, limit)
+		err = pgxscan.Select(ctx, r.DB, &studysets, sql, obj.ID, cursorTS, cursorID, limit)
 	} else {
 		sql := `
 			SELECT
@@ -107,7 +107,7 @@ func (r *subjectResolver) Studysets(ctx context.Context, obj *model.Subject, fir
 			ORDER BY s.updated_at DESC, s.id DESC
 			LIMIT $2
 		`
-		err = pgxscan.Select(ctx, r.DB, &studysets, sql, *obj.ID, limit)
+		err = pgxscan.Select(ctx, r.DB, &studysets, sql, obj.ID, limit)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch subject's studysets: %w", err)
@@ -130,7 +130,7 @@ func (r *subjectResolver) Studysets(ctx context.Context, obj *model.Subject, fir
 
 // StudysetCount is the resolver for the studysetCount field.
 func (r *subjectResolver) StudysetCount(ctx context.Context, obj *model.Subject) (int32, error) {
-	if obj == nil || obj.ID == nil {
+	if obj == nil || obj.ID == "" {
 		return 0, nil
 	}
 
@@ -139,7 +139,7 @@ func (r *subjectResolver) StudysetCount(ctx context.Context, obj *model.Subject)
 	// So we should do the same here.
 
 	var count int32
-	err := r.DB.QueryRow(ctx, "SELECT count(*) FROM studysets WHERE subject_id = $1 AND private = false AND draft = false", *obj.ID).Scan(&count)
+	err := r.DB.QueryRow(ctx, "SELECT count(*) FROM studysets WHERE subject_id = $1 AND private = false AND draft = false", obj.ID).Scan(&count)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count subject studysets: %w", err)
 	}

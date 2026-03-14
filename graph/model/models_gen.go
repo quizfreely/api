@@ -26,8 +26,8 @@ type FRQInput struct {
 }
 
 type Folder struct {
-	ID             *string             `json:"id,omitempty"`
-	Name           *string             `json:"name,omitempty"`
+	ID             string              `json:"id"`
+	Name           string              `json:"name"`
 	Studysets      *StudysetConnection `json:"studysets"`
 	StudysetDrafts *StudysetConnection `json:"studysetDrafts"`
 	StudysetCount  int32               `json:"studysetCount"`
@@ -139,7 +139,7 @@ type StudysetInput struct {
 }
 
 type Subject struct {
-	ID            *string             `json:"id,omitempty"`
+	ID            string              `json:"id"`
 	Name          *string             `json:"name,omitempty"`
 	Category      *SubjectCategory    `json:"category,omitempty"`
 	Studysets     *StudysetConnection `json:"studysets"`
@@ -162,17 +162,17 @@ type TermInput struct {
 }
 
 type TermProgress struct {
-	ID                   *string `json:"id,omitempty"`
+	ID                   string  `json:"id"`
 	TermFirstReviewedAt  *string `json:"termFirstReviewedAt,omitempty"`
 	TermLastReviewedAt   *string `json:"termLastReviewedAt,omitempty"`
 	TermReviewCount      *int32  `json:"termReviewCount,omitempty"`
 	DefFirstReviewedAt   *string `json:"defFirstReviewedAt,omitempty"`
 	DefLastReviewedAt    *string `json:"defLastReviewedAt,omitempty"`
 	DefReviewCount       *int32  `json:"defReviewCount,omitempty"`
-	TermCorrectCount     *int32  `json:"termCorrectCount,omitempty"`
-	TermIncorrectCount   *int32  `json:"termIncorrectCount,omitempty"`
-	DefCorrectCount      *int32  `json:"defCorrectCount,omitempty"`
-	DefIncorrectCount    *int32  `json:"defIncorrectCount,omitempty"`
+	TermCorrectCount     int32   `json:"termCorrectCount"`
+	TermIncorrectCount   int32   `json:"termIncorrectCount"`
+	DefCorrectCount      int32   `json:"defCorrectCount"`
+	DefIncorrectCount    int32   `json:"defIncorrectCount"`
 	TermLeitnerSystemBox *int32  `json:"termLeitnerSystemBox,omitempty"`
 	DefLeitnerSystemBox  *int32  `json:"defLeitnerSystemBox,omitempty"`
 }
@@ -206,9 +206,9 @@ type TrueFalseQuestionInput struct {
 }
 
 type User struct {
-	ID            *string             `json:"id,omitempty"`
+	ID            string              `json:"id"`
 	Username      *string             `json:"username,omitempty"`
-	DisplayName   *string             `json:"displayName,omitempty"`
+	DisplayName   string              `json:"displayName"`
 	Studysets     *StudysetConnection `json:"studysets"`
 	StudysetCount int32               `json:"studysetCount"`
 }

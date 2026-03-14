@@ -303,7 +303,7 @@ type MutationResolver interface {
 	UnsaveStudyset(ctx context.Context, studysetID string) (*bool, error)
 }
 type QueryResolver interface {
-	Authed(ctx context.Context) (*bool, error)
+	Authed(ctx context.Context) (bool, error)
 	AuthedUser(ctx context.Context) (*model.AuthedUser, error)
 	Studyset(ctx context.Context, id string) (*model.Studyset, error)
 	User(ctx context.Context, id string) (*model.User, error)
@@ -2616,11 +2616,14 @@ func (ec *executionContext) _AuthedUser_id(ctx context.Context, field graphql.Co
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNID2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_AuthedUser_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2698,11 +2701,14 @@ func (ec *executionContext) _AuthedUser_displayName(ctx context.Context, field g
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_AuthedUser_displayName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2739,11 +2745,14 @@ func (ec *executionContext) _AuthedUser_authType(ctx context.Context, field grap
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*model.AuthType)
 	fc.Result = res
-	return ec.marshalOAuthType2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐAuthType(ctx, field.Selections, res)
+	return ec.marshalNAuthType2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐAuthType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_AuthedUser_authType(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2821,11 +2830,14 @@ func (ec *executionContext) _AuthedUser_modPerms(ctx context.Context, field grap
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*bool)
 	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+	return ec.marshalNBoolean2ᚖbool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_AuthedUser_modPerms(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -3093,11 +3105,14 @@ func (ec *executionContext) _Folder_id(ctx context.Context, field graphql.Collec
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Folder_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -3134,11 +3149,14 @@ func (ec *executionContext) _Folder_name(ctx context.Context, field graphql.Coll
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Folder_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -4423,7 +4441,7 @@ func (ec *executionContext) _Mutation_updateTerms(ctx context.Context, field gra
 	}
 	res := resTmp.([]*model.Term)
 	fc.Result = res
-	return ec.marshalOTerm2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTerm(ctx, field.Selections, res)
+	return ec.marshalOTerm2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_updateTerms(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -4671,7 +4689,7 @@ func (ec *executionContext) _Mutation_updateTermProgress(ctx context.Context, fi
 	}
 	res := resTmp.([]*model.TermProgress)
 	fc.Result = res
-	return ec.marshalOTermProgress2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermProgress(ctx, field.Selections, res)
+	return ec.marshalOTermProgress2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermProgressᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_updateTermProgress(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5493,11 +5511,14 @@ func (ec *executionContext) _PracticeTest_id(ctx context.Context, field graphql.
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNID2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_PracticeTest_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5534,11 +5555,14 @@ func (ec *executionContext) _PracticeTest_timestamp(ctx context.Context, field g
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_PracticeTest_timestamp(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5575,11 +5599,14 @@ func (ec *executionContext) _PracticeTest_studysetId(ctx context.Context, field 
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNID2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_PracticeTest_studysetId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5702,7 +5729,7 @@ func (ec *executionContext) _PracticeTest_questions(ctx context.Context, field g
 	}
 	res := resTmp.([]*model.Question)
 	fc.Result = res
-	return ec.marshalOQuestion2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐQuestion(ctx, field.Selections, res)
+	return ec.marshalOQuestion2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐQuestionᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_PracticeTest_questions(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5751,11 +5778,14 @@ func (ec *executionContext) _Query_authed(ctx context.Context, field graphql.Col
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*bool)
+	res := resTmp.(bool)
 	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_authed(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -6630,7 +6660,7 @@ func (ec *executionContext) _Query_subjectsByKeyword(ctx context.Context, field 
 	}
 	res := resTmp.([]*model.Subject)
 	fc.Result = res
-	return ec.marshalOSubject2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐSubject(ctx, field.Selections, res)
+	return ec.marshalOSubject2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐSubjectᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_subjectsByKeyword(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -6694,7 +6724,7 @@ func (ec *executionContext) _Query_subjectsByCategory(ctx context.Context, field
 	}
 	res := resTmp.([]*model.Subject)
 	fc.Result = res
-	return ec.marshalOSubject2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐSubject(ctx, field.Selections, res)
+	return ec.marshalOSubject2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐSubjectᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_subjectsByCategory(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -6758,7 +6788,7 @@ func (ec *executionContext) _Query_allSubjects(ctx context.Context, field graphq
 	}
 	res := resTmp.([]*model.Subject)
 	fc.Result = res
-	return ec.marshalOSubject2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐSubject(ctx, field.Selections, res)
+	return ec.marshalOSubject2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐSubjectᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_allSubjects(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -7523,11 +7553,14 @@ func (ec *executionContext) _Studyset_id(ctx context.Context, field graphql.Coll
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNID2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Studyset_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -7564,11 +7597,14 @@ func (ec *executionContext) _Studyset_title(ctx context.Context, field graphql.C
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Studyset_title(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -7605,11 +7641,14 @@ func (ec *executionContext) _Studyset_draft(ctx context.Context, field graphql.C
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*bool)
 	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+	return ec.marshalNBoolean2ᚖbool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Studyset_draft(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -7646,11 +7685,14 @@ func (ec *executionContext) _Studyset_private(ctx context.Context, field graphql
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*bool)
 	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+	return ec.marshalNBoolean2ᚖbool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Studyset_private(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -8354,11 +8396,14 @@ func (ec *executionContext) _Subject_id(ctx context.Context, field graphql.Colle
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Subject_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -8582,11 +8627,14 @@ func (ec *executionContext) _Term_id(ctx context.Context, field graphql.Collecte
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNID2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Term_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -8787,11 +8835,14 @@ func (ec *executionContext) _Term_sortOrder(ctx context.Context, field graphql.C
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*int32)
 	fc.Result = res
-	return ec.marshalOInt2ᚖint32(ctx, field.Selections, res)
+	return ec.marshalNInt2ᚖint32(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Term_sortOrder(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -9144,11 +9195,14 @@ func (ec *executionContext) _TermConfusionPair_id(ctx context.Context, field gra
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNID2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_TermConfusionPair_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -9185,11 +9239,14 @@ func (ec *executionContext) _TermConfusionPair_term(ctx context.Context, field g
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*model.Term)
 	fc.Result = res
-	return ec.marshalOTerm2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTerm(ctx, field.Selections, res)
+	return ec.marshalNTerm2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTerm(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_TermConfusionPair_term(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -9252,11 +9309,14 @@ func (ec *executionContext) _TermConfusionPair_confusedTerm(ctx context.Context,
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*model.Term)
 	fc.Result = res
-	return ec.marshalOTerm2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTerm(ctx, field.Selections, res)
+	return ec.marshalNTerm2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTerm(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_TermConfusionPair_confusedTerm(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -9319,11 +9379,14 @@ func (ec *executionContext) _TermConfusionPair_answeredWith(ctx context.Context,
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*model.AnswerWith)
 	fc.Result = res
-	return ec.marshalOAnswerWith2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐAnswerWith(ctx, field.Selections, res)
+	return ec.marshalNAnswerWith2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐAnswerWith(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_TermConfusionPair_answeredWith(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -9401,11 +9464,14 @@ func (ec *executionContext) _TermConfusionPair_lastConfusedAt(ctx context.Contex
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_TermConfusionPair_lastConfusedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -9442,11 +9508,14 @@ func (ec *executionContext) _TermProgress_id(ctx context.Context, field graphql.
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_TermProgress_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -9729,11 +9798,14 @@ func (ec *executionContext) _TermProgress_termCorrectCount(ctx context.Context, 
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*int32)
+	res := resTmp.(int32)
 	fc.Result = res
-	return ec.marshalOInt2ᚖint32(ctx, field.Selections, res)
+	return ec.marshalNInt2int32(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_TermProgress_termCorrectCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -9770,11 +9842,14 @@ func (ec *executionContext) _TermProgress_termIncorrectCount(ctx context.Context
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*int32)
+	res := resTmp.(int32)
 	fc.Result = res
-	return ec.marshalOInt2ᚖint32(ctx, field.Selections, res)
+	return ec.marshalNInt2int32(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_TermProgress_termIncorrectCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -9811,11 +9886,14 @@ func (ec *executionContext) _TermProgress_defCorrectCount(ctx context.Context, f
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*int32)
+	res := resTmp.(int32)
 	fc.Result = res
-	return ec.marshalOInt2ᚖint32(ctx, field.Selections, res)
+	return ec.marshalNInt2int32(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_TermProgress_defCorrectCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -9852,11 +9930,14 @@ func (ec *executionContext) _TermProgress_defIncorrectCount(ctx context.Context,
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*int32)
+	res := resTmp.(int32)
 	fc.Result = res
-	return ec.marshalOInt2ᚖint32(ctx, field.Selections, res)
+	return ec.marshalNInt2int32(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_TermProgress_defIncorrectCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -9975,11 +10056,14 @@ func (ec *executionContext) _TermProgressHistory_id(ctx context.Context, field g
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNID2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_TermProgressHistory_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -10016,11 +10100,14 @@ func (ec *executionContext) _TermProgressHistory_timestamp(ctx context.Context, 
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_TermProgressHistory_timestamp(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -10478,11 +10565,14 @@ func (ec *executionContext) _User_id(ctx context.Context, field graphql.Collecte
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_User_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -10560,11 +10650,14 @@ func (ec *executionContext) _User_displayName(ctx context.Context, field graphql
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_User_displayName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -12911,7 +13004,7 @@ func (ec *executionContext) unmarshalInputPracticeTestInput(ctx context.Context,
 			it.QuestionsTotal = data
 		case "questions":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("questions"))
-			data, err := ec.unmarshalOQuestionInput2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐQuestionInput(ctx, v)
+			data, err := ec.unmarshalOQuestionInput2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐQuestionInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -13280,16 +13373,28 @@ func (ec *executionContext) _AuthedUser(ctx context.Context, sel ast.SelectionSe
 			out.Values[i] = graphql.MarshalString("AuthedUser")
 		case "id":
 			out.Values[i] = ec._AuthedUser_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "username":
 			out.Values[i] = ec._AuthedUser_username(ctx, field, obj)
 		case "displayName":
 			out.Values[i] = ec._AuthedUser_displayName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "authType":
 			out.Values[i] = ec._AuthedUser_authType(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "oauthGoogleEmail":
 			out.Values[i] = ec._AuthedUser_oauthGoogleEmail(ctx, field, obj)
 		case "modPerms":
 			out.Values[i] = ec._AuthedUser_modPerms(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -13370,8 +13475,14 @@ func (ec *executionContext) _Folder(ctx context.Context, sel ast.SelectionSet, o
 			out.Values[i] = graphql.MarshalString("Folder")
 		case "id":
 			out.Values[i] = ec._Folder_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		case "name":
 			out.Values[i] = ec._Folder_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		case "studysets":
 			field := field
 
@@ -13858,10 +13969,19 @@ func (ec *executionContext) _PracticeTest(ctx context.Context, sel ast.Selection
 			out.Values[i] = graphql.MarshalString("PracticeTest")
 		case "id":
 			out.Values[i] = ec._PracticeTest_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "timestamp":
 			out.Values[i] = ec._PracticeTest_timestamp(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "studysetId":
 			out.Values[i] = ec._PracticeTest_studysetId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "questionsCorrect":
 			out.Values[i] = ec._PracticeTest_questionsCorrect(ctx, field, obj)
 		case "questionsTotal":
@@ -13913,13 +14033,16 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		case "authed":
 			field := field
 
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
 				defer func() {
 					if r := recover(); r != nil {
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
 				res = ec._Query_authed(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
 				return res
 			}
 
@@ -14471,12 +14594,24 @@ func (ec *executionContext) _Studyset(ctx context.Context, sel ast.SelectionSet,
 			out.Values[i] = graphql.MarshalString("Studyset")
 		case "id":
 			out.Values[i] = ec._Studyset_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		case "title":
 			out.Values[i] = ec._Studyset_title(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		case "draft":
 			out.Values[i] = ec._Studyset_draft(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		case "private":
 			out.Values[i] = ec._Studyset_private(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		case "subject":
 			field := field
 
@@ -14836,6 +14971,9 @@ func (ec *executionContext) _Subject(ctx context.Context, sel ast.SelectionSet, 
 			out.Values[i] = graphql.MarshalString("Subject")
 		case "id":
 			out.Values[i] = ec._Subject_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		case "name":
 			out.Values[i] = ec._Subject_name(ctx, field, obj)
 		case "category":
@@ -14948,6 +15086,9 @@ func (ec *executionContext) _Term(ctx context.Context, sel ast.SelectionSet, obj
 			out.Values[i] = graphql.MarshalString("Term")
 		case "id":
 			out.Values[i] = ec._Term_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		case "term":
 			out.Values[i] = ec._Term_term(ctx, field, obj)
 		case "def":
@@ -14958,6 +15099,9 @@ func (ec *executionContext) _Term(ctx context.Context, sel ast.SelectionSet, obj
 			out.Values[i] = ec._Term_defImageUrl(ctx, field, obj)
 		case "sortOrder":
 			out.Values[i] = ec._Term_sortOrder(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		case "progress":
 			field := field
 
@@ -15130,16 +15274,22 @@ func (ec *executionContext) _TermConfusionPair(ctx context.Context, sel ast.Sele
 			out.Values[i] = graphql.MarshalString("TermConfusionPair")
 		case "id":
 			out.Values[i] = ec._TermConfusionPair_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		case "term":
 			field := field
 
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
 				defer func() {
 					if r := recover(); r != nil {
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
 				res = ec._TermConfusionPair_term(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
 				return res
 			}
 
@@ -15166,13 +15316,16 @@ func (ec *executionContext) _TermConfusionPair(ctx context.Context, sel ast.Sele
 		case "confusedTerm":
 			field := field
 
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
 				defer func() {
 					if r := recover(); r != nil {
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
 				res = ec._TermConfusionPair_confusedTerm(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
 				return res
 			}
 
@@ -15198,10 +15351,16 @@ func (ec *executionContext) _TermConfusionPair(ctx context.Context, sel ast.Sele
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "answeredWith":
 			out.Values[i] = ec._TermConfusionPair_answeredWith(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		case "confusedCount":
 			out.Values[i] = ec._TermConfusionPair_confusedCount(ctx, field, obj)
 		case "lastConfusedAt":
 			out.Values[i] = ec._TermConfusionPair_lastConfusedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -15238,6 +15397,9 @@ func (ec *executionContext) _TermProgress(ctx context.Context, sel ast.Selection
 			out.Values[i] = graphql.MarshalString("TermProgress")
 		case "id":
 			out.Values[i] = ec._TermProgress_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "termFirstReviewedAt":
 			out.Values[i] = ec._TermProgress_termFirstReviewedAt(ctx, field, obj)
 		case "termLastReviewedAt":
@@ -15252,12 +15414,24 @@ func (ec *executionContext) _TermProgress(ctx context.Context, sel ast.Selection
 			out.Values[i] = ec._TermProgress_defReviewCount(ctx, field, obj)
 		case "termCorrectCount":
 			out.Values[i] = ec._TermProgress_termCorrectCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "termIncorrectCount":
 			out.Values[i] = ec._TermProgress_termIncorrectCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "defCorrectCount":
 			out.Values[i] = ec._TermProgress_defCorrectCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "defIncorrectCount":
 			out.Values[i] = ec._TermProgress_defIncorrectCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "termLeitnerSystemBox":
 			out.Values[i] = ec._TermProgress_termLeitnerSystemBox(ctx, field, obj)
 		case "defLeitnerSystemBox":
@@ -15298,8 +15472,14 @@ func (ec *executionContext) _TermProgressHistory(ctx context.Context, sel ast.Se
 			out.Values[i] = graphql.MarshalString("TermProgressHistory")
 		case "id":
 			out.Values[i] = ec._TermProgressHistory_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "timestamp":
 			out.Values[i] = ec._TermProgressHistory_timestamp(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "termCorrectCount":
 			out.Values[i] = ec._TermProgressHistory_termCorrectCount(ctx, field, obj)
 		case "termIncorrectCount":
@@ -15388,10 +15568,16 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			out.Values[i] = graphql.MarshalString("User")
 		case "id":
 			out.Values[i] = ec._User_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		case "username":
 			out.Values[i] = ec._User_username(ctx, field, obj)
 		case "displayName":
 			out.Values[i] = ec._User_displayName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		case "studysets":
 			field := field
 
@@ -15822,6 +16008,38 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 
 // region    ***************************** type.gotpl *****************************
 
+func (ec *executionContext) unmarshalNAnswerWith2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐAnswerWith(ctx context.Context, v any) (*model.AnswerWith, error) {
+	var res = new(model.AnswerWith)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNAnswerWith2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐAnswerWith(ctx context.Context, sel ast.SelectionSet, v *model.AnswerWith) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return v
+}
+
+func (ec *executionContext) unmarshalNAuthType2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐAuthType(ctx context.Context, v any) (*model.AuthType, error) {
+	var res = new(model.AuthType)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNAuthType2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐAuthType(ctx context.Context, sel ast.SelectionSet, v *model.AuthType) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return v
+}
+
 func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v any) (bool, error) {
 	res, err := graphql.UnmarshalBoolean(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -15830,6 +16048,28 @@ func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v any) (
 func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.SelectionSet, v bool) graphql.Marshaler {
 	_ = sel
 	res := graphql.MarshalBoolean(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) unmarshalNBoolean2ᚖbool(ctx context.Context, v any) (*bool, error) {
+	res, err := graphql.UnmarshalBoolean(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNBoolean2ᚖbool(ctx context.Context, sel ast.SelectionSet, v *bool) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	_ = sel
+	res := graphql.MarshalBoolean(*v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -15962,6 +16202,28 @@ func (ec *executionContext) marshalNID2ᚕstringᚄ(ctx context.Context, sel ast
 	return ret
 }
 
+func (ec *executionContext) unmarshalNID2ᚖstring(ctx context.Context, v any) (*string, error) {
+	res, err := graphql.UnmarshalID(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNID2ᚖstring(ctx context.Context, sel ast.SelectionSet, v *string) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	_ = sel
+	res := graphql.MarshalID(*v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
 func (ec *executionContext) unmarshalNInt2int32(ctx context.Context, v any) (int32, error) {
 	res, err := graphql.UnmarshalInt32(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -15970,6 +16232,28 @@ func (ec *executionContext) unmarshalNInt2int32(ctx context.Context, v any) (int
 func (ec *executionContext) marshalNInt2int32(ctx context.Context, sel ast.SelectionSet, v int32) graphql.Marshaler {
 	_ = sel
 	res := graphql.MarshalInt32(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) unmarshalNInt2ᚖint32(ctx context.Context, v any) (*int32, error) {
+	res, err := graphql.UnmarshalInt32(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNInt2ᚖint32(ctx context.Context, sel ast.SelectionSet, v *int32) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	_ = sel
+	res := graphql.MarshalInt32(*v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -16008,6 +16292,21 @@ func (ec *executionContext) marshalNPageInfo2ᚖquizfreelyᚋapiᚋgraphᚋmodel
 	return ec._PageInfo(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNQuestion2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐQuestion(ctx context.Context, sel ast.SelectionSet, v *model.Question) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Question(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNQuestionInput2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐQuestionInput(ctx context.Context, v any) (*model.QuestionInput, error) {
+	res, err := ec.unmarshalInputQuestionInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v any) (string, error) {
 	res, err := graphql.UnmarshalString(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -16016,6 +16315,28 @@ func (ec *executionContext) unmarshalNString2string(ctx context.Context, v any) 
 func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
 	_ = sel
 	res := graphql.MarshalString(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) unmarshalNString2ᚖstring(ctx context.Context, v any) (*string, error) {
+	res, err := graphql.UnmarshalString(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNString2ᚖstring(ctx context.Context, sel ast.SelectionSet, v *string) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	_ = sel
+	res := graphql.MarshalString(*v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -16107,6 +16428,30 @@ func (ec *executionContext) unmarshalNStudysetInput2quizfreelyᚋapiᚋgraphᚋm
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalNSubject2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐSubject(ctx context.Context, sel ast.SelectionSet, v *model.Subject) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Subject(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNTerm2quizfreelyᚋapiᚋgraphᚋmodelᚐTerm(ctx context.Context, sel ast.SelectionSet, v model.Term) graphql.Marshaler {
+	return ec._Term(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNTerm2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTerm(ctx context.Context, sel ast.SelectionSet, v *model.Term) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Term(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNTermInput2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermInputᚄ(ctx context.Context, v any) ([]*model.TermInput, error) {
 	var vSlice []any
 	vSlice = graphql.CoerceList(v)
@@ -16125,6 +16470,16 @@ func (ec *executionContext) unmarshalNTermInput2ᚕᚖquizfreelyᚋapiᚋgraph�
 func (ec *executionContext) unmarshalNTermInput2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermInput(ctx context.Context, v any) (*model.TermInput, error) {
 	res, err := ec.unmarshalInputTermInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNTermProgress2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermProgress(ctx context.Context, sel ast.SelectionSet, v *model.TermProgress) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._TermProgress(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNTermProgressInput2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermProgressInputᚄ(ctx context.Context, v any) ([]*model.TermProgressInput, error) {
@@ -16416,22 +16771,6 @@ func (ec *executionContext) marshalOAnswerWith2ᚖquizfreelyᚋapiᚋgraphᚋmod
 	return v
 }
 
-func (ec *executionContext) unmarshalOAuthType2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐAuthType(ctx context.Context, v any) (*model.AuthType, error) {
-	if v == nil {
-		return nil, nil
-	}
-	var res = new(model.AuthType)
-	err := res.UnmarshalGQL(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalOAuthType2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐAuthType(ctx context.Context, sel ast.SelectionSet, v *model.AuthType) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return v
-}
-
 func (ec *executionContext) marshalOAuthedUser2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐAuthedUser(ctx context.Context, sel ast.SelectionSet, v *model.AuthedUser) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -16649,7 +16988,7 @@ func (ec *executionContext) unmarshalOPracticeTestInput2ᚖquizfreelyᚋapiᚋgr
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOQuestion2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐQuestion(ctx context.Context, sel ast.SelectionSet, v []*model.Question) graphql.Marshaler {
+func (ec *executionContext) marshalOQuestion2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐQuestionᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Question) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -16676,7 +17015,7 @@ func (ec *executionContext) marshalOQuestion2ᚕᚖquizfreelyᚋapiᚋgraphᚋmo
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOQuestion2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐQuestion(ctx, sel, v[i])
+			ret[i] = ec.marshalNQuestion2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐQuestion(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -16687,17 +17026,16 @@ func (ec *executionContext) marshalOQuestion2ᚕᚖquizfreelyᚋapiᚋgraphᚋmo
 	}
 	wg.Wait()
 
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
 	return ret
 }
 
-func (ec *executionContext) marshalOQuestion2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐQuestion(ctx context.Context, sel ast.SelectionSet, v *model.Question) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._Question(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalOQuestionInput2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐQuestionInput(ctx context.Context, v any) ([]*model.QuestionInput, error) {
+func (ec *executionContext) unmarshalOQuestionInput2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐQuestionInputᚄ(ctx context.Context, v any) ([]*model.QuestionInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -16707,20 +17045,12 @@ func (ec *executionContext) unmarshalOQuestionInput2ᚕᚖquizfreelyᚋapiᚋgra
 	res := make([]*model.QuestionInput, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalOQuestionInput2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐQuestionInput(ctx, vSlice[i])
+		res[i], err = ec.unmarshalNQuestionInput2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐQuestionInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
 	}
 	return res, nil
-}
-
-func (ec *executionContext) unmarshalOQuestionInput2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐQuestionInput(ctx context.Context, v any) (*model.QuestionInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputQuestionInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOQuestionType2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐQuestionType(ctx context.Context, v any) (*model.QuestionType, error) {
@@ -16772,7 +17102,7 @@ func (ec *executionContext) unmarshalOStudysetInput2ᚖquizfreelyᚋapiᚋgraph�
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOSubject2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐSubject(ctx context.Context, sel ast.SelectionSet, v []*model.Subject) graphql.Marshaler {
+func (ec *executionContext) marshalOSubject2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐSubjectᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Subject) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -16799,7 +17129,7 @@ func (ec *executionContext) marshalOSubject2ᚕᚖquizfreelyᚋapiᚋgraphᚋmod
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOSubject2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐSubject(ctx, sel, v[i])
+			ret[i] = ec.marshalNSubject2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐSubject(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -16809,6 +17139,12 @@ func (ec *executionContext) marshalOSubject2ᚕᚖquizfreelyᚋapiᚋgraphᚋmod
 
 	}
 	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
 
 	return ret
 }
@@ -16873,6 +17209,53 @@ func (ec *executionContext) marshalOTerm2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodel�
 
 	}
 	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalOTerm2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Term) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNTerm2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTerm(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
 
 	return ret
 }
@@ -16984,7 +17367,7 @@ func (ec *executionContext) unmarshalOTermInput2ᚖquizfreelyᚋapiᚋgraphᚋmo
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOTermProgress2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermProgress(ctx context.Context, sel ast.SelectionSet, v []*model.TermProgress) graphql.Marshaler {
+func (ec *executionContext) marshalOTermProgress2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermProgressᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.TermProgress) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -17011,7 +17394,7 @@ func (ec *executionContext) marshalOTermProgress2ᚕᚖquizfreelyᚋapiᚋgraph�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOTermProgress2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermProgress(ctx, sel, v[i])
+			ret[i] = ec.marshalNTermProgress2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermProgress(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -17021,6 +17404,12 @@ func (ec *executionContext) marshalOTermProgress2ᚕᚖquizfreelyᚋapiᚋgraph�
 
 	}
 	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
 
 	return ret
 }

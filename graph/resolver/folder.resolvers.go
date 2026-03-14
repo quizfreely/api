@@ -30,7 +30,7 @@ func (r *folderResolver) Studysets(ctx context.Context, obj *model.Folder, first
 
 	// We check if caller is owner to decide visibility
 	isOwner := false
-	if authedUser != nil && obj.User != nil && obj.User.ID != nil && *authedUser.ID == *obj.User.ID {
+	if authedUser != nil && obj.User != nil && obj.User.ID != "" && *authedUser.ID == obj.User.ID {
 		isOwner = true
 	}
 
@@ -69,7 +69,7 @@ func (r *folderResolver) Studysets(ctx context.Context, obj *model.Folder, first
 		JOIN studysets s ON f.studyset_id = s.id
 	`
 	where := "WHERE f.folder_id = $1"
-	args := []interface{}{*obj.ID}
+	args := []interface{}{obj.ID}
 	argIdx := 2
 
 	if !isOwner {
@@ -161,7 +161,7 @@ func (r *folderResolver) StudysetDrafts(ctx context.Context, obj *model.Folder, 
 	authedUser := auth.AuthedUserContext(ctx)
 
 	isOwner := false
-	if authedUser != nil && obj.User != nil && obj.User.ID != nil && *authedUser.ID == *obj.User.ID {
+	if authedUser != nil && obj.User != nil && obj.User.ID != "" && *authedUser.ID == obj.User.ID {
 		isOwner = true
 	}
 	if !isOwner {
@@ -209,7 +209,7 @@ func (r *folderResolver) StudysetDrafts(ctx context.Context, obj *model.Folder, 
 		JOIN studysets s ON f.studyset_id = s.id
 	`
 	where := "WHERE f.folder_id = $1 AND s.draft = true"
-	args := []interface{}{*obj.ID}
+	args := []interface{}{obj.ID}
 	argIdx := 2
 
 	if isBackward {
@@ -283,7 +283,7 @@ func (r *folderResolver) StudysetDrafts(ctx context.Context, obj *model.Folder, 
 
 // StudysetCount is the resolver for the studysetCount field.
 func (r *folderResolver) StudysetCount(ctx context.Context, obj *model.Folder) (int32, error) {
-	if obj == nil || obj.ID == nil {
+	if obj == nil || obj.ID == "" {
 		return 0, nil
 	}
 
@@ -291,7 +291,7 @@ func (r *folderResolver) StudysetCount(ctx context.Context, obj *model.Folder) (
 
 	// Visibility check: same as Studysets resolver
 	isOwner := false
-	if authedUser != nil && obj.User != nil && obj.User.ID != nil && *authedUser.ID == *obj.User.ID {
+	if authedUser != nil && obj.User != nil && obj.User.ID != "" && *authedUser.ID == obj.User.ID {
 		isOwner = true
 	}
 
@@ -302,7 +302,7 @@ func (r *folderResolver) StudysetCount(ctx context.Context, obj *model.Folder) (
 	sql += " AND s.draft = false"
 
 	var count int32
-	err := r.DB.QueryRow(ctx, sql, *obj.ID).Scan(&count)
+	err := r.DB.QueryRow(ctx, sql, obj.ID).Scan(&count)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count folder studysets: %w", err)
 	}

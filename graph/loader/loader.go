@@ -207,9 +207,26 @@ ORDER BY input.og_order`,
 	}
 	defer rows.Close()
 
+	// Define a struct with pointers to handle potential NULLs from LEFT JOIN
+	type dbTermProgress struct {
+		ID                   *string `db:"id"`
+		TermFirstReviewedAt  *string `db:"term_first_reviewed_at"`
+		TermLastReviewedAt   *string `db:"term_last_reviewed_at"`
+		TermReviewCount      *int32  `db:"term_review_count"`
+		DefFirstReviewedAt   *string `db:"def_first_reviewed_at"`
+		DefLastReviewedAt    *string `db:"def_last_reviewed_at"`
+		DefReviewCount       *int32  `db:"def_review_count"`
+		TermLeitnerSystemBox *int32  `db:"term_leitner_system_box"`
+		DefLeitnerSystemBox  *int32  `db:"def_leitner_system_box"`
+		TermCorrectCount     *int32  `db:"term_correct_count"`
+		TermIncorrectCount   *int32  `db:"term_incorrect_count"`
+		DefCorrectCount      *int32  `db:"def_correct_count"`
+		DefIncorrectCount    *int32  `db:"def_incorrect_count"`
+	}
+
 	var termsProgress []*model.TermProgress
 	for rows.Next() {
-		var tp model.TermProgress
+		var tp dbTermProgress
 		err := pgxscan.ScanRow(&tp, rows)
 		if err != nil {
 			return nil, []error{err}
@@ -218,7 +235,21 @@ ORDER BY input.og_order`,
 		if tp.ID == nil {
 			termsProgress = append(termsProgress, nil)
 		} else {
-			termsProgress = append(termsProgress, &tp)
+			termsProgress = append(termsProgress, &model.TermProgress{
+				ID:                   *tp.ID,
+				TermFirstReviewedAt:  tp.TermFirstReviewedAt,
+				TermLastReviewedAt:   tp.TermLastReviewedAt,
+				TermReviewCount:      tp.TermReviewCount,
+				DefFirstReviewedAt:   tp.DefFirstReviewedAt,
+				DefLastReviewedAt:    tp.DefLastReviewedAt,
+				DefReviewCount:       tp.DefReviewCount,
+				TermLeitnerSystemBox: tp.TermLeitnerSystemBox,
+				DefLeitnerSystemBox:  tp.DefLeitnerSystemBox,
+				TermCorrectCount:     *tp.TermCorrectCount,
+				TermIncorrectCount:   *tp.TermIncorrectCount,
+				DefCorrectCount:      *tp.DefCorrectCount,
+				DefIncorrectCount:    *tp.DefIncorrectCount,
+			})
 		}
 	}
 
@@ -231,12 +262,21 @@ func (dr *dataReader) getTermsProgressHistory(ctx context.Context, termIDs []str
 		return nil, nil
 	}
 
-	var termProgressHistory []*model.TermProgressHistory
+	type dbTermProgressHistory struct {
+		ID                 *string `db:"id"`
+		TermID             *string `db:"term_id"`
+		Timestamp          *string `db:"timestamp"`
+		TermCorrectCount   *int32  `db:"term_correct_count"`
+		TermIncorrectCount *int32  `db:"term_incorrect_count"`
+		DefCorrectCount    *int32  `db:"def_correct_count"`
+		DefIncorrectCount  *int32  `db:"def_incorrect_count"`
+	}
 
+	var dbHistory []*dbTermProgressHistory
 	err := pgxscan.Select(
 		ctx,
 		dr.db,
-		&termProgressHistory,
+		&dbHistory,
 		`SELECT tph.id,
     tph.term_id,
     to_char(tph.timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as timestamp,
@@ -256,10 +296,24 @@ ORDER BY input.og_order ASC, tph.timestamp DESC`,
 		return nil, []error{err}
 	}
 
+	var termProgressHistory []*model.TermProgressHistory
+	for _, dbTph := range dbHistory {
+		if dbTph.ID != nil {
+			termProgressHistory = append(termProgressHistory, &model.TermProgressHistory{
+				ID:                 dbTph.ID,
+				Timestamp:          dbTph.Timestamp,
+				TermCorrectCount:   dbTph.TermCorrectCount,
+				TermIncorrectCount: dbTph.TermIncorrectCount,
+				DefCorrectCount:    dbTph.DefCorrectCount,
+				DefIncorrectCount:  dbTph.DefIncorrectCount,
+			})
+		}
+	}
+
 	grouped := make(map[string][]*model.TermProgressHistory)
-	for _, tph := range termProgressHistory {
-		if tph.TermID != nil {
-			grouped[*tph.TermID] = append(grouped[*tph.TermID], tph)
+	for i, tph := range dbHistory {
+		if tph.TermID != nil && tph.ID != nil {
+			grouped[*tph.TermID] = append(grouped[*tph.TermID], termProgressHistory[i])
 		}
 	}
 
@@ -277,12 +331,20 @@ func (dr *dataReader) getTermsTopConfusionPairs(ctx context.Context, termIDs []s
 		return nil, nil
 	}
 
-	var confusionPairs []*model.TermConfusionPair
+	type dbTermConfusionPair struct {
+		ID             *string `db:"id"`
+		TermID         *string `db:"term_id"`
+		ConfusedTermID *string `db:"confused_term_id"`
+		AnsweredWith   *string `db:"answered_with"`
+		ConfusedCount  *int32  `db:"confused_count"`
+		LastConfusedAt *string `db:"last_confused_at"`
+	}
 
+	var dbPairs []*dbTermConfusionPair
 	err := pgxscan.Select(
 		ctx,
 		dr.db,
-		&confusionPairs,
+		&dbPairs,
 		`SELECT id,
     term_id,
     confused_term_id,
@@ -309,10 +371,23 @@ ORDER BY term_id, confused_count DESC`,
 		return nil, []error{err}
 	}
 
+	var confusionPairs []*model.TermConfusionPair
+	for _, dbTcp := range dbPairs {
+		if dbTcp.ID != nil {
+			answeredWith := model.AnswerWith(*dbTcp.AnsweredWith)
+			confusionPairs = append(confusionPairs, &model.TermConfusionPair{
+				ID:             dbTcp.ID,
+				AnsweredWith:   &answeredWith,
+				ConfusedCount:  dbTcp.ConfusedCount,
+				LastConfusedAt: dbTcp.LastConfusedAt,
+			})
+		}
+	}
+
 	grouped := make(map[string][]*model.TermConfusionPair)
-	for _, c := range confusionPairs {
-		if c.TermID != nil {
-			grouped[*c.TermID] = append(grouped[*c.TermID], c)
+	for i, c := range dbPairs {
+		if c.TermID != nil && c.ID != nil {
+			grouped[*c.TermID] = append(grouped[*c.TermID], confusionPairs[i])
 		}
 	}
 
@@ -330,12 +405,20 @@ func (dr *dataReader) getTermsTopReverseConfusionPairs(ctx context.Context, term
 		return nil, nil
 	}
 
-	var confusionPairs []*model.TermConfusionPair
+	type dbTermConfusionPair struct {
+		ID             *string `db:"id"`
+		TermID         *string `db:"term_id"`
+		ConfusedTermID *string `db:"confused_term_id"`
+		AnsweredWith   *string `db:"answered_with"`
+		ConfusedCount  *int32  `db:"confused_count"`
+		LastConfusedAt *string `db:"last_confused_at"`
+	}
 
+	var dbPairs []*dbTermConfusionPair
 	err := pgxscan.Select(
 		ctx,
 		dr.db,
-		&confusionPairs,
+		&dbPairs,
 		`SELECT id,
     term_id,
     confused_term_id,
@@ -362,10 +445,23 @@ ORDER BY confused_term_id, confused_count DESC`,
 		return nil, []error{err}
 	}
 
+	var confusionPairs []*model.TermConfusionPair
+	for _, dbTcp := range dbPairs {
+		if dbTcp.ID != nil {
+			answeredWith := model.AnswerWith(*dbTcp.AnsweredWith)
+			confusionPairs = append(confusionPairs, &model.TermConfusionPair{
+				ID:             dbTcp.ID,
+				AnsweredWith:   &answeredWith,
+				ConfusedCount:  dbTcp.ConfusedCount,
+				LastConfusedAt: dbTcp.LastConfusedAt,
+			})
+		}
+	}
+
 	grouped := make(map[string][]*model.TermConfusionPair)
-	for _, c := range confusionPairs {
-		if c.ConfusedTermID != nil {
-			grouped[*c.ConfusedTermID] = append(grouped[*c.ConfusedTermID], c)
+	for i, c := range dbPairs {
+		if c.ConfusedTermID != nil && c.ID != nil {
+			grouped[*c.ConfusedTermID] = append(grouped[*c.ConfusedTermID], confusionPairs[i])
 		}
 	}
 

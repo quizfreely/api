@@ -17,9 +17,9 @@ import (
 )
 
 // Authed is the resolver for the authed field.
-func (r *queryResolver) Authed(ctx context.Context) (*bool, error) {
+func (r *queryResolver) Authed(ctx context.Context) (bool, error) {
 	authed := auth.AuthedUserContext(ctx) != nil
-	return &authed, nil
+	return authed, nil
 }
 
 // AuthedUser is the resolver for the authedUser field.
@@ -770,7 +770,7 @@ func (r *queryResolver) MyFolders(ctx context.Context, first *int32, after *stri
 	}
 	edges := make([]*model.FolderEdge, 0, len(folders))
 	for _, f := range folders {
-		idStr := ptrToString(f.ID)
+		idStr := f.ID
 		edges = append(edges, &model.FolderEdge{
 			Node:   f,
 			Cursor: cursor.EncodeFolderCursor(idStr),

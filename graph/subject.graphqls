@@ -6,7 +6,7 @@ enum SubjectCategory {
     MATH
 }
 type Subject {
-    id: String
+    id: String!
     name: String
     category: SubjectCategory
     studysets(first: Int = 24, after: String, last: Int, before: String): StudysetConnection!
