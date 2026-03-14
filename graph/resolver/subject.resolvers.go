@@ -16,7 +16,7 @@ import (
 
 // Studysets is the resolver for the studysets field.
 func (r *subjectResolver) Studysets(ctx context.Context, obj *model.Subject, first *int32, after *string, last *int32, before *string) (*model.StudysetConnection, error) {
-	if obj == nil || obj.ID == "" {
+	if obj == nil || obj.ID == nil {
 		return nil, nil
 	}
 
@@ -130,7 +130,7 @@ func (r *subjectResolver) Studysets(ctx context.Context, obj *model.Subject, fir
 
 // StudysetCount is the resolver for the studysetCount field.
 func (r *subjectResolver) StudysetCount(ctx context.Context, obj *model.Subject) (int32, error) {
-	if obj == nil || obj.ID == "" {
+	if obj == nil || obj.ID == nil {
 		return 0, nil
 	}
 

@@ -25,15 +25,6 @@ type FRQInput struct {
 	AnsweredString    *string     `json:"answeredString,omitempty"`
 }
 
-type Folder struct {
-	ID             string              `json:"id"`
-	Name           string              `json:"name"`
-	Studysets      *StudysetConnection `json:"studysets"`
-	StudysetDrafts *StudysetConnection `json:"studysetDrafts"`
-	StudysetCount  int32               `json:"studysetCount"`
-	User           *User               `json:"user,omitempty"`
-}
-
 type FolderConnection struct {
 	Edges    []*FolderEdge `json:"edges"`
 	PageInfo *PageInfo     `json:"pageInfo"`
@@ -138,14 +129,6 @@ type StudysetInput struct {
 	SubjectID *string `json:"subjectId,omitempty"`
 }
 
-type Subject struct {
-	ID            string              `json:"id"`
-	Name          *string             `json:"name,omitempty"`
-	Category      *SubjectCategory    `json:"category,omitempty"`
-	Studysets     *StudysetConnection `json:"studysets"`
-	StudysetCount int32               `json:"studysetCount"`
-}
-
 type TermConfusionPairInput struct {
 	TermID                *string     `json:"termId,omitempty"`
 	ConfusedTermID        *string     `json:"confusedTermId,omitempty"`
@@ -159,22 +142,6 @@ type TermInput struct {
 	Term      *string `json:"term,omitempty"`
 	Def       *string `json:"def,omitempty"`
 	SortOrder *int32  `json:"sortOrder,omitempty"`
-}
-
-type TermProgress struct {
-	ID                   string  `json:"id"`
-	TermFirstReviewedAt  *string `json:"termFirstReviewedAt,omitempty"`
-	TermLastReviewedAt   *string `json:"termLastReviewedAt,omitempty"`
-	TermReviewCount      *int32  `json:"termReviewCount,omitempty"`
-	DefFirstReviewedAt   *string `json:"defFirstReviewedAt,omitempty"`
-	DefLastReviewedAt    *string `json:"defLastReviewedAt,omitempty"`
-	DefReviewCount       *int32  `json:"defReviewCount,omitempty"`
-	TermCorrectCount     int32   `json:"termCorrectCount"`
-	TermIncorrectCount   int32   `json:"termIncorrectCount"`
-	DefCorrectCount      int32   `json:"defCorrectCount"`
-	DefIncorrectCount    int32   `json:"defIncorrectCount"`
-	TermLeitnerSystemBox *int32  `json:"termLeitnerSystemBox,omitempty"`
-	DefLeitnerSystemBox  *int32  `json:"defLeitnerSystemBox,omitempty"`
 }
 
 type TermProgressInput struct {
@@ -203,14 +170,6 @@ type TrueFalseQuestionInput struct {
 	Correct      *bool       `json:"correct,omitempty"`
 	AnsweredBool *bool       `json:"answeredBool,omitempty"`
 	Distractor   *TermInput  `json:"distractor,omitempty"`
-}
-
-type User struct {
-	ID            string              `json:"id"`
-	Username      *string             `json:"username,omitempty"`
-	DisplayName   string              `json:"displayName"`
-	Studysets     *StudysetConnection `json:"studysets"`
-	StudysetCount int32               `json:"studysetCount"`
 }
 
 type AnswerWith string
