@@ -773,7 +773,7 @@ func (r *queryResolver) MyFolders(ctx context.Context, first *int32, after *stri
 		idStr := f.ID
 		edges = append(edges, &model.FolderEdge{
 			Node:   f,
-			Cursor: cursor.EncodeFolderCursor(idStr),
+			Cursor: cursor.EncodeFolderCursor(ptrToString(idStr)),
 		})
 	}
 	var startCursor, endCursor *string

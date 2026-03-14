@@ -17,7 +17,7 @@ import (
 
 // Studysets is the resolver for the studysets field.
 func (r *userResolver) Studysets(ctx context.Context, obj *model.User, first *int32, after *string, last *int32, before *string, includePrivate *bool) (*model.StudysetConnection, error) {
-	if obj == nil || obj.ID == "" {
+	if obj == nil || obj.ID == nil {
 		return nil, nil
 	}
 
@@ -27,7 +27,7 @@ func (r *userResolver) Studysets(ctx context.Context, obj *model.User, first *in
 	if includePrivate != nil && *includePrivate {
 		if authedUser != nil {
 			// Check if owner
-			if authedUser.ID != nil && obj.ID != "" && *authedUser.ID == obj.ID {
+			if authedUser.ID != nil && obj.ID != nil && *authedUser.ID == *obj.ID {
 				canSeePrivate = true
 			}
 			// Check if mod
@@ -131,7 +131,7 @@ func (r *userResolver) Studysets(ctx context.Context, obj *model.User, first *in
 
 // StudysetCount is the resolver for the studysetCount field.
 func (r *userResolver) StudysetCount(ctx context.Context, obj *model.User, includePrivate *bool) (int32, error) {
-	if obj == nil || obj.ID == "" {
+	if obj == nil || obj.ID == nil {
 		return 0, nil
 	}
 
@@ -140,7 +140,7 @@ func (r *userResolver) StudysetCount(ctx context.Context, obj *model.User, inclu
 	if includePrivate != nil && *includePrivate {
 		if authedUser != nil {
 			// Check if owner
-			if authedUser.ID != nil && obj.ID != "" && *authedUser.ID == obj.ID {
+			if authedUser.ID != nil && obj.ID != nil && *authedUser.ID == *obj.ID {
 				canSeePrivate = true
 			}
 			// Check if mod

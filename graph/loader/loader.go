@@ -27,12 +27,17 @@ type dataReader struct {
 // getUsers implements a batch function that can retrieve many users by ID,
 // for use in a dataloader
 func (dr *dataReader) getUsers(ctx context.Context, userIDs []string) ([]*model.User, []error) {
-	var users []*model.User
+	type dbUser struct {
+		ID          *string `db:"id"`
+		Username    *string `db:"username"`
+		DisplayName *string `db:"display_name"`
+	}
+	var dbUsers []*dbUser
 
 	err := pgxscan.Select(
 		ctx,
 		dr.db,
-		&users,
+		&dbUsers,
 		`SELECT u.id, u.username, u.display_name
 FROM unnest($1::uuid[]) WITH ORDINALITY AS input(id, og_order)
 LEFT JOIN auth.users u ON u.id = input.id
@@ -41,6 +46,19 @@ ORDER BY input.og_order`,
 	)
 	if err != nil {
 		return nil, []error{err}
+	}
+
+	users := make([]*model.User, len(dbUsers))
+	for i, du := range dbUsers {
+		if du.ID == nil {
+			users[i] = nil
+		} else {
+			users[i] = &model.User{
+				ID:          du.ID,
+				Username:    du.Username,
+				DisplayName: du.DisplayName,
+			}
+		}
 	}
 
 	return users, nil
@@ -53,12 +71,23 @@ func (dr *dataReader) getTermsByIDs(ctx context.Context, ids []string) ([]*model
 		authedUserID = authedUser.ID
 	}
 
-	var terms []*model.Term
+	type dbTerm struct {
+		ID           *string `db:"id"`
+		StudysetID   *string `db:"studyset_id"`
+		Term         *string `db:"term"`
+		Def          *string `db:"def"`
+		TermImageURL *string `db:"term_image_url"`
+		DefImageURL  *string `db:"def_image_url"`
+		SortOrder    *int32  `db:"sort_order"`
+		CreatedAt    *string `db:"created_at"`
+		UpdatedAt    *string `db:"updated_at"`
+	}
+	var dbTerms []*dbTerm
 
 	err := pgxscan.Select(
 		ctx,
 		dr.db,
-		&terms,
+		&dbTerms,
 		`SELECT t.id, t.studyset_id, t.term, t.def, ($3||t.term_image_key) as term_image_url, ($3||t.def_image_key) as def_image_url, t.sort_order,
 	to_char(t.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 	to_char(t.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
@@ -76,6 +105,25 @@ ORDER BY input.og_order`,
 	)
 	if err != nil {
 		return nil, []error{err}
+	}
+
+	terms := make([]*model.Term, len(dbTerms))
+	for i, dt := range dbTerms {
+		if dt.ID == nil {
+			terms[i] = nil
+		} else {
+			terms[i] = &model.Term{
+				ID:           dt.ID,
+				StudysetID:   dt.StudysetID,
+				Term:         dt.Term,
+				Def:          dt.Def,
+				TermImageURL: dt.TermImageURL,
+				DefImageURL:  dt.DefImageURL,
+				SortOrder:    dt.SortOrder,
+				CreatedAt:    dt.CreatedAt,
+				UpdatedAt:    dt.UpdatedAt,
+			}
+		}
 	}
 
 	return terms, nil
@@ -236,7 +284,7 @@ ORDER BY input.og_order`,
 			termsProgress = append(termsProgress, nil)
 		} else {
 			termsProgress = append(termsProgress, &model.TermProgress{
-				ID:                   *tp.ID,
+				ID:                   tp.ID,
 				TermFirstReviewedAt:  tp.TermFirstReviewedAt,
 				TermLastReviewedAt:   tp.TermLastReviewedAt,
 				TermReviewCount:      tp.TermReviewCount,
@@ -296,10 +344,10 @@ ORDER BY input.og_order ASC, tph.timestamp DESC`,
 		return nil, []error{err}
 	}
 
-	var termProgressHistory []*model.TermProgressHistory
+	grouped := make(map[string][]*model.TermProgressHistory)
 	for _, dbTph := range dbHistory {
-		if dbTph.ID != nil {
-			termProgressHistory = append(termProgressHistory, &model.TermProgressHistory{
+		if dbTph.ID != nil && dbTph.TermID != nil {
+			grouped[*dbTph.TermID] = append(grouped[*dbTph.TermID], &model.TermProgressHistory{
 				ID:                 dbTph.ID,
 				Timestamp:          dbTph.Timestamp,
 				TermCorrectCount:   dbTph.TermCorrectCount,
@@ -307,13 +355,6 @@ ORDER BY input.og_order ASC, tph.timestamp DESC`,
 				DefCorrectCount:    dbTph.DefCorrectCount,
 				DefIncorrectCount:  dbTph.DefIncorrectCount,
 			})
-		}
-	}
-
-	grouped := make(map[string][]*model.TermProgressHistory)
-	for i, tph := range dbHistory {
-		if tph.TermID != nil && tph.ID != nil {
-			grouped[*tph.TermID] = append(grouped[*tph.TermID], termProgressHistory[i])
 		}
 	}
 
@@ -371,23 +412,18 @@ ORDER BY term_id, confused_count DESC`,
 		return nil, []error{err}
 	}
 
-	var confusionPairs []*model.TermConfusionPair
+	grouped := make(map[string][]*model.TermConfusionPair)
 	for _, dbTcp := range dbPairs {
-		if dbTcp.ID != nil {
+		if dbTcp.ID != nil && dbTcp.TermID != nil {
 			answeredWith := model.AnswerWith(*dbTcp.AnsweredWith)
-			confusionPairs = append(confusionPairs, &model.TermConfusionPair{
+			grouped[*dbTcp.TermID] = append(grouped[*dbTcp.TermID], &model.TermConfusionPair{
 				ID:             dbTcp.ID,
+				TermID:         dbTcp.TermID,
+				ConfusedTermID: dbTcp.ConfusedTermID,
 				AnsweredWith:   &answeredWith,
 				ConfusedCount:  dbTcp.ConfusedCount,
 				LastConfusedAt: dbTcp.LastConfusedAt,
 			})
-		}
-	}
-
-	grouped := make(map[string][]*model.TermConfusionPair)
-	for i, c := range dbPairs {
-		if c.TermID != nil && c.ID != nil {
-			grouped[*c.TermID] = append(grouped[*c.TermID], confusionPairs[i])
 		}
 	}
 
@@ -445,23 +481,18 @@ ORDER BY confused_term_id, confused_count DESC`,
 		return nil, []error{err}
 	}
 
-	var confusionPairs []*model.TermConfusionPair
+	grouped := make(map[string][]*model.TermConfusionPair)
 	for _, dbTcp := range dbPairs {
-		if dbTcp.ID != nil {
+		if dbTcp.ID != nil && dbTcp.ConfusedTermID != nil {
 			answeredWith := model.AnswerWith(*dbTcp.AnsweredWith)
-			confusionPairs = append(confusionPairs, &model.TermConfusionPair{
+			grouped[*dbTcp.ConfusedTermID] = append(grouped[*dbTcp.ConfusedTermID], &model.TermConfusionPair{
 				ID:             dbTcp.ID,
+				TermID:         dbTcp.TermID,
+				ConfusedTermID: dbTcp.ConfusedTermID,
 				AnsweredWith:   &answeredWith,
 				ConfusedCount:  dbTcp.ConfusedCount,
 				LastConfusedAt: dbTcp.LastConfusedAt,
 			})
-		}
-	}
-
-	grouped := make(map[string][]*model.TermConfusionPair)
-	for i, c := range dbPairs {
-		if c.ConfusedTermID != nil && c.ID != nil {
-			grouped[*c.ConfusedTermID] = append(grouped[*c.ConfusedTermID], confusionPairs[i])
 		}
 	}
 
@@ -479,12 +510,20 @@ func (dr *dataReader) getPracticeTestsByStudysetIDs(ctx context.Context, studyse
 		return nil, nil
 	}
 
-	var practiceTests []*model.PracticeTest
+	type dbPracticeTest struct {
+		ID               *string           `db:"id"`
+		Timestamp        *string           `db:"timestamp"`
+		StudysetID       *string           `db:"studyset_id"`
+		QuestionsCorrect *int32            `db:"questions_correct"`
+		QuestionsTotal   *int32            `db:"questions_total"`
+		Questions        []*model.Question `db:"questions"`
+	}
+	var dbPracticeTests []*dbPracticeTest
 
 	err := pgxscan.Select(
 		ctx,
 		dr.db,
-		&practiceTests,
+		&dbPracticeTests,
 		`SELECT pt.id,
 	to_char(pt.timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as timestamp,
 	pt.studyset_id,
@@ -504,9 +543,16 @@ ORDER BY input.og_order ASC, pt.timestamp DESC`,
 	}
 
 	grouped := make(map[string][]*model.PracticeTest)
-	for _, pt := range practiceTests {
-		if pt.StudysetID != nil {
-			grouped[*pt.StudysetID] = append(grouped[*pt.StudysetID], pt)
+	for _, pt := range dbPracticeTests {
+		if pt.ID != nil && pt.StudysetID != nil {
+			grouped[*pt.StudysetID] = append(grouped[*pt.StudysetID], &model.PracticeTest{
+				ID:               pt.ID,
+				StudysetID:       pt.StudysetID,
+				Timestamp:        pt.Timestamp,
+				QuestionsCorrect: pt.QuestionsCorrect,
+				QuestionsTotal:   pt.QuestionsTotal,
+				Questions:        pt.Questions,
+			})
 		}
 	}
 
