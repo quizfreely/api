@@ -30,7 +30,7 @@ func (r *folderResolver) Studysets(ctx context.Context, obj *model.Folder, first
 
 	// We check if caller is owner to decide visibility
 	isOwner := false
-	if authedUser != nil && obj.User != nil && obj.User.ID != "" && *authedUser.ID == obj.User.ID {
+	if authedUser != nil && obj.User != nil && obj.User.ID != nil && *authedUser.ID == *obj.User.ID {
 		isOwner = true
 	}
 
@@ -161,7 +161,7 @@ func (r *folderResolver) StudysetDrafts(ctx context.Context, obj *model.Folder, 
 	authedUser := auth.AuthedUserContext(ctx)
 
 	isOwner := false
-	if authedUser != nil && obj.User != nil && obj.User.ID != "" && *authedUser.ID == obj.User.ID {
+	if authedUser != nil && obj.User != nil && obj.User.ID != nil && *authedUser.ID == *obj.User.ID {
 		isOwner = true
 	}
 	if !isOwner {
@@ -283,7 +283,7 @@ func (r *folderResolver) StudysetDrafts(ctx context.Context, obj *model.Folder, 
 
 // StudysetCount is the resolver for the studysetCount field.
 func (r *folderResolver) StudysetCount(ctx context.Context, obj *model.Folder) (int32, error) {
-	if obj == nil || obj.ID == "" {
+	if obj == nil || obj.ID == nil {
 		return 0, nil
 	}
 
@@ -291,7 +291,7 @@ func (r *folderResolver) StudysetCount(ctx context.Context, obj *model.Folder) (
 
 	// Visibility check: same as Studysets resolver
 	isOwner := false
-	if authedUser != nil && obj.User != nil && obj.User.ID != "" && *authedUser.ID == obj.User.ID {
+	if authedUser != nil && obj.User != nil && obj.User.ID != nil && *authedUser.ID == *obj.User.ID {
 		isOwner = true
 	}
 
