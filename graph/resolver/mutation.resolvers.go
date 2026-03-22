@@ -835,6 +835,28 @@ func (r *mutationResolver) UnsaveStudyset(ctx context.Context, studysetID string
 	return &yay, nil
 }
 
+// SetStudysetSeoIndexing is the resolver for the setStudysetSeoIndexing field.
+func (r *mutationResolver) SetStudysetSeoIndexing(ctx context.Context, studysetID string, approved bool) (bool, error) {
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil {
+		return false, errors.New("not authenticated")
+	}
+	if !authedUser.ModPerms {
+		return false, errors.New("missing moderator permissions needed to set studyset SEO indexing approval")
+	}
+	tag, err := r.DB.Exec(
+		ctx,
+		"UPDATE studysets SET seo_indexing_approved = $1 WHERE id = $2",
+		approved,
+		studysetID,
+	)
+	if err != nil {
+		log.Error().Err(err).Msg("DB Error in SetStudysetSeoIndexing")
+		return false, errors.New("DB Error in SetStudysetSeoIndexing")
+	}
+    return tag.RowsAffected() == 1, nil
+}
+
 // Mutation returns graph.MutationResolver implementation.
 func (r *Resolver) Mutation() graph.MutationResolver { return &mutationResolver{r} }
 

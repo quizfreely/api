@@ -119,6 +119,7 @@ type ComplexityRoot struct {
 		RenameFolder             func(childComplexity int, id string, name string) int
 		SaveStudyset             func(childComplexity int, studysetID string) int
 		SetStudysetFolder        func(childComplexity int, studysetID string, folderID string) int
+		SetStudysetSeoIndexing   func(childComplexity int, studysetID string, approved bool) int
 		UnsaveStudyset           func(childComplexity int, studysetID string) int
 		UpdatePracticeTest       func(childComplexity int, input *model.PracticeTestInput) int
 		UpdateStudyset           func(childComplexity int, id string, studyset *model.StudysetInput, draft bool) int
@@ -178,19 +179,20 @@ type ComplexityRoot struct {
 	}
 
 	Studyset struct {
-		CreatedAt     func(childComplexity int) int
-		Draft         func(childComplexity int) int
-		Folder        func(childComplexity int) int
-		ID            func(childComplexity int) int
-		PracticeTests func(childComplexity int) int
-		Private       func(childComplexity int) int
-		Saved         func(childComplexity int) int
-		Subject       func(childComplexity int) int
-		Terms         func(childComplexity int) int
-		TermsCount    func(childComplexity int) int
-		Title         func(childComplexity int) int
-		UpdatedAt     func(childComplexity int) int
-		User          func(childComplexity int) int
+		CreatedAt           func(childComplexity int) int
+		Draft               func(childComplexity int) int
+		Folder              func(childComplexity int) int
+		ID                  func(childComplexity int) int
+		PracticeTests       func(childComplexity int) int
+		Private             func(childComplexity int) int
+		SEOIndexingApproved func(childComplexity int) int
+		Saved               func(childComplexity int) int
+		Subject             func(childComplexity int) int
+		Terms               func(childComplexity int) int
+		TermsCount          func(childComplexity int) int
+		Title               func(childComplexity int) int
+		UpdatedAt           func(childComplexity int) int
+		User                func(childComplexity int) int
 	}
 
 	StudysetConnection struct {
@@ -301,6 +303,7 @@ type MutationResolver interface {
 	RemoveStudysetFromFolder(ctx context.Context, studysetID string) (*bool, error)
 	SaveStudyset(ctx context.Context, studysetID string) (*bool, error)
 	UnsaveStudyset(ctx context.Context, studysetID string) (*bool, error)
+	SetStudysetSeoIndexing(ctx context.Context, studysetID string, approved bool) (bool, error)
 }
 type QueryResolver interface {
 	Authed(ctx context.Context) (bool, error)
@@ -752,6 +755,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.SetStudysetFolder(childComplexity, args["studysetId"].(string), args["folderId"].(string)), true
+
+	case "Mutation.setStudysetSeoIndexing":
+		if e.complexity.Mutation.SetStudysetSeoIndexing == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_setStudysetSeoIndexing_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.SetStudysetSeoIndexing(childComplexity, args["studysetId"].(string), args["approved"].(bool)), true
 
 	case "Mutation.unsaveStudyset":
 		if e.complexity.Mutation.UnsaveStudyset == nil {
@@ -1227,6 +1242,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Studyset.Private(childComplexity), true
+
+	case "Studyset.seoIndexingApproved":
+		if e.complexity.Studyset.SEOIndexingApproved == nil {
+			break
+		}
+
+		return e.complexity.Studyset.SEOIndexingApproved(childComplexity), true
 
 	case "Studyset.saved":
 		if e.complexity.Studyset.Saved == nil {
@@ -2036,6 +2058,22 @@ func (ec *executionContext) field_Mutation_setStudysetFolder_args(ctx context.Co
 		return nil, err
 	}
 	args["folderId"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_setStudysetSeoIndexing_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "studysetId", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["studysetId"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "approved", ec.unmarshalNBoolean2bool)
+	if err != nil {
+		return nil, err
+	}
+	args["approved"] = arg1
 	return args, nil
 }
 
@@ -4240,6 +4278,8 @@ func (ec *executionContext) fieldContext_Mutation_createStudyset(ctx context.Con
 				return ec.fieldContext_Studyset_saved(ctx, field)
 			case "folder":
 				return ec.fieldContext_Studyset_folder(ctx, field)
+			case "seoIndexingApproved":
+				return ec.fieldContext_Studyset_seoIndexingApproved(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Studyset", field.Name)
 		},
@@ -4320,6 +4360,8 @@ func (ec *executionContext) fieldContext_Mutation_updateStudyset(ctx context.Con
 				return ec.fieldContext_Studyset_saved(ctx, field)
 			case "folder":
 				return ec.fieldContext_Studyset_folder(ctx, field)
+			case "seoIndexingApproved":
+				return ec.fieldContext_Studyset_seoIndexingApproved(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Studyset", field.Name)
 		},
@@ -5320,6 +5362,61 @@ func (ec *executionContext) fieldContext_Mutation_unsaveStudyset(ctx context.Con
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_setStudysetSeoIndexing(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_setStudysetSeoIndexing(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().SetStudysetSeoIndexing(rctx, fc.Args["studysetId"].(string), fc.Args["approved"].(bool))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_setStudysetSeoIndexing(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_setStudysetSeoIndexing_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _PageInfo_hasNextPage(ctx context.Context, field graphql.CollectedField, obj *model.PageInfo) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_PageInfo_hasNextPage(ctx, field)
 	if err != nil {
@@ -5918,6 +6015,8 @@ func (ec *executionContext) fieldContext_Query_studyset(ctx context.Context, fie
 				return ec.fieldContext_Studyset_saved(ctx, field)
 			case "folder":
 				return ec.fieldContext_Studyset_folder(ctx, field)
+			case "seoIndexingApproved":
+				return ec.fieldContext_Studyset_seoIndexingApproved(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Studyset", field.Name)
 		},
@@ -8155,6 +8254,50 @@ func (ec *executionContext) fieldContext_Studyset_folder(_ context.Context, fiel
 	return fc, nil
 }
 
+func (ec *executionContext) _Studyset_seoIndexingApproved(ctx context.Context, field graphql.CollectedField, obj *model.Studyset) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Studyset_seoIndexingApproved(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SEOIndexingApproved, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalNBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Studyset_seoIndexingApproved(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Studyset",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _StudysetConnection_edges(ctx context.Context, field graphql.CollectedField, obj *model.StudysetConnection) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_StudysetConnection_edges(ctx, field)
 	if err != nil {
@@ -8324,6 +8467,8 @@ func (ec *executionContext) fieldContext_StudysetEdge_node(_ context.Context, fi
 				return ec.fieldContext_Studyset_saved(ctx, field)
 			case "folder":
 				return ec.fieldContext_Studyset_folder(ctx, field)
+			case "seoIndexingApproved":
+				return ec.fieldContext_Studyset_seoIndexingApproved(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Studyset", field.Name)
 		},
@@ -13885,6 +14030,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_unsaveStudyset(ctx, field)
 			})
+		case "setStudysetSeoIndexing":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_setStudysetSeoIndexing(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -14847,6 +14999,11 @@ func (ec *executionContext) _Studyset(ctx context.Context, sel ast.SelectionSet,
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "seoIndexingApproved":
+			out.Values[i] = ec._Studyset_seoIndexingApproved(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
