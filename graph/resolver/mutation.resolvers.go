@@ -40,7 +40,7 @@ func (r *mutationResolver) CreateStudyset(ctx context.Context, studyset model.St
 	sql := `
 		INSERT INTO public.studysets (user_id, title, private, subject_id, draft)
 		VALUES ($1, $2, $3, $4, $5)
-		RETURNING id, user_id, title, private, subject_id, draft,
+		RETURNING id, user_id, title, private, subject_id, draft, seo_indexing_approved,
 			to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 			to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 	`
@@ -91,7 +91,7 @@ func (r *mutationResolver) UpdateStudyset(ctx context.Context, id string, studys
 		UPDATE public.studysets
 		SET title = $1, private = $2, subject_id = $3, draft = $4, updated_at = now()
 		WHERE id = $5 AND (user_id = $6 OR COALESCE($7, false) = true)
-		RETURNING id, user_id, title, private, subject_id, draft,
+		RETURNING id, user_id, title, private, subject_id, draft, seo_indexing_approved,
 			to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 			to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 	`

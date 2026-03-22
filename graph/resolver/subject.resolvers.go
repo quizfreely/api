@@ -48,6 +48,7 @@ func (r *subjectResolver) Studysets(ctx context.Context, obj *model.Subject, fir
 				s.draft,
 				s.private,
 				s.subject_id,
+				s.seo_indexing_approved,
 				to_char(s.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 				to_char(s.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 			FROM studysets s
@@ -78,6 +79,7 @@ func (r *subjectResolver) Studysets(ctx context.Context, obj *model.Subject, fir
 				s.draft,
 				s.private,
 				s.subject_id,
+				s.seo_indexing_approved,
 				to_char(s.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 				to_char(s.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 			FROM studysets s
@@ -98,6 +100,7 @@ func (r *subjectResolver) Studysets(ctx context.Context, obj *model.Subject, fir
 				s.draft,
 				s.private,
 				s.subject_id,
+				s.seo_indexing_approved,
 				to_char(s.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 				to_char(s.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 			FROM studysets s

@@ -57,7 +57,7 @@ func (r *userResolver) Studysets(ctx context.Context, obj *model.User, first *in
 	studysets := []*model.Studyset{}
 	var err error
 
-	cols := `id, user_id, title, draft, private, subject_id,
+	cols := `id, user_id, title, draft, private, subject_id, seo_indexing_approved,
 			to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 			to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at`
 

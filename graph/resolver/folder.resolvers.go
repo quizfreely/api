@@ -60,6 +60,7 @@ func (r *folderResolver) Studysets(ctx context.Context, obj *model.Folder, first
 		s.draft,
 		s.private,
 		s.subject_id,
+		s.seo_indexing_approved,
 		to_char(s.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 		to_char(s.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at,
 		to_char(f.timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.USTZH:TZM') as folder_timestamp
@@ -200,6 +201,7 @@ func (r *folderResolver) StudysetDrafts(ctx context.Context, obj *model.Folder, 
 		s.draft,
 		s.private,
 		s.subject_id,
+		s.seo_indexing_approved,
 		to_char(s.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 		to_char(s.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at,
 		to_char(f.timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.USTZH:TZM') as folder_timestamp

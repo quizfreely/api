@@ -35,7 +35,7 @@ func (r *queryResolver) Studyset(ctx context.Context, id string) (*model.Studyse
 	var err error
 	if authedUser != nil {
 		sql := `
-			SELECT id, user_id, title, private, subject_id, draft,
+			SELECT id, user_id, title, private, subject_id, draft, seo_indexing_approved,
 				to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 				to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 			FROM public.studysets
@@ -43,7 +43,7 @@ func (r *queryResolver) Studyset(ctx context.Context, id string) (*model.Studyse
 		err = pgxscan.Get(ctx, r.DB, &studyset, sql, id, authedUser.ID)
 	} else {
 		sql := `
-			SELECT id, user_id, title, private, draft,
+			SELECT id, user_id, title, private, draft, seo_indexing_approved,
 				to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 				to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 			FROM public.studysets
@@ -172,6 +172,7 @@ func (r *queryResolver) RecentlyCreatedStudysets(ctx context.Context, first *int
 				private,
 				draft,
 				subject_id,
+				seo_indexing_approved,
 				to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 				to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 			FROM public.studysets
@@ -214,6 +215,7 @@ func (r *queryResolver) RecentlyCreatedStudysets(ctx context.Context, first *int
 				private,
 				draft,
 				subject_id,
+				seo_indexing_approved,
 				to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 				to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 			FROM public.studysets
@@ -233,6 +235,7 @@ func (r *queryResolver) RecentlyCreatedStudysets(ctx context.Context, first *int
 				private,
 				draft,
 				subject_id,
+				seo_indexing_approved,
 				to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 				to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 			FROM public.studysets
@@ -300,6 +303,7 @@ func (r *queryResolver) RecentlyUpdatedStudysets(ctx context.Context, first *int
 				private,
 				draft,
 				subject_id,
+				seo_indexing_approved,
 				to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 				to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 			FROM public.studysets
@@ -334,6 +338,7 @@ func (r *queryResolver) RecentlyUpdatedStudysets(ctx context.Context, first *int
 				private,
 				draft,
 				subject_id,
+				seo_indexing_approved,
 				to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 				to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 			FROM public.studysets
@@ -353,6 +358,7 @@ func (r *queryResolver) RecentlyUpdatedStudysets(ctx context.Context, first *int
 				private,
 				draft,
 				subject_id,
+				seo_indexing_approved,
 				to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 				to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
 			FROM public.studysets
@@ -431,6 +437,7 @@ func (r *queryResolver) SearchStudysets(ctx context.Context, q string, first *in
 		private,
 		draft,
 		subject_id,
+		seo_indexing_approved,
 		to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 		to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at,
 		word_similarity(lower($1), lower(title)) as score
@@ -564,7 +571,7 @@ func (r *queryResolver) MyStudysets(ctx context.Context, first *int32, after *st
 	var err error
 
 	// Common columns for selectivity
-	cols := `id, user_id, title, private, subject_id, draft,
+	cols := `id, user_id, title, private, subject_id, draft, seo_indexing_approved,
 				to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 				to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at`
 
@@ -658,7 +665,7 @@ func (r *queryResolver) MyStudysetDrafts(ctx context.Context, first *int32, afte
 	var studysets []*model.Studyset
 	var err error
 
-	cols := `id, user_id, title, private, subject_id, draft,
+	cols := `id, user_id, title, private, subject_id, draft, seo_indexing_approved,
 				to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 				to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at`
 
@@ -827,6 +834,7 @@ func (r *queryResolver) MySavedStudysets(ctx context.Context, first *int32, afte
 				s.draft,
 				s.private,
 				s.subject_id,
+				s.seo_indexing_approved,
 				to_char(s.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 				to_char(s.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at,
 				to_char(saved_studysets.timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as saved_at
@@ -858,6 +866,7 @@ func (r *queryResolver) MySavedStudysets(ctx context.Context, first *int32, afte
 				s.draft,
 				s.private,
 				s.subject_id,
+				s.seo_indexing_approved,
 				to_char(s.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 				to_char(s.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at,
 				to_char(saved_studysets.timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as saved_at
@@ -879,6 +888,7 @@ func (r *queryResolver) MySavedStudysets(ctx context.Context, first *int32, afte
 				s.draft,
 				s.private,
 				s.subject_id,
+				s.seo_indexing_approved,
 				to_char(s.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
 				to_char(s.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at,
 				to_char(saved_studysets.timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as saved_at
