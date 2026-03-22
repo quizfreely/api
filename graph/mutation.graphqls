@@ -17,6 +17,7 @@ type Mutation {
     removeStudysetFromFolder(studysetId: ID!): Boolean
     saveStudyset(studysetId: ID!): Boolean
     unsaveStudyset(studysetId: ID!): Boolean
+    setStudysetSeoIndexing(studysetId: ID!, approved: Boolean!): Boolean!
 }
 input PracticeTestInput {
     id: ID
