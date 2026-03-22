@@ -283,7 +283,7 @@ ORDER BY input.og_order`,
 		if tp.ID == nil {
 			termsProgress = append(termsProgress, nil)
 		} else {
-			termsProgress = append(termsProgress, &model.TermProgress{
+			modelTp := &model.TermProgress{
 				ID:                   tp.ID,
 				TermFirstReviewedAt:  tp.TermFirstReviewedAt,
 				TermLastReviewedAt:   tp.TermLastReviewedAt,
@@ -293,11 +293,20 @@ ORDER BY input.og_order`,
 				DefReviewCount:       tp.DefReviewCount,
 				TermLeitnerSystemBox: tp.TermLeitnerSystemBox,
 				DefLeitnerSystemBox:  tp.DefLeitnerSystemBox,
-				TermCorrectCount:     *tp.TermCorrectCount,
-				TermIncorrectCount:   *tp.TermIncorrectCount,
-				DefCorrectCount:      *tp.DefCorrectCount,
-				DefIncorrectCount:    *tp.DefIncorrectCount,
-			})
+			}
+			if tp.TermCorrectCount != nil {
+				modelTp.TermCorrectCount = *tp.TermCorrectCount
+			}
+			if tp.TermIncorrectCount != nil {
+				modelTp.TermIncorrectCount = *tp.TermIncorrectCount
+			}
+			if tp.DefCorrectCount != nil {
+				modelTp.DefCorrectCount = *tp.DefCorrectCount
+			}
+			if tp.DefIncorrectCount != nil {
+				modelTp.DefIncorrectCount = *tp.DefIncorrectCount
+			}
+			termsProgress = append(termsProgress, modelTp)
 		}
 	}
 
