@@ -11,10 +11,17 @@ This setup process in the `TestMain` function in `integration_test.go` is only r
 - **TestMain**:
     - Starts a PostgreSQL container.
     - Runs database migrations.
-    - Creates test users (`user1`, `user2`) and sessions.
+    - Creates test users (`user1`, `user2`, and `modUser1`) and sessions.
     - Starts the test HTTP server.
     - Runs all the tests (`m.Run()`).
     - Cleans up resources (server, database connection, container).
+
+- **TestStudysetSeoIndexingApproved**:
+    1. **Default Value**: `user1` creates a studyset and verifies `seoIndexingApproved` is false.
+    2. **Unauthorized Mutation (Random User)**: `user2` attempts to approve indexing (should fail).
+    3. **Unauthorized Mutation (Owner)**: `user1` attempts to approve indexing (should fail).
+    4. **Authorized Mutation**: `modUser1` (moderator) approves indexing successfully.
+    5. **Verify Update**: `user2` views the studyset and verifies `seoIndexingApproved` is true.
 
 ## `practice_test_test.go`
 
