@@ -15,6 +15,7 @@ import (
 	"github.com/amacneil/dbmate/v2/pkg/dbmate"
 	_ "github.com/amacneil/dbmate/v2/pkg/driver/postgres"
 	"github.com/georgysavva/scany/v2/pgxscan"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stretchr/testify/require"
 	tc "github.com/testcontainers/testcontainers-go"
@@ -106,8 +107,8 @@ func TestMain(m *testing.M) {
 			dbPool,
 			&user1ID,
 			`INSERT INTO auth.users (username, encrypted_password, display_name, auth_type)
-VALU	ES ($1, crypt($1, gen_salt('bf')), $1, 'USERNAME_PASSWORD')
-RETU	RNING id`,
+VALUES ($1, crypt($1, gen_salt('bf')), $1, 'USERNAME_PASSWORD')
+RETURNING id`,
 			"user1",
 		)
 		if err != nil {
@@ -118,8 +119,8 @@ RETU	RNING id`,
 			dbPool,
 			&user2ID,
 			`INSERT INTO auth.users (username, encrypted_password, display_name, auth_type)
-VALU	ES ($1, crypt($1, gen_salt('bf')), $1, 'USERNAME_PASSWORD')
-RETU	RNING id`,
+VALUES ($1, crypt($1, gen_salt('bf')), $1, 'USERNAME_PASSWORD')
+RETURNING id`,
 			"user2",
 		)
 		if err != nil {
@@ -131,7 +132,7 @@ RETU	RNING id`,
 			dbPool,
 			&user1Token,
 			`INSERT INTO auth.sessions (user_id)
-VALU	ES ($1) RETURNING token`,
+VALUES ($1) RETURNING token`,
 			user1ID,
 		)
 		if err != nil {
@@ -142,7 +143,7 @@ VALU	ES ($1) RETURNING token`,
 			dbPool,
 			&user2Token,
 			`INSERT INTO auth.sessions (user_id)
-VALU	ES ($1) RETURNING token`,
+VALUES ($1) RETURNING token`,
 			user2ID,
 		)
 		if err != nil {
