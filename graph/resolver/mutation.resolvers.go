@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
+	"github.com/rs/zerolog/log"
 	pgx "github.com/jackc/pgx/v5"
 )
 
@@ -841,7 +842,7 @@ func (r *mutationResolver) SetStudysetSeoIndexing(ctx context.Context, studysetI
 	if authedUser == nil {
 		return false, errors.New("not authenticated")
 	}
-	if !authedUser.ModPerms {
+	if authedUser.ModPerms == nil || !*authedUser.ModPerms {
 		return false, errors.New("missing moderator permissions needed to set studyset SEO indexing approval")
 	}
 	tag, err := r.DB.Exec(
