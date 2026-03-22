@@ -20,6 +20,7 @@ type Studyset {
     practiceTests: [PracticeTest]
     saved: Boolean
     folder: Folder
+    seoIndexingApproved: Boolean!
 }
 input StudysetInput {
     title: String!
