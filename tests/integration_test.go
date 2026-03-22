@@ -21,16 +21,16 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 )
 
-func startPostgres(t *testing.T) (tc.Container, string) {
+func startPostgres(t *testing.T) (tc.Container, string, string) {
 	ctx := context.Background()
 
 	req := tc.ContainerRequest{
 		Image:        "postgres:16",
 		ExposedPorts: []string{"5432/tcp"},
 		Env: map[string]string{
-			"POSTGRES_USER":     "test",
-			"POSTGRES_PASSWORD": "test",
-			"POSTGRES_DB":       "testdb",
+			"POSTGRES_USER":     "quizfreely_db_admin",
+			"POSTGRES_PASSWORD": "testsAdminPassword",
+			"POSTGRES_DB":       "quizfreely_test_db",
 		},
 		WaitingFor: wait.ForListeningPort("5432/tcp"),
 	}
@@ -44,14 +44,14 @@ func startPostgres(t *testing.T) (tc.Container, string) {
 	host, _ := container.Host(ctx)
 	port, _ := container.MappedPort(ctx, "5432")
 
-	dbURL := "postgres://test:test@" + host + ":" + port.Port() + "/testdb?sslmode=disable"
+	adminDBURL := "postgres://quizfreely_db_admin:testsAdminPassword@" + host + ":" + port.Port() + "/quizfreely_test_db?sslmode=disable"
+	apiDBURL := "postgres://quizfreely_api:testsAPIPassword@" + host + ":" + port.Port() + "/quizfreely_test_db?sslmode=disable"
 
-	return container, dbURL
+	return container, adminDBURL, apiDBURL
 }
 
 var testServer *httptest.Server
 var container tc.Container
-var dbURL string
 var dbPool *pgxpool.Pool
 
 var user1ID string
@@ -60,99 +60,108 @@ var user2ID string
 var user2Token string
 
 func TestMain(m *testing.M) {
-	ctx := context.Background()
+	code := func () int {
+		// NOTE: this immediately invoked func/IIFE is used because `defer` needs the function to return BEFORE os.Exit is called
+		// os.Exit will skip stuff with `defer`, but using `defer` is much better than duplicaing `Close`/`Terminate` calls before every `panic`
 
-	t := &testing.T{}
-	container, dbURL = startPostgres(t)
+		ctx := context.Background()
 
-	parsedDBURL, err := url.Parse(dbURL)
-	if err != nil {
-		panic(err)
-	}
+		t := &testing.T{}
+		container, adminDBURL, apiDBURL := startPostgres(t)
+		defer container.Terminate(ctx)
 
-	dbPool, err = pgxpool.New(ctx, dbURL)
-	if err != nil {
-		panic(err)
-	}
+		parsedAdminDBURL, err := url.Parse(adminDBURL)
+		if err != nil {
+			panic(err)
+		}
 
-	_, err = dbPool.Exec(ctx, "CREATE ROLE quizfreely_api")
-	if err != nil {
-		panic(err)
-	}
+		adminConn, err := pgx.Connect(ctx, adminDBURL)
+		if err != nil {
+			panic(err)
+		}
+		_, err = adminConn.Exec(ctx, "CREATE ROLE quizfreely_api LOGIN PASSWORD 'testsAPIPassword'")
+		if err != nil {
+			adminConn.Close(ctx)
+			panic(err)
+		}
+		adminConn.Close(ctx)
 
-	dbMigration := dbmate.New(parsedDBURL)
-	dbMigration.MigrationsDir = []string{"../db/migrations"}
-	dbMigration.SchemaFile = "../db/schema.sql"
-	dbMigration.AutoDumpSchema = false
-	err = dbMigration.CreateAndMigrate()
-	if err != nil {
-		panic(err)
-	}
+		dbMigration := dbmate.New(parsedAdminDBURL)
+		dbMigration.MigrationsDir = []string{"../db/migrations"}
+		dbMigration.SchemaFile = "../db/schema.sql"
+		dbMigration.AutoDumpSchema = false
+		err = dbMigration.CreateAndMigrate()
+		if err != nil {
+			panic(err)
+		}
 
-	err = pgxscan.Get(
-		ctx,
-		dbPool,
-		&user1ID,
-		`INSERT INTO auth.users (username, encrypted_password, display_name, auth_type)
-VALUES ($1, crypt($1, gen_salt('bf')), $1, 'USERNAME_PASSWORD')
-RETURNING id`,
-		"user1",
-	)
-	if err != nil {
-		panic(err)
-	}
-	err = pgxscan.Get(
-		ctx,
-		dbPool,
-		&user2ID,
-		`INSERT INTO auth.users (username, encrypted_password, display_name, auth_type)
-VALUES ($1, crypt($1, gen_salt('bf')), $1, 'USERNAME_PASSWORD')
-RETURNING id`,
-		"user2",
-	)
-	if err != nil {
-		panic(err)
-	}
+		dbPool, err = pgxpool.New(ctx, apiDBURL)
+		if err != nil {
+			panic(err)
+		}
+		defer dbPool.Close()
 
-	err = pgxscan.Get(
-		ctx,
-		dbPool,
-		&user1Token,
-		`INSERT INTO auth.sessions (user_id)
-VALUES ($1) RETURNING token`,
-		user1ID,
-	)
-	if err != nil {
-		panic(err)
-	}
-	err = pgxscan.Get(
-		ctx,
-		dbPool,
-		&user2Token,
-		`INSERT INTO auth.sessions (user_id)
-VALUES ($1) RETURNING token`,
-		user2ID,
-	)
-	if err != nil {
-		panic(err)
-	}
+		err = pgxscan.Get(
+			ctx,
+			dbPool,
+			&user1ID,
+			`INSERT INTO auth.users (username, encrypted_password, display_name, auth_type)
+VALU	ES ($1, crypt($1, gen_salt('bf')), $1, 'USERNAME_PASSWORD')
+RETU	RNING id`,
+			"user1",
+		)
+		if err != nil {
+			panic(err)
+		}
+		err = pgxscan.Get(
+			ctx,
+			dbPool,
+			&user2ID,
+			`INSERT INTO auth.users (username, encrypted_password, display_name, auth_type)
+VALU	ES ($1, crypt($1, gen_salt('bf')), $1, 'USERNAME_PASSWORD')
+RETU	RNING id`,
+			"user2",
+		)
+		if err != nil {
+			panic(err)
+		}
 
-	router := server.NewRouter(
-		config.Config{
-			BasePath:          "/",
-			EnableOAuthGoogle: false,
-		},
-		dbPool,
-		nil,
-	)
-	testServer = httptest.NewServer(router)
+		err = pgxscan.Get(
+			ctx,
+			dbPool,
+			&user1Token,
+			`INSERT INTO auth.sessions (user_id)
+VALU	ES ($1) RETURNING token`,
+			user1ID,
+		)
+		if err != nil {
+			panic(err)
+		}
+		err = pgxscan.Get(
+			ctx,
+			dbPool,
+			&user2Token,
+			`INSERT INTO auth.sessions (user_id)
+VALU	ES ($1) RETURNING token`,
+			user2ID,
+		)
+		if err != nil {
+			panic(err)
+		}
 
-	code := m.Run()
+		router := server.NewRouter(
+			config.Config{
+				BasePath:          "/",
+				EnableOAuthGoogle: false,
+			},
+			dbPool,
+			nil,
+		)
+		testServer = httptest.NewServer(router)
+		defer testServer.Close()
 
-	testServer.Close()
-	dbPool.Close()
-	container.Terminate(ctx)
-
+		return m.Run() /* return exit code */
+	}()
 	os.Exit(code)
 }
 
