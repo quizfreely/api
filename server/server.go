@@ -31,6 +31,10 @@ func NewRouter(config qzfrAPIConfig.Config, dbPool *pgxpool.Pool, s3Client *s3.C
 		UsercontentBaseURL: &config.UsercontentBaseURL,
 	}
 
+	router.Get("/ping", func (w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("pong"))
+	})
+	router.Get("/health", restHandler.Health)
 	router.Post(
 		"/v0/auth/sign-up",
 		authHandler.SignUp,
