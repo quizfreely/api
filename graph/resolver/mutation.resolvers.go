@@ -345,7 +345,7 @@ func (r *mutationResolver) UpdateUser(ctx context.Context, displayName *string) 
 
 	var updatedUser model.AuthedUser
 	err = pgxscan.Get(ctx, tx, &updatedUser,
-		`UPDATE auth.users SET display_name = $1 WHERE id = $2 RETURNING id, display_name`,
+		`UPDATE auth.users SET display_name = $1 WHERE id = $2 RETURNING id, username, display_name`,
 		*displayName, authedUser.ID)
 
 	if err != nil {
@@ -607,6 +607,7 @@ FROM studysets s
 WHERE s.id = $2 AND s.draft = false AND (s.private = false OR s.user_id = $1)
 RETURNING
 	id,
+	studyset_id,
 	to_char(timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as timestamp,
 	questions_correct,
 	questions_total,
@@ -647,6 +648,7 @@ func (r *mutationResolver) UpdatePracticeTest(ctx context.Context, input *model.
 WHERE user_id = $1 AND id = $2
 RETURNING
 	id,
+	studyset_id,
 	to_char(timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as timestamp,
 	questions_correct,
 	questions_total,
