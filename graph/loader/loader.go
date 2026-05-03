@@ -573,66 +573,77 @@ ORDER BY input.og_order ASC, pt.timestamp DESC`,
 	return orderedPracticeTests, nil
 }
 
-func (dr *dataReader) getTermsFSRSCards(ctx context.Context, termIDs []string) ([][]*model.TermProgressHistory, []error) {
+func (dr *dataReader) getFSRSCardsByTermIDs(ctx context.Context, termIDs []string) ([]*model.FSRSCard, []error) {
 	authedUser := auth.AuthedUserContext(ctx)
 	if authedUser == nil || authedUser.ID == nil {
 		return nil, nil
 	}
 
-	type dbTermProgressHistory struct {
-		ID                 *string `db:"id"`
-		TermID             *string `db:"term_id"`
-		Timestamp          *string `db:"timestamp"`
-		TermCorrectCount   *int32  `db:"term_correct_count"`
-		TermIncorrectCount *int32  `db:"term_incorrect_count"`
-		DefCorrectCount    *int32  `db:"def_correct_count"`
-		DefIncorrectCount  *int32  `db:"def_incorrect_count"`
-	}
-
-	var dbHistory []*dbTermProgressHistory
-	err := pgxscan.Select(
+	rows, err := dr.db.Query(
 		ctx,
-		dr.db,
-		&dbHistory,
-		`SELECT tph.id,
-    tph.term_id,
-    to_char(tph.timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as timestamp,
-    tph.term_correct_count,
-    tph.term_incorrect_count,
-    tph.def_correct_count,
-    tph.def_incorrect_count
+		`SELECT fc.term_id,
+    fc.difficulty,
+	to_char(fc.due, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as due,
+    fc.lapses,
+	to_char(fc.last_review, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as last_review,
+    fc.learning_steps,
+    fc.reps,
+    fc.scheduled_days,
+    fc.stability,
+    fc.state
 FROM unnest($1::uuid[]) WITH ORDINALITY AS input(term_id, og_order)
-LEFT JOIN term_progress_history tph
-	ON tph.term_id = input.term_id
-	AND tph.user_id = $2
-ORDER BY input.og_order ASC, tph.timestamp DESC`,
+LEFT JOIN fsrs_cards fc
+	ON fc.term_id = input.term_id
+	AND fc.user_id = $2
+ORDER BY input.og_order`,
 		termIDs,
 		authedUser.ID,
 	)
 	if err != nil {
 		return nil, []error{err}
 	}
+	defer rows.Close()
 
-	grouped := make(map[string][]*model.TermProgressHistory)
-	for _, dbTph := range dbHistory {
-		if dbTph.ID != nil && dbTph.TermID != nil {
-			grouped[*dbTph.TermID] = append(grouped[*dbTph.TermID], &model.TermProgressHistory{
-				ID:                 dbTph.ID,
-				Timestamp:          dbTph.Timestamp,
-				TermCorrectCount:   dbTph.TermCorrectCount,
-				TermIncorrectCount: dbTph.TermIncorrectCount,
-				DefCorrectCount:    dbTph.DefCorrectCount,
-				DefIncorrectCount:  dbTph.DefIncorrectCount,
-			})
+	type dbFSRSCard struct {
+		TermID        *string   `db:"term_id"`
+		Difficulty    *float64   `db:"difficulty"`
+		Due           *string    `db:"due"`
+		Lapses        *int32     `db:"lapses"`
+		LastReview    *string   `db:"last_review"`
+		LearningSteps *int32     `db:"learning_steps"`
+		Reps          *int32     `db:"reps"`
+		ScheduledDays *int32     `db:"scheduled_days"`
+		Stability     *float64   `db:"stability"`
+		State         *model.FSRSState `db:"state"`
+	}
+
+	var fsrsCards []*model.FSRSCard
+	for rows.Next() {
+		var fc dbFSRSCard
+		err := pgxscan.ScanRow(&fc, rows)
+		if err != nil {
+			return nil, []error{err}
+		}
+
+		if fc.TermID == nil {
+			fsrsCards = append(fsrsCards, nil)
+		} else {
+			modelFc := &model.FSRSCard{
+				Difficulty:    *fc.Difficulty,
+				Due:           *fc.Due,
+				Lapses:        *fc.Lapses,
+				LastReview: fc.LastReview, /* actually nullable, so it's a pointer */
+				LearningSteps: *fc.LearningSteps,
+				Reps: *fc.Reps,
+				ScheduledDays: *fc.ScheduledDays,
+				Stability: *fc.Stability,
+				State: *fc.State,
+			}
+			fsrsCards = append(fsrsCards, modelFc)
 		}
 	}
 
-	orderedProgressHistory := make([][]*model.TermProgressHistory, len(termIDs))
-	for i, id := range termIDs {
-		orderedProgressHistory[i] = grouped[id]
-	}
-
-	return orderedProgressHistory, nil
+	return fsrsCards, nil
 }
 
 // Loaders wrap your data loaders to inject via middleware
@@ -646,6 +657,7 @@ type Loaders struct {
 	TermTopConfusionPairsLoader        *dataloadgen.Loader[string, []*model.TermConfusionPair]
 	TermTopReverseConfusionPairsLoader *dataloadgen.Loader[string, []*model.TermConfusionPair]
 	PracticeTestByStudysetIDLoader     *dataloadgen.Loader[string, []*model.PracticeTest]
+	FSRSCardByTermIDLoader     *dataloadgen.Loader[string, *model.FSRSCard]
 }
 
 // NewLoaders instantiates data loaders for the middleware
@@ -665,6 +677,7 @@ func NewLoaders(db *pgxpool.Pool, usercontentBaseURL *string) *Loaders {
 		TermTopConfusionPairsLoader:        dataloadgen.NewLoader(dr.getTermsTopConfusionPairs, dataloadgen.WithWait(time.Millisecond)),
 		TermTopReverseConfusionPairsLoader: dataloadgen.NewLoader(dr.getTermsTopReverseConfusionPairs, dataloadgen.WithWait(time.Millisecond)),
 		PracticeTestByStudysetIDLoader:     dataloadgen.NewLoader(dr.getPracticeTestsByStudysetIDs, dataloadgen.WithWait(time.Millisecond)),
+		FSRSCardByTermIDLoader:     dataloadgen.NewLoader(dr.getFSRSCardsByTermIDs, dataloadgen.WithWait(time.Millisecond)),
 	}
 }
 
@@ -785,5 +798,15 @@ func GetPracticeTestsByStudysetID(ctx context.Context, studysetID string) ([]*mo
 func GetPracticeTestsByStudysetIDs(ctx context.Context, studysetIDs []string) ([][]*model.PracticeTest, error) {
 	loaders := For(ctx)
 	return loaders.PracticeTestByStudysetIDLoader.LoadAll(ctx, studysetIDs)
+}
+
+func GetFSRSCardByTermID(ctx context.Context, termID string) (*model.FSRSCard, error) {
+	loaders := For(ctx)
+	return loaders.FSRSCardByTermIDLoader.Load(ctx, studysetID)
+}
+
+func GETFSRSCardsByTermIDs(ctx context.Context, termIDs []string) ([]*model.FSRSCard, error) {
+	loaders := For(ctx)
+	return loaders.FSRSCardByTermIDLoader.LoadAll(ctx, termIDs)
 }
 
