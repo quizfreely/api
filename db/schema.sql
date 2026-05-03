@@ -1,4 +1,4 @@
-\restrict 9flRpkWjitKhkFWuoc6ba3ckK31nmbSV7dQg1g5wOtf1cOc2fPAqkIeU4OSYzv0
+\restrict A5mMdu7dRkrRCNi8bPOHI8RPg76VnfLDvUgmD5npwU6xNIvkadW1a7IcpUgaNR7
 
 -- Dumped from database version 18.2
 -- Dumped by pg_dump version 18.2
@@ -68,12 +68,37 @@ CREATE TYPE public.answer_with_enum AS ENUM (
 
 
 --
--- Name: auth_type_enum; Type: TYPE; Schema: public; Owner: -
+-- Name: auth_type; Type: TYPE; Schema: public; Owner: -
 --
 
-CREATE TYPE public.auth_type_enum AS ENUM (
+CREATE TYPE public.auth_type AS ENUM (
     'USERNAME_PASSWORD',
     'OAUTH_GOOGLE'
+);
+
+
+--
+-- Name: fsrs_rating; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.fsrs_rating AS ENUM (
+    'MANUAL',
+    'AGAIN',
+    'HARD',
+    'GOOD',
+    'EASY'
+);
+
+
+--
+-- Name: fsrs_state; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.fsrs_state AS ENUM (
+    'NEW',
+    'LEARNING',
+    'REVIEW',
+    'RELEARNING'
 );
 
 
@@ -114,7 +139,7 @@ CREATE TABLE auth.users (
     username text,
     encrypted_password text,
     display_name text NOT NULL,
-    auth_type public.auth_type_enum NOT NULL,
+    auth_type public.auth_type NOT NULL,
     oauth_google_sub text,
     oauth_google_email text,
     mod_perms boolean DEFAULT false NOT NULL,
@@ -143,6 +168,44 @@ CREATE TABLE public.folders (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     user_id uuid,
     name text NOT NULL
+);
+
+
+--
+-- Name: fsrs_cards; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.fsrs_cards (
+    term_id uuid NOT NULL,
+    user_id uuid NOT NULL,
+    difficulty double precision NOT NULL,
+    due timestamp with time zone NOT NULL,
+    lapses integer NOT NULL,
+    last_review timestamp with time zone,
+    learning_steps integer NOT NULL,
+    reps integer NOT NULL,
+    scheduled_days integer NOT NULL,
+    stability double precision NOT NULL,
+    state public.fsrs_state NOT NULL
+);
+
+
+--
+-- Name: fsrs_review_logs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.fsrs_review_logs (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    term_id uuid,
+    user_id uuid,
+    difficulty double precision NOT NULL,
+    due timestamp with time zone NOT NULL,
+    learning_steps integer NOT NULL,
+    rating public.fsrs_rating NOT NULL,
+    review timestamp with time zone NOT NULL,
+    scheduled_days integer NOT NULL,
+    stability double precision NOT NULL,
+    state public.fsrs_state NOT NULL
 );
 
 
@@ -205,7 +268,8 @@ CREATE TABLE public.studysets (
     tsvector_title tsvector GENERATED ALWAYS AS (to_tsvector('english'::regconfig, title)) STORED,
     subject_id text,
     created_at timestamp with time zone DEFAULT now(),
-    draft boolean DEFAULT false NOT NULL
+    draft boolean DEFAULT false NOT NULL,
+    seo_indexing_approved boolean DEFAULT false NOT NULL
 );
 
 
@@ -364,6 +428,22 @@ ALTER TABLE ONLY public.folder_studysets
 
 ALTER TABLE ONLY public.folders
     ADD CONSTRAINT folders_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: fsrs_cards fsrs_cards_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.fsrs_cards
+    ADD CONSTRAINT fsrs_cards_pkey PRIMARY KEY (term_id, user_id);
+
+
+--
+-- Name: fsrs_review_logs fsrs_review_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.fsrs_review_logs
+    ADD CONSTRAINT fsrs_review_logs_pkey PRIMARY KEY (id);
 
 
 --
@@ -538,6 +618,38 @@ ALTER TABLE ONLY public.folders
 
 
 --
+-- Name: fsrs_cards fsrs_cards_term_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.fsrs_cards
+    ADD CONSTRAINT fsrs_cards_term_id_fkey FOREIGN KEY (term_id) REFERENCES public.terms(id);
+
+
+--
+-- Name: fsrs_cards fsrs_cards_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.fsrs_cards
+    ADD CONSTRAINT fsrs_cards_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id);
+
+
+--
+-- Name: fsrs_review_logs fsrs_review_logs_term_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.fsrs_review_logs
+    ADD CONSTRAINT fsrs_review_logs_term_id_fkey FOREIGN KEY (term_id) REFERENCES public.terms(id);
+
+
+--
+-- Name: fsrs_review_logs fsrs_review_logs_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.fsrs_review_logs
+    ADD CONSTRAINT fsrs_review_logs_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id);
+
+
+--
 -- Name: practice_tests practice_tests_studyset_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -677,7 +789,7 @@ ALTER TABLE ONLY public.terms
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 9flRpkWjitKhkFWuoc6ba3ckK31nmbSV7dQg1g5wOtf1cOc2fPAqkIeU4OSYzv0
+\unrestrict A5mMdu7dRkrRCNi8bPOHI8RPg76VnfLDvUgmD5npwU6xNIvkadW1a7IcpUgaNR7
 
 
 --
@@ -712,4 +824,7 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('202603021910'),
     ('202603031915'),
     ('202603071210'),
-    ('202603071640');
+    ('202603071640'),
+    ('202603212200'),
+    ('202605031122'),
+    ('202605031337');

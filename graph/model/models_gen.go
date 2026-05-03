@@ -25,6 +25,29 @@ type FRQInput struct {
 	AnsweredString    *string     `json:"answeredString,omitempty"`
 }
 
+type FSRSCard struct {
+	Difficulty    float64   `json:"difficulty"`
+	Due           string    `json:"due"`
+	Lapses        int32     `json:"lapses"`
+	LastReview    *string   `json:"lastReview,omitempty"`
+	LearningSteps int32     `json:"learningSteps"`
+	Reps          int32     `json:"reps"`
+	ScheduledDays int32     `json:"scheduledDays"`
+	Stability     float64   `json:"stability"`
+	State         FSRSState `json:"state"`
+}
+
+type FSRSReviewLog struct {
+	Difficulty    float64    `json:"difficulty"`
+	Due           string     `json:"due"`
+	LearningSteps int32      `json:"learningSteps"`
+	Rating        FSRSRating `json:"rating"`
+	Review        string     `json:"review"`
+	ScheduledDays int32      `json:"scheduledDays"`
+	Stability     float64    `json:"stability"`
+	State         FSRSState  `json:"state"`
+}
+
 type FolderConnection struct {
 	Edges    []*FolderEdge `json:"edges"`
 	PageInfo *PageInfo     `json:"pageInfo"`
@@ -277,6 +300,126 @@ func (e *AuthType) UnmarshalJSON(b []byte) error {
 }
 
 func (e AuthType) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type FSRSRating string
+
+const (
+	FSRSRatingManual FSRSRating = "MANUAL"
+	FSRSRatingAgain  FSRSRating = "AGAIN"
+	FSRSRatingHard   FSRSRating = "HARD"
+	FSRSRatingGood   FSRSRating = "GOOD"
+	FSRSRatingEasy   FSRSRating = "EASY"
+)
+
+var AllFSRSRating = []FSRSRating{
+	FSRSRatingManual,
+	FSRSRatingAgain,
+	FSRSRatingHard,
+	FSRSRatingGood,
+	FSRSRatingEasy,
+}
+
+func (e FSRSRating) IsValid() bool {
+	switch e {
+	case FSRSRatingManual, FSRSRatingAgain, FSRSRatingHard, FSRSRatingGood, FSRSRatingEasy:
+		return true
+	}
+	return false
+}
+
+func (e FSRSRating) String() string {
+	return string(e)
+}
+
+func (e *FSRSRating) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = FSRSRating(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid FSRSRating", str)
+	}
+	return nil
+}
+
+func (e FSRSRating) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *FSRSRating) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e FSRSRating) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type FSRSState string
+
+const (
+	FSRSStateNew        FSRSState = "NEW"
+	FSRSStateLearning   FSRSState = "LEARNING"
+	FSRSStateReview     FSRSState = "REVIEW"
+	FSRSStateRelearning FSRSState = "RELEARNING"
+)
+
+var AllFSRSState = []FSRSState{
+	FSRSStateNew,
+	FSRSStateLearning,
+	FSRSStateReview,
+	FSRSStateRelearning,
+}
+
+func (e FSRSState) IsValid() bool {
+	switch e {
+	case FSRSStateNew, FSRSStateLearning, FSRSStateReview, FSRSStateRelearning:
+		return true
+	}
+	return false
+}
+
+func (e FSRSState) String() string {
+	return string(e)
+}
+
+func (e *FSRSState) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = FSRSState(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid FSRSState", str)
+	}
+	return nil
+}
+
+func (e FSRSState) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *FSRSState) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e FSRSState) MarshalJSON() ([]byte, error) {
 	var buf bytes.Buffer
 	e.MarshalGQL(&buf)
 	return buf.Bytes(), nil

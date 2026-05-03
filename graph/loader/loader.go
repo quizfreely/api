@@ -564,6 +564,68 @@ ORDER BY input.og_order ASC, pt.timestamp DESC`,
 	return orderedPracticeTests, nil
 }
 
+func (dr *dataReader) getTermsFSRSCards(ctx context.Context, termIDs []string) ([][]*model.TermProgressHistory, []error) {
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil || authedUser.ID == nil {
+		return nil, nil
+	}
+
+	type dbTermProgressHistory struct {
+		ID                 *string `db:"id"`
+		TermID             *string `db:"term_id"`
+		Timestamp          *string `db:"timestamp"`
+		TermCorrectCount   *int32  `db:"term_correct_count"`
+		TermIncorrectCount *int32  `db:"term_incorrect_count"`
+		DefCorrectCount    *int32  `db:"def_correct_count"`
+		DefIncorrectCount  *int32  `db:"def_incorrect_count"`
+	}
+
+	var dbHistory []*dbTermProgressHistory
+	err := pgxscan.Select(
+		ctx,
+		dr.db,
+		&dbHistory,
+		`SELECT tph.id,
+    tph.term_id,
+    to_char(tph.timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as timestamp,
+    tph.term_correct_count,
+    tph.term_incorrect_count,
+    tph.def_correct_count,
+    tph.def_incorrect_count
+FROM unnest($1::uuid[]) WITH ORDINALITY AS input(term_id, og_order)
+LEFT JOIN term_progress_history tph
+	ON tph.term_id = input.term_id
+	AND tph.user_id = $2
+ORDER BY input.og_order ASC, tph.timestamp DESC`,
+		termIDs,
+		authedUser.ID,
+	)
+	if err != nil {
+		return nil, []error{err}
+	}
+
+	grouped := make(map[string][]*model.TermProgressHistory)
+	for _, dbTph := range dbHistory {
+		if dbTph.ID != nil && dbTph.TermID != nil {
+			grouped[*dbTph.TermID] = append(grouped[*dbTph.TermID], &model.TermProgressHistory{
+				ID:                 dbTph.ID,
+				Timestamp:          dbTph.Timestamp,
+				TermCorrectCount:   dbTph.TermCorrectCount,
+				TermIncorrectCount: dbTph.TermIncorrectCount,
+				DefCorrectCount:    dbTph.DefCorrectCount,
+				DefIncorrectCount:  dbTph.DefIncorrectCount,
+			})
+		}
+	}
+
+	orderedProgressHistory := make([][]*model.TermProgressHistory, len(termIDs))
+	for i, id := range termIDs {
+		orderedProgressHistory[i] = grouped[id]
+	}
+
+	return orderedProgressHistory, nil
+}
+
 // Loaders wrap your data loaders to inject via middleware
 type Loaders struct {
 	UserLoader                         *dataloadgen.Loader[string, *model.User]

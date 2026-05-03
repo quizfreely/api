@@ -14,8 +14,8 @@ import (
 	"strings"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
-	"github.com/rs/zerolog/log"
 	pgx "github.com/jackc/pgx/v5"
+	"github.com/rs/zerolog/log"
 )
 
 // CreateStudyset is the resolver for the createStudyset field.
@@ -855,7 +855,7 @@ func (r *mutationResolver) SetStudysetSeoIndexing(ctx context.Context, studysetI
 		log.Error().Err(err).Msg("DB Error in SetStudysetSeoIndexing")
 		return false, errors.New("DB Error in SetStudysetSeoIndexing")
 	}
-    return tag.RowsAffected() == 1, nil
+	return tag.RowsAffected() == 1, nil
 }
 
 // Mutation returns graph.MutationResolver implementation.

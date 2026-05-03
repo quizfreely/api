@@ -9,6 +9,8 @@ type Term {
     progressHistory: [TermProgressHistory]
     topConfusionPairs: [TermConfusionPair]
     topReverseConfusionPairs: [TermConfusionPair]
+    fsrsCard: FSRSCard
+    fsrsReviewLogs: [FSRSReviewLog!]
     createdAt: String
     updatedAt: String
 }
@@ -72,3 +74,38 @@ input TermConfusionPairInput {
     confusedCountIncrease: Int
     confusedAt: String
 }
+enum FSRSState {
+    NEW
+    LEARNING
+    REVIEW
+    RELEARNING
+}
+type FSRSCard {
+    difficulty: Float!
+    due: String!
+    lapses: Int!
+    lastReview: String
+    learningSteps: Int!
+    reps: Int!
+    scheduledDays: Int!
+    stability: Float!
+    state: FSRSState!
+}
+enum FSRSRating {
+    MANUAL
+    AGAIN
+    HARD
+    GOOD
+    EASY
+}
+type FSRSReviewLog {
+    difficulty: Float!
+    due: String!
+    learningSteps: Int!
+    rating: FSRSRating!
+    review: String!
+    scheduledDays: Int!
+    stability: Float!
+    state: FSRSState!
+}
+

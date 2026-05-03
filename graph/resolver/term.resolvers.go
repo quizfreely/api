@@ -6,6 +6,7 @@ package resolver
 
 import (
 	"context"
+	"fmt"
 	"quizfreely/api/auth"
 	"quizfreely/api/graph"
 	"quizfreely/api/graph/loader"
@@ -50,6 +51,16 @@ func (r *termResolver) TopReverseConfusionPairs(ctx context.Context, obj *model.
 	}
 
 	return loader.GetTermTopReverseConfusionPairs(ctx, *obj.ID)
+}
+
+// FsrsCard is the resolver for the fsrsCard field.
+func (r *termResolver) FsrsCard(ctx context.Context, obj *model.Term) (*model.FSRSCard, error) {
+	panic(fmt.Errorf("not implemented: FsrsCard - fsrsCard"))
+}
+
+// FsrsReviewLogs is the resolver for the fsrsReviewLogs field.
+func (r *termResolver) FsrsReviewLogs(ctx context.Context, obj *model.Term) ([]*model.FSRSReviewLog, error) {
+	panic(fmt.Errorf("not implemented: FsrsReviewLogs - fsrsReviewLogs"))
 }
 
 // Term is the resolver for the term field.

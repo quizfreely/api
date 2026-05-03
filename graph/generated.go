@@ -70,6 +70,29 @@ type ComplexityRoot struct {
 		UserMarkedCorrect func(childComplexity int) int
 	}
 
+	FSRSCard struct {
+		Difficulty    func(childComplexity int) int
+		Due           func(childComplexity int) int
+		Lapses        func(childComplexity int) int
+		LastReview    func(childComplexity int) int
+		LearningSteps func(childComplexity int) int
+		Reps          func(childComplexity int) int
+		ScheduledDays func(childComplexity int) int
+		Stability     func(childComplexity int) int
+		State         func(childComplexity int) int
+	}
+
+	FSRSReviewLog struct {
+		Difficulty    func(childComplexity int) int
+		Due           func(childComplexity int) int
+		LearningSteps func(childComplexity int) int
+		Rating        func(childComplexity int) int
+		Review        func(childComplexity int) int
+		ScheduledDays func(childComplexity int) int
+		Stability     func(childComplexity int) int
+		State         func(childComplexity int) int
+	}
+
 	Folder struct {
 		ID             func(childComplexity int) int
 		Name           func(childComplexity int) int
@@ -217,6 +240,8 @@ type ComplexityRoot struct {
 		CreatedAt                func(childComplexity int) int
 		Def                      func(childComplexity int) int
 		DefImageURL              func(childComplexity int) int
+		FsrsCard                 func(childComplexity int) int
+		FsrsReviewLogs           func(childComplexity int) int
 		ID                       func(childComplexity int) int
 		Progress                 func(childComplexity int) int
 		ProgressHistory          func(childComplexity int) int
@@ -349,6 +374,8 @@ type TermResolver interface {
 	ProgressHistory(ctx context.Context, obj *model.Term) ([]*model.TermProgressHistory, error)
 	TopConfusionPairs(ctx context.Context, obj *model.Term) ([]*model.TermConfusionPair, error)
 	TopReverseConfusionPairs(ctx context.Context, obj *model.Term) ([]*model.TermConfusionPair, error)
+	FsrsCard(ctx context.Context, obj *model.Term) (*model.FSRSCard, error)
+	FsrsReviewLogs(ctx context.Context, obj *model.Term) ([]*model.FSRSReviewLog, error)
 }
 type TermConfusionPairResolver interface {
 	Term(ctx context.Context, obj *model.TermConfusionPair) (*model.Term, error)
@@ -454,6 +481,125 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.FRQ.UserMarkedCorrect(childComplexity), true
+
+	case "FSRSCard.difficulty":
+		if e.complexity.FSRSCard.Difficulty == nil {
+			break
+		}
+
+		return e.complexity.FSRSCard.Difficulty(childComplexity), true
+
+	case "FSRSCard.due":
+		if e.complexity.FSRSCard.Due == nil {
+			break
+		}
+
+		return e.complexity.FSRSCard.Due(childComplexity), true
+
+	case "FSRSCard.lapses":
+		if e.complexity.FSRSCard.Lapses == nil {
+			break
+		}
+
+		return e.complexity.FSRSCard.Lapses(childComplexity), true
+
+	case "FSRSCard.lastReview":
+		if e.complexity.FSRSCard.LastReview == nil {
+			break
+		}
+
+		return e.complexity.FSRSCard.LastReview(childComplexity), true
+
+	case "FSRSCard.learningSteps":
+		if e.complexity.FSRSCard.LearningSteps == nil {
+			break
+		}
+
+		return e.complexity.FSRSCard.LearningSteps(childComplexity), true
+
+	case "FSRSCard.reps":
+		if e.complexity.FSRSCard.Reps == nil {
+			break
+		}
+
+		return e.complexity.FSRSCard.Reps(childComplexity), true
+
+	case "FSRSCard.scheduledDays":
+		if e.complexity.FSRSCard.ScheduledDays == nil {
+			break
+		}
+
+		return e.complexity.FSRSCard.ScheduledDays(childComplexity), true
+
+	case "FSRSCard.stability":
+		if e.complexity.FSRSCard.Stability == nil {
+			break
+		}
+
+		return e.complexity.FSRSCard.Stability(childComplexity), true
+
+	case "FSRSCard.state":
+		if e.complexity.FSRSCard.State == nil {
+			break
+		}
+
+		return e.complexity.FSRSCard.State(childComplexity), true
+
+	case "FSRSReviewLog.difficulty":
+		if e.complexity.FSRSReviewLog.Difficulty == nil {
+			break
+		}
+
+		return e.complexity.FSRSReviewLog.Difficulty(childComplexity), true
+
+	case "FSRSReviewLog.due":
+		if e.complexity.FSRSReviewLog.Due == nil {
+			break
+		}
+
+		return e.complexity.FSRSReviewLog.Due(childComplexity), true
+
+	case "FSRSReviewLog.learningSteps":
+		if e.complexity.FSRSReviewLog.LearningSteps == nil {
+			break
+		}
+
+		return e.complexity.FSRSReviewLog.LearningSteps(childComplexity), true
+
+	case "FSRSReviewLog.rating":
+		if e.complexity.FSRSReviewLog.Rating == nil {
+			break
+		}
+
+		return e.complexity.FSRSReviewLog.Rating(childComplexity), true
+
+	case "FSRSReviewLog.review":
+		if e.complexity.FSRSReviewLog.Review == nil {
+			break
+		}
+
+		return e.complexity.FSRSReviewLog.Review(childComplexity), true
+
+	case "FSRSReviewLog.scheduledDays":
+		if e.complexity.FSRSReviewLog.ScheduledDays == nil {
+			break
+		}
+
+		return e.complexity.FSRSReviewLog.ScheduledDays(childComplexity), true
+
+	case "FSRSReviewLog.stability":
+		if e.complexity.FSRSReviewLog.Stability == nil {
+			break
+		}
+
+		return e.complexity.FSRSReviewLog.Stability(childComplexity), true
+
+	case "FSRSReviewLog.state":
+		if e.complexity.FSRSReviewLog.State == nil {
+			break
+		}
+
+		return e.complexity.FSRSReviewLog.State(childComplexity), true
 
 	case "Folder.id":
 		if e.complexity.Folder.ID == nil {
@@ -1387,6 +1533,20 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Term.DefImageURL(childComplexity), true
+
+	case "Term.fsrsCard":
+		if e.complexity.Term.FsrsCard == nil {
+			break
+		}
+
+		return e.complexity.Term.FsrsCard(childComplexity), true
+
+	case "Term.fsrsReviewLogs":
+		if e.complexity.Term.FsrsReviewLogs == nil {
+			break
+		}
+
+		return e.complexity.Term.FsrsReviewLogs(childComplexity), true
 
 	case "Term.id":
 		if e.complexity.Term.ID == nil {
@@ -2947,6 +3107,10 @@ func (ec *executionContext) fieldContext_FRQ_term(_ context.Context, field graph
 				return ec.fieldContext_Term_topConfusionPairs(ctx, field)
 			case "topReverseConfusionPairs":
 				return ec.fieldContext_Term_topReverseConfusionPairs(ctx, field)
+			case "fsrsCard":
+				return ec.fieldContext_Term_fsrsCard(ctx, field)
+			case "fsrsReviewLogs":
+				return ec.fieldContext_Term_fsrsReviewLogs(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Term_createdAt(ctx, field)
 			case "updatedAt":
@@ -3117,6 +3281,751 @@ func (ec *executionContext) fieldContext_FRQ_answeredString(_ context.Context, f
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FSRSCard_difficulty(ctx context.Context, field graphql.CollectedField, obj *model.FSRSCard) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FSRSCard_difficulty(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Difficulty, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FSRSCard_difficulty(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FSRSCard",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FSRSCard_due(ctx context.Context, field graphql.CollectedField, obj *model.FSRSCard) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FSRSCard_due(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Due, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FSRSCard_due(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FSRSCard",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FSRSCard_lapses(ctx context.Context, field graphql.CollectedField, obj *model.FSRSCard) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FSRSCard_lapses(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Lapses, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int32)
+	fc.Result = res
+	return ec.marshalNInt2int32(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FSRSCard_lapses(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FSRSCard",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FSRSCard_lastReview(ctx context.Context, field graphql.CollectedField, obj *model.FSRSCard) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FSRSCard_lastReview(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LastReview, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FSRSCard_lastReview(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FSRSCard",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FSRSCard_learningSteps(ctx context.Context, field graphql.CollectedField, obj *model.FSRSCard) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FSRSCard_learningSteps(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LearningSteps, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int32)
+	fc.Result = res
+	return ec.marshalNInt2int32(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FSRSCard_learningSteps(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FSRSCard",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FSRSCard_reps(ctx context.Context, field graphql.CollectedField, obj *model.FSRSCard) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FSRSCard_reps(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Reps, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int32)
+	fc.Result = res
+	return ec.marshalNInt2int32(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FSRSCard_reps(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FSRSCard",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FSRSCard_scheduledDays(ctx context.Context, field graphql.CollectedField, obj *model.FSRSCard) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FSRSCard_scheduledDays(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ScheduledDays, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int32)
+	fc.Result = res
+	return ec.marshalNInt2int32(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FSRSCard_scheduledDays(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FSRSCard",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FSRSCard_stability(ctx context.Context, field graphql.CollectedField, obj *model.FSRSCard) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FSRSCard_stability(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Stability, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FSRSCard_stability(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FSRSCard",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FSRSCard_state(ctx context.Context, field graphql.CollectedField, obj *model.FSRSCard) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FSRSCard_state(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.State, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.FSRSState)
+	fc.Result = res
+	return ec.marshalNFSRSState2quizfreelyᚋapiᚋgraphᚋmodelᚐFSRSState(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FSRSCard_state(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FSRSCard",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type FSRSState does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FSRSReviewLog_difficulty(ctx context.Context, field graphql.CollectedField, obj *model.FSRSReviewLog) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FSRSReviewLog_difficulty(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Difficulty, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FSRSReviewLog_difficulty(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FSRSReviewLog",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FSRSReviewLog_due(ctx context.Context, field graphql.CollectedField, obj *model.FSRSReviewLog) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FSRSReviewLog_due(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Due, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FSRSReviewLog_due(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FSRSReviewLog",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FSRSReviewLog_learningSteps(ctx context.Context, field graphql.CollectedField, obj *model.FSRSReviewLog) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FSRSReviewLog_learningSteps(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LearningSteps, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int32)
+	fc.Result = res
+	return ec.marshalNInt2int32(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FSRSReviewLog_learningSteps(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FSRSReviewLog",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FSRSReviewLog_rating(ctx context.Context, field graphql.CollectedField, obj *model.FSRSReviewLog) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FSRSReviewLog_rating(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Rating, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.FSRSRating)
+	fc.Result = res
+	return ec.marshalNFSRSRating2quizfreelyᚋapiᚋgraphᚋmodelᚐFSRSRating(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FSRSReviewLog_rating(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FSRSReviewLog",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type FSRSRating does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FSRSReviewLog_review(ctx context.Context, field graphql.CollectedField, obj *model.FSRSReviewLog) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FSRSReviewLog_review(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Review, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FSRSReviewLog_review(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FSRSReviewLog",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FSRSReviewLog_scheduledDays(ctx context.Context, field graphql.CollectedField, obj *model.FSRSReviewLog) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FSRSReviewLog_scheduledDays(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ScheduledDays, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int32)
+	fc.Result = res
+	return ec.marshalNInt2int32(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FSRSReviewLog_scheduledDays(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FSRSReviewLog",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FSRSReviewLog_stability(ctx context.Context, field graphql.CollectedField, obj *model.FSRSReviewLog) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FSRSReviewLog_stability(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Stability, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FSRSReviewLog_stability(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FSRSReviewLog",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FSRSReviewLog_state(ctx context.Context, field graphql.CollectedField, obj *model.FSRSReviewLog) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FSRSReviewLog_state(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.State, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.FSRSState)
+	fc.Result = res
+	return ec.marshalNFSRSState2quizfreelyᚋapiᚋgraphᚋmodelᚐFSRSState(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FSRSReviewLog_state(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FSRSReviewLog",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type FSRSState does not have child fields")
 		},
 	}
 	return fc, nil
@@ -3691,6 +4600,10 @@ func (ec *executionContext) fieldContext_MCQ_term(_ context.Context, field graph
 				return ec.fieldContext_Term_topConfusionPairs(ctx, field)
 			case "topReverseConfusionPairs":
 				return ec.fieldContext_Term_topReverseConfusionPairs(ctx, field)
+			case "fsrsCard":
+				return ec.fieldContext_Term_fsrsCard(ctx, field)
+			case "fsrsReviewLogs":
+				return ec.fieldContext_Term_fsrsReviewLogs(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Term_createdAt(ctx, field)
 			case "updatedAt":
@@ -3840,6 +4753,10 @@ func (ec *executionContext) fieldContext_MCQ_answeredTerm(_ context.Context, fie
 				return ec.fieldContext_Term_topConfusionPairs(ctx, field)
 			case "topReverseConfusionPairs":
 				return ec.fieldContext_Term_topReverseConfusionPairs(ctx, field)
+			case "fsrsCard":
+				return ec.fieldContext_Term_fsrsCard(ctx, field)
+			case "fsrsReviewLogs":
+				return ec.fieldContext_Term_fsrsReviewLogs(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Term_createdAt(ctx, field)
 			case "updatedAt":
@@ -3907,6 +4824,10 @@ func (ec *executionContext) fieldContext_MCQ_distractors(_ context.Context, fiel
 				return ec.fieldContext_Term_topConfusionPairs(ctx, field)
 			case "topReverseConfusionPairs":
 				return ec.fieldContext_Term_topReverseConfusionPairs(ctx, field)
+			case "fsrsCard":
+				return ec.fieldContext_Term_fsrsCard(ctx, field)
+			case "fsrsReviewLogs":
+				return ec.fieldContext_Term_fsrsReviewLogs(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Term_createdAt(ctx, field)
 			case "updatedAt":
@@ -4015,6 +4936,10 @@ func (ec *executionContext) fieldContext_MatchQuestion_term(_ context.Context, f
 				return ec.fieldContext_Term_topConfusionPairs(ctx, field)
 			case "topReverseConfusionPairs":
 				return ec.fieldContext_Term_topReverseConfusionPairs(ctx, field)
+			case "fsrsCard":
+				return ec.fieldContext_Term_fsrsCard(ctx, field)
+			case "fsrsReviewLogs":
+				return ec.fieldContext_Term_fsrsReviewLogs(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Term_createdAt(ctx, field)
 			case "updatedAt":
@@ -4164,6 +5089,10 @@ func (ec *executionContext) fieldContext_MatchQuestion_answeredTerm(_ context.Co
 				return ec.fieldContext_Term_topConfusionPairs(ctx, field)
 			case "topReverseConfusionPairs":
 				return ec.fieldContext_Term_topReverseConfusionPairs(ctx, field)
+			case "fsrsCard":
+				return ec.fieldContext_Term_fsrsCard(ctx, field)
+			case "fsrsReviewLogs":
+				return ec.fieldContext_Term_fsrsReviewLogs(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Term_createdAt(ctx, field)
 			case "updatedAt":
@@ -4436,6 +5365,10 @@ func (ec *executionContext) fieldContext_Mutation_createTerms(ctx context.Contex
 				return ec.fieldContext_Term_topConfusionPairs(ctx, field)
 			case "topReverseConfusionPairs":
 				return ec.fieldContext_Term_topReverseConfusionPairs(ctx, field)
+			case "fsrsCard":
+				return ec.fieldContext_Term_fsrsCard(ctx, field)
+			case "fsrsReviewLogs":
+				return ec.fieldContext_Term_fsrsReviewLogs(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Term_createdAt(ctx, field)
 			case "updatedAt":
@@ -4514,6 +5447,10 @@ func (ec *executionContext) fieldContext_Mutation_updateTerms(ctx context.Contex
 				return ec.fieldContext_Term_topConfusionPairs(ctx, field)
 			case "topReverseConfusionPairs":
 				return ec.fieldContext_Term_topReverseConfusionPairs(ctx, field)
+			case "fsrsCard":
+				return ec.fieldContext_Term_fsrsCard(ctx, field)
+			case "fsrsReviewLogs":
+				return ec.fieldContext_Term_fsrsReviewLogs(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Term_createdAt(ctx, field)
 			case "updatedAt":
@@ -6155,6 +7092,10 @@ func (ec *executionContext) fieldContext_Query_term(ctx context.Context, field g
 				return ec.fieldContext_Term_topConfusionPairs(ctx, field)
 			case "topReverseConfusionPairs":
 				return ec.fieldContext_Term_topReverseConfusionPairs(ctx, field)
+			case "fsrsCard":
+				return ec.fieldContext_Term_fsrsCard(ctx, field)
+			case "fsrsReviewLogs":
+				return ec.fieldContext_Term_fsrsReviewLogs(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Term_createdAt(ctx, field)
 			case "updatedAt":
@@ -8051,6 +8992,10 @@ func (ec *executionContext) fieldContext_Studyset_terms(_ context.Context, field
 				return ec.fieldContext_Term_topConfusionPairs(ctx, field)
 			case "topReverseConfusionPairs":
 				return ec.fieldContext_Term_topReverseConfusionPairs(ctx, field)
+			case "fsrsCard":
+				return ec.fieldContext_Term_fsrsCard(ctx, field)
+			case "fsrsReviewLogs":
+				return ec.fieldContext_Term_fsrsReviewLogs(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Term_createdAt(ctx, field)
 			case "updatedAt":
@@ -9237,6 +10182,126 @@ func (ec *executionContext) fieldContext_Term_topReverseConfusionPairs(_ context
 	return fc, nil
 }
 
+func (ec *executionContext) _Term_fsrsCard(ctx context.Context, field graphql.CollectedField, obj *model.Term) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Term_fsrsCard(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Term().FsrsCard(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.FSRSCard)
+	fc.Result = res
+	return ec.marshalOFSRSCard2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐFSRSCard(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Term_fsrsCard(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Term",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "difficulty":
+				return ec.fieldContext_FSRSCard_difficulty(ctx, field)
+			case "due":
+				return ec.fieldContext_FSRSCard_due(ctx, field)
+			case "lapses":
+				return ec.fieldContext_FSRSCard_lapses(ctx, field)
+			case "lastReview":
+				return ec.fieldContext_FSRSCard_lastReview(ctx, field)
+			case "learningSteps":
+				return ec.fieldContext_FSRSCard_learningSteps(ctx, field)
+			case "reps":
+				return ec.fieldContext_FSRSCard_reps(ctx, field)
+			case "scheduledDays":
+				return ec.fieldContext_FSRSCard_scheduledDays(ctx, field)
+			case "stability":
+				return ec.fieldContext_FSRSCard_stability(ctx, field)
+			case "state":
+				return ec.fieldContext_FSRSCard_state(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type FSRSCard", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Term_fsrsReviewLogs(ctx context.Context, field graphql.CollectedField, obj *model.Term) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Term_fsrsReviewLogs(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Term().FsrsReviewLogs(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.FSRSReviewLog)
+	fc.Result = res
+	return ec.marshalOFSRSReviewLog2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐFSRSReviewLogᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Term_fsrsReviewLogs(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Term",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "difficulty":
+				return ec.fieldContext_FSRSReviewLog_difficulty(ctx, field)
+			case "due":
+				return ec.fieldContext_FSRSReviewLog_due(ctx, field)
+			case "learningSteps":
+				return ec.fieldContext_FSRSReviewLog_learningSteps(ctx, field)
+			case "rating":
+				return ec.fieldContext_FSRSReviewLog_rating(ctx, field)
+			case "review":
+				return ec.fieldContext_FSRSReviewLog_review(ctx, field)
+			case "scheduledDays":
+				return ec.fieldContext_FSRSReviewLog_scheduledDays(ctx, field)
+			case "stability":
+				return ec.fieldContext_FSRSReviewLog_stability(ctx, field)
+			case "state":
+				return ec.fieldContext_FSRSReviewLog_state(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type FSRSReviewLog", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Term_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.Term) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Term_createdAt(ctx, field)
 	if err != nil {
@@ -9422,6 +10487,10 @@ func (ec *executionContext) fieldContext_TermConfusionPair_term(_ context.Contex
 				return ec.fieldContext_Term_topConfusionPairs(ctx, field)
 			case "topReverseConfusionPairs":
 				return ec.fieldContext_Term_topReverseConfusionPairs(ctx, field)
+			case "fsrsCard":
+				return ec.fieldContext_Term_fsrsCard(ctx, field)
+			case "fsrsReviewLogs":
+				return ec.fieldContext_Term_fsrsReviewLogs(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Term_createdAt(ctx, field)
 			case "updatedAt":
@@ -9492,6 +10561,10 @@ func (ec *executionContext) fieldContext_TermConfusionPair_confusedTerm(_ contex
 				return ec.fieldContext_Term_topConfusionPairs(ctx, field)
 			case "topReverseConfusionPairs":
 				return ec.fieldContext_Term_topReverseConfusionPairs(ctx, field)
+			case "fsrsCard":
+				return ec.fieldContext_Term_fsrsCard(ctx, field)
+			case "fsrsReviewLogs":
+				return ec.fieldContext_Term_fsrsReviewLogs(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Term_createdAt(ctx, field)
 			case "updatedAt":
@@ -10488,6 +11561,10 @@ func (ec *executionContext) fieldContext_TrueFalseQuestion_term(_ context.Contex
 				return ec.fieldContext_Term_topConfusionPairs(ctx, field)
 			case "topReverseConfusionPairs":
 				return ec.fieldContext_Term_topReverseConfusionPairs(ctx, field)
+			case "fsrsCard":
+				return ec.fieldContext_Term_fsrsCard(ctx, field)
+			case "fsrsReviewLogs":
+				return ec.fieldContext_Term_fsrsReviewLogs(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Term_createdAt(ctx, field)
 			case "updatedAt":
@@ -10678,6 +11755,10 @@ func (ec *executionContext) fieldContext_TrueFalseQuestion_distractor(_ context.
 				return ec.fieldContext_Term_topConfusionPairs(ctx, field)
 			case "topReverseConfusionPairs":
 				return ec.fieldContext_Term_topReverseConfusionPairs(ctx, field)
+			case "fsrsCard":
+				return ec.fieldContext_Term_fsrsCard(ctx, field)
+			case "fsrsReviewLogs":
+				return ec.fieldContext_Term_fsrsReviewLogs(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Term_createdAt(ctx, field)
 			case "updatedAt":
@@ -13607,6 +14688,156 @@ func (ec *executionContext) _FRQ(ctx context.Context, sel ast.SelectionSet, obj 
 	return out
 }
 
+var fSRSCardImplementors = []string{"FSRSCard"}
+
+func (ec *executionContext) _FSRSCard(ctx context.Context, sel ast.SelectionSet, obj *model.FSRSCard) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, fSRSCardImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("FSRSCard")
+		case "difficulty":
+			out.Values[i] = ec._FSRSCard_difficulty(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "due":
+			out.Values[i] = ec._FSRSCard_due(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "lapses":
+			out.Values[i] = ec._FSRSCard_lapses(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "lastReview":
+			out.Values[i] = ec._FSRSCard_lastReview(ctx, field, obj)
+		case "learningSteps":
+			out.Values[i] = ec._FSRSCard_learningSteps(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "reps":
+			out.Values[i] = ec._FSRSCard_reps(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "scheduledDays":
+			out.Values[i] = ec._FSRSCard_scheduledDays(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "stability":
+			out.Values[i] = ec._FSRSCard_stability(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "state":
+			out.Values[i] = ec._FSRSCard_state(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var fSRSReviewLogImplementors = []string{"FSRSReviewLog"}
+
+func (ec *executionContext) _FSRSReviewLog(ctx context.Context, sel ast.SelectionSet, obj *model.FSRSReviewLog) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, fSRSReviewLogImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("FSRSReviewLog")
+		case "difficulty":
+			out.Values[i] = ec._FSRSReviewLog_difficulty(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "due":
+			out.Values[i] = ec._FSRSReviewLog_due(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "learningSteps":
+			out.Values[i] = ec._FSRSReviewLog_learningSteps(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "rating":
+			out.Values[i] = ec._FSRSReviewLog_rating(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "review":
+			out.Values[i] = ec._FSRSReviewLog_review(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "scheduledDays":
+			out.Values[i] = ec._FSRSReviewLog_scheduledDays(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "stability":
+			out.Values[i] = ec._FSRSReviewLog_stability(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "state":
+			out.Values[i] = ec._FSRSReviewLog_state(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var folderImplementors = []string{"Folder"}
 
 func (ec *executionContext) _Folder(ctx context.Context, sel ast.SelectionSet, obj *model.Folder) graphql.Marshaler {
@@ -15391,6 +16622,72 @@ func (ec *executionContext) _Term(ctx context.Context, sel ast.SelectionSet, obj
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "fsrsCard":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Term_fsrsCard(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "fsrsReviewLogs":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Term_fsrsReviewLogs(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "createdAt":
 			out.Values[i] = ec._Term_createdAt(ctx, field, obj)
 		case "updatedAt":
@@ -16235,6 +17532,52 @@ func (ec *executionContext) marshalNBoolean2ᚖbool(ctx context.Context, sel ast
 	return res
 }
 
+func (ec *executionContext) unmarshalNFSRSRating2quizfreelyᚋapiᚋgraphᚋmodelᚐFSRSRating(ctx context.Context, v any) (model.FSRSRating, error) {
+	var res model.FSRSRating
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNFSRSRating2quizfreelyᚋapiᚋgraphᚋmodelᚐFSRSRating(ctx context.Context, sel ast.SelectionSet, v model.FSRSRating) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) marshalNFSRSReviewLog2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐFSRSReviewLog(ctx context.Context, sel ast.SelectionSet, v *model.FSRSReviewLog) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._FSRSReviewLog(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNFSRSState2quizfreelyᚋapiᚋgraphᚋmodelᚐFSRSState(ctx context.Context, v any) (model.FSRSState, error) {
+	var res model.FSRSState
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNFSRSState2quizfreelyᚋapiᚋgraphᚋmodelᚐFSRSState(ctx context.Context, sel ast.SelectionSet, v model.FSRSState) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v any) (float64, error) {
+	res, err := graphql.UnmarshalFloatContext(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNFloat2float64(ctx context.Context, sel ast.SelectionSet, v float64) graphql.Marshaler {
+	_ = sel
+	res := graphql.MarshalFloatContext(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return graphql.WrapContextMarshaler(ctx, res)
+}
+
 func (ec *executionContext) marshalNFolder2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐFolder(ctx context.Context, sel ast.SelectionSet, v *model.Folder) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -16978,6 +18321,60 @@ func (ec *executionContext) unmarshalOFRQInput2ᚖquizfreelyᚋapiᚋgraphᚋmod
 	}
 	res, err := ec.unmarshalInputFRQInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOFSRSCard2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐFSRSCard(ctx context.Context, sel ast.SelectionSet, v *model.FSRSCard) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._FSRSCard(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOFSRSReviewLog2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐFSRSReviewLogᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.FSRSReviewLog) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNFSRSReviewLog2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐFSRSReviewLog(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalOFolder2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐFolder(ctx context.Context, sel ast.SelectionSet, v *model.Folder) graphql.Marshaler {
