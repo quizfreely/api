@@ -646,6 +646,79 @@ ORDER BY input.og_order`,
 	return fsrsCards, nil
 }
 
+func (dr *dataReader) getFSRSReviewLogsByTermIDs(ctx context.Context, termIDs []string) ([][]*model.FSRSReviewLog, []error) {
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil || authedUser.ID == nil {
+		return nil, nil
+	}
+
+	type dbFSRSReviewLog struct {
+		ID            *string   `db:"id"`
+		TermID        *string   `db:"term_id"`
+		Difficulty    *float64   `db:"difficulty"`
+		Due           *string    `db:"due"`
+		LearningSteps *int32     `db:"learning_steps"`
+		Rating        *model.FSRSRating `db:"rating"`,
+		Review        *string     `db:"review"`,
+		ScheduledDays *int32     `db:"scheduled_days"`
+		Stability     *float64   `db:"stability"`
+		State         *model.FSRSState `db:"state"`
+	}
+	var dbFSRSReviewLogs []*dbFSRSReviewLog
+
+	err := pgxscan.Select(
+		ctx,
+		dr.db,
+		&dbFSRSReviewLogs,
+		`SELECT rl.id,
+    rl.term_id,
+    rl.user_id,
+    rl.difficulty,
+	to_char(rl.due, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as due,
+    rl.learning_steps,
+    rl.rating,
+	to_char(rl.review, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as review,
+    rl.scheduled_days,
+    rl.stability,
+    rl.state
+FROM unnest($1::uuid[]) WITH ORDINALITY AS input(term_id, og_order)
+LEFT JOIN fsrs_review_logs rl
+	ON rl.term_id = input.term_id
+	AND rl.user_id = $2
+ORDER BY input.og_order ASC, rl.review DESC`,
+		termIDs,
+		authedUser.ID,
+	)
+	if err != nil {
+		return nil, []error{err}
+	}
+
+	grouped := make(map[string][]*model.FSRSReviewLog)
+	for _, rl := range dbFSRSReviewLogs {
+		if rl.ID != nil && pt.StudysetID != nil {
+			grouped[*rl.StudysetID] = append(grouped[*rl.TermID], &model.FSRSReviewLog{
+				ID: *rl.ID,
+				TermID: *rl.TermID,
+				Difficulty: *rl.Difficulty,
+				Due: *rl.Due,
+				LearningSteps: *rl.LearningSteps,
+				Rating: *rl.Rating,
+				Review: *rl.Review,
+				ScheduledDays: *rl.ScheduledDays,
+				Stability: *rl.Stability,
+				State: *rl.State,
+			})
+		}
+	}
+
+	orderedFSRSReviewLogs := make([][]*model.FSRSReviewLog, len(termIDs))
+	for i, id := range termIDs {
+		orderedFSRSReviewLogs[i] = grouped[id]
+	}
+
+	return orderedFSRSReviewLogs, nil
+}
+
 // Loaders wrap your data loaders to inject via middleware
 type Loaders struct {
 	UserLoader                         *dataloadgen.Loader[string, *model.User]
@@ -658,6 +731,7 @@ type Loaders struct {
 	TermTopReverseConfusionPairsLoader *dataloadgen.Loader[string, []*model.TermConfusionPair]
 	PracticeTestByStudysetIDLoader     *dataloadgen.Loader[string, []*model.PracticeTest]
 	FSRSCardByTermIDLoader     *dataloadgen.Loader[string, *model.FSRSCard]
+	FSRSReviewLogsByTermIDLoader     *dataloadgen.Loader[string, []*model.FSRSReviewLog]
 }
 
 // NewLoaders instantiates data loaders for the middleware
@@ -678,6 +752,7 @@ func NewLoaders(db *pgxpool.Pool, usercontentBaseURL *string) *Loaders {
 		TermTopReverseConfusionPairsLoader: dataloadgen.NewLoader(dr.getTermsTopReverseConfusionPairs, dataloadgen.WithWait(time.Millisecond)),
 		PracticeTestByStudysetIDLoader:     dataloadgen.NewLoader(dr.getPracticeTestsByStudysetIDs, dataloadgen.WithWait(time.Millisecond)),
 		FSRSCardByTermIDLoader:     dataloadgen.NewLoader(dr.getFSRSCardsByTermIDs, dataloadgen.WithWait(time.Millisecond)),
+		FSRSReviewLogsByTermIDLoader:     dataloadgen.NewLoader(dr.getFSRSReviewLogsByTermIDs, dataloadgen.WithWait(time.Millisecond)),
 	}
 }
 
@@ -802,11 +877,21 @@ func GetPracticeTestsByStudysetIDs(ctx context.Context, studysetIDs []string) ([
 
 func GetFSRSCardByTermID(ctx context.Context, termID string) (*model.FSRSCard, error) {
 	loaders := For(ctx)
-	return loaders.FSRSCardByTermIDLoader.Load(ctx, studysetID)
+	return loaders.FSRSCardByTermIDLoader.Load(ctx, termID)
 }
 
 func GETFSRSCardsByTermIDs(ctx context.Context, termIDs []string) ([]*model.FSRSCard, error) {
 	loaders := For(ctx)
 	return loaders.FSRSCardByTermIDLoader.LoadAll(ctx, termIDs)
+}
+
+func GetFSRSReviewLogsByTermID(ctx context.Context, termID string) ([]*model.FSRSReviewLog, error) {
+	loaders := For(ctx)
+	return loaders.FSRSReviewLogsByTermIDLoader.Load(ctx, termID)
+}
+
+func GetFSRSReviewLogsByTermIDs(ctx context.Context, termIDs []string) ([][]*model.FSRSCard, error) {
+	loaders := For(ctx)
+	return loaders.FSRSReviewLogsByTermIDLoader.LoadAll(ctx, termIDs)
 }
 
