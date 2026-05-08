@@ -6,7 +6,6 @@ package resolver
 
 import (
 	"context"
-	"fmt"
 	"quizfreely/api/auth"
 	"quizfreely/api/graph"
 	"quizfreely/api/graph/loader"
