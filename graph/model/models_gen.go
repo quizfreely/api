@@ -38,6 +38,7 @@ type FSRSCard struct {
 }
 
 type FSRSReviewLog struct {
+	ID            string     `json:"id"`
 	Difficulty    float64    `json:"difficulty"`
 	Due           string     `json:"due"`
 	LearningSteps int32      `json:"learningSteps"`

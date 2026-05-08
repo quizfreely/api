@@ -85,6 +85,7 @@ type ComplexityRoot struct {
 	FSRSReviewLog struct {
 		Difficulty    func(childComplexity int) int
 		Due           func(childComplexity int) int
+		ID            func(childComplexity int) int
 		LearningSteps func(childComplexity int) int
 		Rating        func(childComplexity int) int
 		Review        func(childComplexity int) int
@@ -558,6 +559,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.FSRSReviewLog.Due(childComplexity), true
+
+	case "FSRSReviewLog.id":
+		if e.complexity.FSRSReviewLog.ID == nil {
+			break
+		}
+
+		return e.complexity.FSRSReviewLog.ID(childComplexity), true
 
 	case "FSRSReviewLog.learningSteps":
 		if e.complexity.FSRSReviewLog.LearningSteps == nil {
@@ -3674,6 +3682,50 @@ func (ec *executionContext) fieldContext_FSRSCard_state(_ context.Context, field
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type FSRSState does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FSRSReviewLog_id(ctx context.Context, field graphql.CollectedField, obj *model.FSRSReviewLog) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FSRSReviewLog_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FSRSReviewLog_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FSRSReviewLog",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
 		},
 	}
 	return fc, nil
@@ -10279,6 +10331,8 @@ func (ec *executionContext) fieldContext_Term_fsrsReviewLogs(_ context.Context, 
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "id":
+				return ec.fieldContext_FSRSReviewLog_id(ctx, field)
 			case "difficulty":
 				return ec.fieldContext_FSRSReviewLog_difficulty(ctx, field)
 			case "due":
@@ -14775,6 +14829,11 @@ func (ec *executionContext) _FSRSReviewLog(ctx context.Context, sel ast.Selectio
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("FSRSReviewLog")
+		case "id":
+			out.Values[i] = ec._FSRSReviewLog_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "difficulty":
 			out.Values[i] = ec._FSRSReviewLog_difficulty(ctx, field, obj)
 			if out.Values[i] == graphql.Null {

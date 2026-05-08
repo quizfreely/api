@@ -99,6 +99,7 @@ enum FSRSRating {
     EASY
 }
 type FSRSReviewLog {
+    id: ID!
     difficulty: Float!
     due: String!
     learningSteps: Int!

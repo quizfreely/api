@@ -695,10 +695,9 @@ ORDER BY input.og_order ASC, rl.review DESC`,
 
 	grouped := make(map[string][]*model.FSRSReviewLog)
 	for _, rl := range dbFSRSReviewLogs {
-		if rl.ID != nil && pt.StudysetID != nil {
-			grouped[*rl.StudysetID] = append(grouped[*rl.TermID], &model.FSRSReviewLog{
+		if rl.ID != nil && rl.TermID != nil {
+			grouped[*rl.TermID] = append(grouped[*rl.TermID], &model.FSRSReviewLog{
 				ID: *rl.ID,
-				TermID: *rl.TermID,
 				Difficulty: *rl.Difficulty,
 				Due: *rl.Due,
 				LearningSteps: *rl.LearningSteps,
@@ -890,7 +889,7 @@ func GetFSRSReviewLogsByTermID(ctx context.Context, termID string) ([]*model.FSR
 	return loaders.FSRSReviewLogsByTermIDLoader.Load(ctx, termID)
 }
 
-func GetFSRSReviewLogsByTermIDs(ctx context.Context, termIDs []string) ([][]*model.FSRSCard, error) {
+func GetFSRSReviewLogsByTermIDs(ctx context.Context, termIDs []string) ([][]*model.FSRSReviewLog, error) {
 	loaders := For(ctx)
 	return loaders.FSRSReviewLogsByTermIDLoader.LoadAll(ctx, termIDs)
 }
