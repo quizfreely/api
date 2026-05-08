@@ -55,12 +55,22 @@ func (r *termResolver) TopReverseConfusionPairs(ctx context.Context, obj *model.
 
 // FsrsCard is the resolver for the fsrsCard field.
 func (r *termResolver) FsrsCard(ctx context.Context, obj *model.Term) (*model.FSRSCard, error) {
-	panic(fmt.Errorf("not implemented: FsrsCard - fsrsCard"))
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil || authedUser.ID == nil || obj.ID == nil {
+		return nil, nil
+	}
+
+	return loader.GetFSRSCardByTermID(ctx, *obj.ID)
 }
 
 // FsrsReviewLogs is the resolver for the fsrsReviewLogs field.
 func (r *termResolver) FsrsReviewLogs(ctx context.Context, obj *model.Term) ([]*model.FSRSReviewLog, error) {
-	panic(fmt.Errorf("not implemented: FsrsReviewLogs - fsrsReviewLogs"))
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil || authedUser.ID == nil || obj.ID == nil {
+		return nil, nil
+	}
+
+	return loader.GetFSRSReviewLogsByTermID(ctx, *obj.ID)
 }
 
 // Term is the resolver for the term field.
