@@ -860,6 +860,98 @@ func (r *mutationResolver) SetStudysetSeoIndexing(ctx context.Context, studysetI
 	return tag.RowsAffected() == 1, nil
 }
 
+// UpdateFsrsCard is the resolver for the updateFsrsCard field.
+func (r *mutationResolver) UpdateFsrsCard(ctx context.Context, termID string, card model.FSRSCardInput) (bool, error) {
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil || authedUser.ID == nil {
+		return false, errors.New("not authenticated")
+	}
+
+	tag, err := r.DB.Exec(
+		ctx,
+		`INSERT INTO fsrs_cards (term_id,
+    user_id,
+    difficulty,
+    due,
+    lapses,
+    last_review,
+    learning_steps,
+    reps,
+    scheduled_days,
+    stability,
+    state
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+ON CONFLICT (term_id, user_id)
+DO UPDATE SET
+    term_id = EXCLUDED.term_id,
+    user_id = EXCLUDED.user_id,
+    difficulty = EXCLUDED.difficulty,
+    due = EXCLUDED.due,
+    lapses = EXCLUDED.lapses,
+    last_review = EXCLUDED.last_review,
+    learning_steps = EXCLUDED.learning_steps,
+    reps = EXCLUDED.reps,
+    scheduled_days = EXCLUDED.scheduled_days,
+    stability = EXCLUDED.stability,
+    state = EXCLUDED.state`,
+		termID,
+		authedUser.ID,
+		card.Difficulty,
+    	card.Due,
+    	card.Lapses,
+    	card.LastReview,
+    	card.LearningSteps,
+    	card.Reps,
+    	card.ScheduledDays,
+    	card.Stability,
+    	card.State,
+	)
+	if err != nil {
+		log.Error().Err(err).Msg("DB Error in UpdateFsrsCard")
+		return false, errors.New("DB Error in UpdateFsrsCard")
+	}
+	return tag.RowsAffected() == 1, nil
+}
+
+// RecordFsrsReviewLog is the resolver for the recordFsrsReviewLog field.
+func (r *mutationResolver) RecordFsrsReviewLog(ctx context.Context, termID string, reviewLog model.FSRSReviewLogInput) (bool, error) {
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil || authedUser.ID == nil {
+		return false, errors.New("not authenticated")
+	}
+
+	tag, err := r.DB.Exec(
+		ctx,
+		`INSERT INTO fsrs_review_logs (
+    term_id,
+    user_id,
+    difficulty,
+    due,
+    learning_steps,
+    rating,
+    review,
+    scheduled_days,
+    stability,
+    state
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+		termID,
+		authedUser.ID,
+		reviewLog.Difficulty,
+    	reviewLog.Due,
+    	reviewLog.LearningSteps,
+    	reviewLog.Rating,
+    	reviewLog.Review,
+    	reviewLog.ScheduledDays,
+    	reviewLog.Stability,
+    	reviewLog.State,
+	)
+	if err != nil {
+		log.Error().Err(err).Msg("DB Error in RecordFsrsReviewLog")
+		return false, errors.New("DB Error in RecordFsrsReviewLog")
+	}
+	return tag.RowsAffected() == 1, nil
+}
+
 // Mutation returns graph.MutationResolver implementation.
 func (r *Resolver) Mutation() graph.MutationResolver { return &mutationResolver{r} }
 
