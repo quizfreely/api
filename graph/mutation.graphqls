@@ -18,6 +18,8 @@ type Mutation {
     saveStudyset(studysetId: ID!): Boolean
     unsaveStudyset(studysetId: ID!): Boolean
     setStudysetSeoIndexing(studysetId: ID!, approved: Boolean!): Boolean!
+    updateFsrsCard(termId: ID!, card: FSRSCard!): Boolean!
+    recordFsrsReviewLog(termId: ID!, reviewLog: FSRSReviewLog!): Boolean!
 }
 input PracticeTestInput {
     id: ID
