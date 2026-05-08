@@ -91,6 +91,17 @@ type FSRSCard {
     stability: Float!
     state: FSRSState!
 }
+type FSRSCardInput {
+    difficulty: Float!
+    due: String!
+    lapses: Int!
+    lastReview: String
+    learningSteps: Int!
+    reps: Int!
+    scheduledDays: Int!
+    stability: Float!
+    state: FSRSState!
+}
 enum FSRSRating {
     MANUAL
     AGAIN
@@ -99,6 +110,17 @@ enum FSRSRating {
     EASY
 }
 type FSRSReviewLog {
+    id: ID!
+    difficulty: Float!
+    due: String!
+    learningSteps: Int!
+    rating: FSRSRating!
+    review: String!
+    scheduledDays: Int!
+    stability: Float!
+    state: FSRSState!
+}
+type FSRSReviewLogInput {
     id: ID!
     difficulty: Float!
     due: String!
