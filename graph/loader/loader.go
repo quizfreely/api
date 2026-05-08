@@ -658,8 +658,8 @@ func (dr *dataReader) getFSRSReviewLogsByTermIDs(ctx context.Context, termIDs []
 		Difficulty    *float64   `db:"difficulty"`
 		Due           *string    `db:"due"`
 		LearningSteps *int32     `db:"learning_steps"`
-		Rating        *model.FSRSRating `db:"rating"`,
-		Review        *string     `db:"review"`,
+		Rating        *model.FSRSRating `db:"rating"`
+		Review        *string     `db:"review"`
 		ScheduledDays *int32     `db:"scheduled_days"`
 		Stability     *float64   `db:"stability"`
 		State         *model.FSRSState `db:"state"`
