@@ -91,7 +91,7 @@ type FSRSCard {
     stability: Float!
     state: FSRSState!
 }
-type FSRSCardInput {
+input FSRSCardInput {
     difficulty: Float!
     due: String!
     lapses: Int!
@@ -120,7 +120,7 @@ type FSRSReviewLog {
     stability: Float!
     state: FSRSState!
 }
-type FSRSReviewLogInput {
+input FSRSReviewLogInput {
     id: ID!
     difficulty: Float!
     due: String!
