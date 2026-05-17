@@ -41,3 +41,21 @@ usercontent_base_url = "http://localhost:8080/usercontent/"
 
 session_cleanup_cron_spec = "0 0 * * *"
 term_image_cleanup_cron_spec = "10 0 * * *"
+
+enable_web_import = false
+
+# if enable_web_import is true, uncomment use_crawlbase, crawlbase_api_key, use_zyte, and zyte_api_key
+
+# you can also comment out crawlbase_api_key if use_crawlbase is false or zyte_api_key if use_zyte is false
+# use_crawlbase = false
+# crawlbase_api_key = ""
+# use_zyte = false
+# zyte_api_key = ""
+
+# if use_crawlbase and use_zyte are both true, uncomment try_zyte_before_crawlbase
+
+# if use_crawlbase or use_zyte is false, this has no effect & you can comment it out
+# if enable_web_import is false, this also has no effect & you can comment it out
+# if false try crawlbase before zyte, if true try zyte before crawlbase
+# try_zyte_before_crawlbase = false
+

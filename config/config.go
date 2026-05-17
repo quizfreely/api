@@ -18,4 +18,6 @@ type Config struct {
 	UsercontentBaseURL       string `toml:"usercontent_base_url"`
 	SessionCleanupCronSpec   string `toml:"session_cleanup_cron_spec"`
 	TermImageCleanupCronSpec string `toml:"term_image_cleanup_cron_spec"`
+	EnableWebImport          bool   `toml:"enable_web_import"`
+	ZyteAPIKey               string `toml:"zyte_api_key"`
 }
