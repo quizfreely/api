@@ -1,8 +1,8 @@
 package rest
 
 import (
-	"net/http"
 	"github.com/rs/zerolog/log"
+	"net/http"
 )
 
 func (rh *RESTHandler) Health(w http.ResponseWriter, r *http.Request) {

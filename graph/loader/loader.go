@@ -605,15 +605,15 @@ ORDER BY input.og_order`,
 	defer rows.Close()
 
 	type dbFSRSCard struct {
-		TermID        *string   `db:"term_id"`
-		Difficulty    *float64   `db:"difficulty"`
-		Due           *string    `db:"due"`
-		Lapses        *int32     `db:"lapses"`
-		LastReview    *string   `db:"last_review"`
-		LearningSteps *int32     `db:"learning_steps"`
-		Reps          *int32     `db:"reps"`
-		ScheduledDays *int32     `db:"scheduled_days"`
-		Stability     *float64   `db:"stability"`
+		TermID        *string          `db:"term_id"`
+		Difficulty    *float64         `db:"difficulty"`
+		Due           *string          `db:"due"`
+		Lapses        *int32           `db:"lapses"`
+		LastReview    *string          `db:"last_review"`
+		LearningSteps *int32           `db:"learning_steps"`
+		Reps          *int32           `db:"reps"`
+		ScheduledDays *int32           `db:"scheduled_days"`
+		Stability     *float64         `db:"stability"`
 		State         *model.FSRSState `db:"state"`
 	}
 
@@ -632,12 +632,12 @@ ORDER BY input.og_order`,
 				Difficulty:    *fc.Difficulty,
 				Due:           *fc.Due,
 				Lapses:        *fc.Lapses,
-				LastReview: fc.LastReview, /* actually nullable, so it's a pointer */
+				LastReview:    fc.LastReview, /* actually nullable, so it's a pointer */
 				LearningSteps: *fc.LearningSteps,
-				Reps: *fc.Reps,
+				Reps:          *fc.Reps,
 				ScheduledDays: *fc.ScheduledDays,
-				Stability: *fc.Stability,
-				State: *fc.State,
+				Stability:     *fc.Stability,
+				State:         *fc.State,
 			}
 			fsrsCards = append(fsrsCards, modelFc)
 		}
@@ -653,16 +653,16 @@ func (dr *dataReader) getFSRSReviewLogsByTermIDs(ctx context.Context, termIDs []
 	}
 
 	type dbFSRSReviewLog struct {
-		ID            *string   `db:"id"`
-		TermID        *string   `db:"term_id"`
-		Difficulty    *float64   `db:"difficulty"`
-		Due           *string    `db:"due"`
-		LearningSteps *int32     `db:"learning_steps"`
+		ID            *string           `db:"id"`
+		TermID        *string           `db:"term_id"`
+		Difficulty    *float64          `db:"difficulty"`
+		Due           *string           `db:"due"`
+		LearningSteps *int32            `db:"learning_steps"`
 		Rating        *model.FSRSRating `db:"rating"`
-		Review        *string     `db:"review"`
-		ScheduledDays *int32     `db:"scheduled_days"`
-		Stability     *float64   `db:"stability"`
-		State         *model.FSRSState `db:"state"`
+		Review        *string           `db:"review"`
+		ScheduledDays *int32            `db:"scheduled_days"`
+		Stability     *float64          `db:"stability"`
+		State         *model.FSRSState  `db:"state"`
 	}
 	var dbFSRSReviewLogs []*dbFSRSReviewLog
 
@@ -697,15 +697,15 @@ ORDER BY input.og_order ASC, rl.review DESC`,
 	for _, rl := range dbFSRSReviewLogs {
 		if rl.ID != nil && rl.TermID != nil {
 			grouped[*rl.TermID] = append(grouped[*rl.TermID], &model.FSRSReviewLog{
-				ID: *rl.ID,
-				Difficulty: *rl.Difficulty,
-				Due: *rl.Due,
+				ID:            *rl.ID,
+				Difficulty:    *rl.Difficulty,
+				Due:           *rl.Due,
 				LearningSteps: *rl.LearningSteps,
-				Rating: *rl.Rating,
-				Review: *rl.Review,
+				Rating:        *rl.Rating,
+				Review:        *rl.Review,
 				ScheduledDays: *rl.ScheduledDays,
-				Stability: *rl.Stability,
-				State: *rl.State,
+				Stability:     *rl.Stability,
+				State:         *rl.State,
 			})
 		}
 	}
@@ -729,8 +729,8 @@ type Loaders struct {
 	TermTopConfusionPairsLoader        *dataloadgen.Loader[string, []*model.TermConfusionPair]
 	TermTopReverseConfusionPairsLoader *dataloadgen.Loader[string, []*model.TermConfusionPair]
 	PracticeTestByStudysetIDLoader     *dataloadgen.Loader[string, []*model.PracticeTest]
-	FSRSCardByTermIDLoader     *dataloadgen.Loader[string, *model.FSRSCard]
-	FSRSReviewLogsByTermIDLoader     *dataloadgen.Loader[string, []*model.FSRSReviewLog]
+	FSRSCardByTermIDLoader             *dataloadgen.Loader[string, *model.FSRSCard]
+	FSRSReviewLogsByTermIDLoader       *dataloadgen.Loader[string, []*model.FSRSReviewLog]
 }
 
 // NewLoaders instantiates data loaders for the middleware
@@ -750,8 +750,8 @@ func NewLoaders(db *pgxpool.Pool, usercontentBaseURL *string) *Loaders {
 		TermTopConfusionPairsLoader:        dataloadgen.NewLoader(dr.getTermsTopConfusionPairs, dataloadgen.WithWait(time.Millisecond)),
 		TermTopReverseConfusionPairsLoader: dataloadgen.NewLoader(dr.getTermsTopReverseConfusionPairs, dataloadgen.WithWait(time.Millisecond)),
 		PracticeTestByStudysetIDLoader:     dataloadgen.NewLoader(dr.getPracticeTestsByStudysetIDs, dataloadgen.WithWait(time.Millisecond)),
-		FSRSCardByTermIDLoader:     dataloadgen.NewLoader(dr.getFSRSCardsByTermIDs, dataloadgen.WithWait(time.Millisecond)),
-		FSRSReviewLogsByTermIDLoader:     dataloadgen.NewLoader(dr.getFSRSReviewLogsByTermIDs, dataloadgen.WithWait(time.Millisecond)),
+		FSRSCardByTermIDLoader:             dataloadgen.NewLoader(dr.getFSRSCardsByTermIDs, dataloadgen.WithWait(time.Millisecond)),
+		FSRSReviewLogsByTermIDLoader:       dataloadgen.NewLoader(dr.getFSRSReviewLogsByTermIDs, dataloadgen.WithWait(time.Millisecond)),
 	}
 }
 
@@ -893,4 +893,3 @@ func GetFSRSReviewLogsByTermIDs(ctx context.Context, termIDs []string) ([][]*mod
 	loaders := For(ctx)
 	return loaders.FSRSReviewLogsByTermIDLoader.LoadAll(ctx, termIDs)
 }
-

@@ -64,7 +64,7 @@ var modUser1ID string
 var modUser1Token string
 
 func TestMain(m *testing.M) {
-	code := func () int {
+	code := func() int {
 		// NOTE: this immediately invoked func/IIFE is used because `defer` needs the function to return BEFORE os.Exit is called
 		// os.Exit will skip stuff with `defer`, but using `defer` is much better than duplicaing `Close`/`Terminate` calls before every `panic`
 

@@ -897,14 +897,14 @@ DO UPDATE SET
 		termID,
 		authedUser.ID,
 		card.Difficulty,
-    	card.Due,
-    	card.Lapses,
-    	card.LastReview,
-    	card.LearningSteps,
-    	card.Reps,
-    	card.ScheduledDays,
-    	card.Stability,
-    	card.State,
+		card.Due,
+		card.Lapses,
+		card.LastReview,
+		card.LearningSteps,
+		card.Reps,
+		card.ScheduledDays,
+		card.Stability,
+		card.State,
 	)
 	if err != nil {
 		log.Error().Err(err).Msg("DB Error in UpdateFsrsCard")
@@ -937,13 +937,13 @@ func (r *mutationResolver) RecordFsrsReviewLog(ctx context.Context, termID strin
 		termID,
 		authedUser.ID,
 		reviewLog.Difficulty,
-    	reviewLog.Due,
-    	reviewLog.LearningSteps,
-    	reviewLog.Rating,
-    	reviewLog.Review,
-    	reviewLog.ScheduledDays,
-    	reviewLog.Stability,
-    	reviewLog.State,
+		reviewLog.Due,
+		reviewLog.LearningSteps,
+		reviewLog.Rating,
+		reviewLog.Review,
+		reviewLog.ScheduledDays,
+		reviewLog.Stability,
+		reviewLog.State,
 	)
 	if err != nil {
 		log.Error().Err(err).Msg("DB Error in RecordFsrsReviewLog")

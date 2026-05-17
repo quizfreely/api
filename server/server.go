@@ -31,7 +31,7 @@ func NewRouter(config qzfrAPIConfig.Config, dbPool *pgxpool.Pool, s3Client *s3.C
 		UsercontentBaseURL: &config.UsercontentBaseURL,
 	}
 
-	router.Get("/ping", func (w http.ResponseWriter, r *http.Request) {
+	router.Get("/ping", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("pong"))
 	})
 	router.Get("/health", restHandler.Health)
@@ -79,7 +79,7 @@ func NewRouter(config qzfrAPIConfig.Config, dbPool *pgxpool.Pool, s3Client *s3.C
 		r.Use(authHandler.AuthMiddleware)
 
 		h := handler.New(graph.NewExecutableSchema(graph.Config{Resolvers: &resolver.Resolver{
-			DB: dbPool,
+			DB:                 dbPool,
 			UsercontentBaseURL: &config.UsercontentBaseURL,
 		}}))
 
