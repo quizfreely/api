@@ -10,5 +10,8 @@ func (rh *RESTHandler) WebImport(w http.ResponseWriter, r *http.Request) {
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://", nil)
 	resp, err := http.DefaultClient.Do(req)
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	string(body)
 }
 
