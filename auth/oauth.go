@@ -19,7 +19,7 @@ var googleOAuthConfig *oauth2.Config
 var finalRedirectURL string
 
 func InitOAuthGoogle(config qzfrAPIConfig.Config) {
-	/* this gets called after config is loaded by main() in main.go */
+	/* this gets called after config is loaded, in server/server.go */
 
 	finalRedirectURL = config.OAuthFinalRedirectURL
 
