@@ -20,6 +20,7 @@ import (
 	"github.com/go-chi/httprate"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/vektah/gqlparser/v2/ast"
+	"github.com/rs/zerolog/log"
 )
 
 func NewRouter(config qzfrAPIConfig.Config, dbPool *pgxpool.Pool, s3Client *s3.Client) http.Handler {
@@ -80,10 +81,23 @@ func NewRouter(config qzfrAPIConfig.Config, dbPool *pgxpool.Pool, s3Client *s3.C
 		)
 	}
 	if config.EnableWebImport {
+		rateLimitReq := 2
+		rateLimitDur := 10
+		if (config.WebImportRateLimitReq >= 1) {
+			rateLimitReq = config.WebImportRateLimitReq
+		} else {
+			log.Warn().Msg("web_import_rate_limit_req is not >= 1. defaulting to 2 instead. check config.toml")
+		}
+		if (config.WebImportRateLimitDur >= 1) {
+			rateLimitDur = config.WebImportRateLimitDur
+		} else {
+			log.Warn().Msg("web_import_rate_limit_dur is not >= 1. defaulting to 10 (s) instead. check config.toml")
+		}
+
 		router.With(
 			httprate.Limit(
-				config.WebImportRateLimitReq,
-				config.WebImportRateLimitDur * time.Second,
+				rateLimitReq,
+				time.Duration(rateLimitDur) * time.Second,
 				httprate.WithKeyFuncs(httprate.KeyByIP, httprate.KeyByEndpoint),
 			),
 		).Post(
