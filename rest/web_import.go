@@ -45,8 +45,10 @@ func (rh *RESTHandler) WebImport(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err != nil && rh.UseZyte && rh.TryZyteBeforeCrawlbase && rh.UseCrawlbase {
+		log.Error().Err(err).Msg("web import zyte err on first try")
 		reader, err = rh.crawlbaseReq(reqBody.URL, ctx)
 	} else if err != nil && rh.UseCrawlbase && rh.UseZyte {
+		log.Error().Err(err).Msg("web import crawlbase err on first try")
 		reader, err = rh.zyteReq(reqBody.URL, ctx)
 	}
 
@@ -76,7 +78,7 @@ func (rh *RESTHandler) WebImport(w http.ResponseWriter, r *http.Request) {
 
 func (rh *RESTHandler) crawlbaseReq(targetURL string, reqCtx context.Context) (io.Reader, error) {
 	log.Trace().Msg("crawlbase attempted")
-	ctx, cancel := context.WithTimeout(reqCtx, 60*time.Second)
+	ctx, cancel := context.WithTimeout(reqCtx, 90*time.Second)
 	defer cancel()
 
 	params := url.Values{}
@@ -115,7 +117,7 @@ type zyteRespBody struct {
 }
 func (rh *RESTHandler) zyteReq(targetURL string, reqCtx context.Context) (io.Reader, error) {
 	log.Trace().Msg("zyte attempted")
-	ctx, cancel := context.WithTimeout(reqCtx, 60*time.Second)
+	ctx, cancel := context.WithTimeout(reqCtx, 90*time.Second)
 	defer cancel()
 
 	reqBodyJSON, err := json.Marshal(
