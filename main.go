@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 	"time"
+	"flag"
 
 	qzfrAPIConfig "quizfreely/api/config"
 	"quizfreely/api/server"
@@ -25,6 +26,31 @@ import (
 )
 
 func main() {
+	logLevel := flag.String("log-level", "info", "panic, fatal, error ,warn, info, debug, or trace")
+	flag.Parse()
+	switch *logLevel {
+	case "panic":
+		zerolog.SetGlobalLevel(zerolog.PanicLevel)
+	case "fatal":
+		zerolog.SetGlobalLevel(zerolog.FatalLevel)
+	case "error":
+		zerolog.SetGlobalLevel(zerolog.ErrorLevel)
+	case "warn":
+		zerolog.SetGlobalLevel(zerolog.WarnLevel)
+	case "info":
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	case "debug":
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	case "trace":
+		zerolog.SetGlobalLevel(zerolog.TraceLevel)
+	default:
+		fmt.Print(
+			"❌ Invalid log level\n" +
+			"Valid levels: panic, fatal, error, warn, info, debug, trace\n",
+		)
+		os.Exit(1)
+	}
+
 	var config qzfrAPIConfig.Config
 	configFile, err := os.Open("config.toml")
 	if err != nil {
@@ -89,9 +115,11 @@ func main() {
 	log.Info().Msg(
 		"http://localhost:" + port + "/graphiql for GraphiQL",
 	)
-	log.Fatal().Err(
-		http.ListenAndServe(":"+port, router),
-	).Msg("Error starting server")
+
+	err = http.ListenAndServe(":"+port, router)
+	if err != nil {
+		log.Fatal().Err(err).Msg("Error starting server")
+	}
 }
 
 func sessionCleanupJob(dbPool *pgxpool.Pool) {

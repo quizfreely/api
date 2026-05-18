@@ -2,6 +2,7 @@ package server
 
 import (
 	"net/http"
+	"time"
 	"quizfreely/api/auth"
 	qzfrAPIConfig "quizfreely/api/config"
 	"quizfreely/api/graph"
@@ -23,12 +24,21 @@ import (
 func NewRouter(config qzfrAPIConfig.Config, dbPool *pgxpool.Pool, s3Client *s3.Client) http.Handler {
 	router := chi.NewRouter()
 
+	sharedClient := &http.Client{
+		Timeout: 90 * time.Second, // prevents server from hanging forever. it's long & overridden later with context
+	}
 	authHandler := &auth.AuthHandler{DB: dbPool}
 	restHandler := &rest.RESTHandler{
 		DB:                 dbPool,
 		Storage:            s3Client,
 		UsercontentBucket:  &config.UsercontentBucket,
 		UsercontentBaseURL: &config.UsercontentBaseURL,
+		HTTPClient: sharedClient,
+		UseCrawlbase:      config.UseCrawlbase,
+		CrawlbaseAPIKey:  config.CrawlbaseAPIKey,
+		UseZyte:    config.UseZyte,
+		ZyteAPIKey:  config.ZyteAPIKey,
+		TryZyteBeforeCrawlbase:  config.TryZyteBeforeCrawlbase,
 	}
 
 	router.Get("/ping", func(w http.ResponseWriter, r *http.Request) {
@@ -66,6 +76,12 @@ func NewRouter(config qzfrAPIConfig.Config, dbPool *pgxpool.Pool, s3Client *s3.C
 		router.Get(
 			"/oauth/google/callback",
 			authHandler.OAuthGoogleCallback,
+		)
+	}
+	if config.EnableWebImport {
+		router.Post(
+			"/web-import",
+			restHandler.WebImport,
 		)
 	}
 
@@ -113,16 +129,12 @@ func NewRouter(config qzfrAPIConfig.Config, dbPool *pgxpool.Pool, s3Client *s3.C
 		)
 
 		if s3Client != nil {
-			router.With(
-				authHandler.AuthMiddleware,
-			).Put(
+			r.Put(
 				"/term-images/{termID}/{side}",
 				restHandler.UploadTermImage,
 			)
 		}
-		router.With(
-			authHandler.AuthMiddleware,
-		).Delete(
+		r.Delete(
 			"/term-images/{termID}/{side}",
 			restHandler.RemoveTermImage,
 		)
