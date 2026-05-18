@@ -176,29 +176,60 @@ func parse(reader io.Reader) ([][]string, error) {
 
 	rawNextData := doc.Find(`script#__NEXT_DATA__`).Text()
 	if rawNextData == "" {
+		// TODO: hmm
 		return nil, errors.New("no __NEXT_DATA__ :(")
 	}
 
 	var nextData struct {
-		StudiableData struct {
-			StudiableItems []struct {
-				IsDeleted bool `json:"isDeleted"`
-				CardSides []struct {
-					SideID int `json:"sideId"`
-					Media []struct {
-						PlainText string `json:"plainText"`
-						RichText *string `json:"richText"`
-					} `json:"media"`
-				} `json:"cardSides"`
-			} `json:"studiableItems"`
-		} `json:"studiableData"`
+		Props struct {
+			PageProps struct {
+				DehydratedReduxStateKey json.RawMessage `json:"dehydratedReduxStateKey"`
+			} `json:"pageProps"`
+		} `json:"props"`
+	}
+	var dhrsk struct {
+		StudyModesCommon struct {
+			StudiableData struct {
+				StudiableItems []struct {
+					IsDeleted bool `json:"isDeleted"`
+					CardSides []struct {
+						SideID int `json:"sideId"`
+						Media []struct {
+							PlainText string `json:"plainText"`
+							RichText *string `json:"richText"`
+						} `json:"media"`
+					} `json:"cardSides"`
+				} `json:"studiableItems"`
+			} `json:"studiableData"`
+		}`json:"StudyModesCommon"`
 	}
 	if err := json.Unmarshal([]byte(rawNextData), &nextData); err != nil {
 		return nil, err
 	}
+	trimmedRawDHRSK := bytes.TrimSpace(nextData.Props.PageProps.DehydratedReduxStateKey)
+	log.Trace().Str("first char", string(trimmedRawDHRSK[0])).Msg("hmm")
+	if len(trimmedRawDHRSK) == 0 {
+		// TODO: hmm
+		return nil, errors.New("empty dehydratedReduxStateKey in __NEXT_DATA__")
+	}
+	if trimmedRawDHRSK[0] == '"' {
+		var dhrskString string
+		if err := json.Unmarshal(nextData.Props.PageProps.DehydratedReduxStateKey, &dhrskString); err != nil {
+			return nil, err
+		}
+		if err := json.Unmarshal([]byte(dhrskString), &dhrsk); err != nil {
+			return nil, err
+		}
+	} else if trimmedRawDHRSK[0] == '{' {
+		if err := json.Unmarshal(nextData.Props.PageProps.DehydratedReduxStateKey, &dhrsk); err != nil {
+			return nil, err
+		}
+	} else {
+		return nil, errors.New("unexpected JSON token in dehydratedReduxStateKey in __NEXT_DATA__")
+	}
 
 	var termDefPairs [][]string
-	for _, item := range nextData.StudiableData.StudiableItems {
+	for _, item := range dhrsk.StudyModesCommon.StudiableData.StudiableItems {
 		sides := len(item.CardSides)
 		if sides < 1 {
 			continue
