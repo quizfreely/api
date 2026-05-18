@@ -44,7 +44,10 @@ term_image_cleanup_cron_spec = "10 0 * * *"
 
 enable_web_import = false
 
-# if enable_web_import is true, uncomment use_crawlbase, crawlbase_api_key, use_zyte, and zyte_api_key
+# if enable_web_import is true, uncomment web_import_rate_limit_req, web_import_rate_limit_dur, use_crawlbase, crawlbase_api_key, use_zyte, and zyte_api_key
+
+# web_import_rate_limit_req = 2 # requests
+# web_import_rate_limit_dur = 10 # per duration (in seconds)
 
 # you can also comment out crawlbase_api_key if use_crawlbase is false or zyte_api_key if use_zyte is false
 # use_crawlbase = false

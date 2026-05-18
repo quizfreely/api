@@ -19,6 +19,8 @@ type Config struct {
 	SessionCleanupCronSpec   string `toml:"session_cleanup_cron_spec"`
 	TermImageCleanupCronSpec string `toml:"term_image_cleanup_cron_spec"`
 	EnableWebImport          bool   `toml:"enable_web_import"`
+	WebImportRateLimitReq    int   `toml:"web_import_rate_limit_req"`
+	WebImportRateLimitDur    int   `toml:"web_import_rate_limit_dur"`
 	UseCrawlbase             bool   `toml:"use_crawlbase"`
 	CrawlbaseAPIKey          string `toml:"crawlbase_api_key"`
 	UseZyte                  bool   `toml:"use_zyte"`

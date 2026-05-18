@@ -17,6 +17,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/httprate"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/vektah/gqlparser/v2/ast"
 )
@@ -79,7 +80,13 @@ func NewRouter(config qzfrAPIConfig.Config, dbPool *pgxpool.Pool, s3Client *s3.C
 		)
 	}
 	if config.EnableWebImport {
-		router.Post(
+		router.With(
+			httprate.Limit(
+				config.WebImportRateLimitReq,
+				config.WebImportRateLimitDur * time.Second,
+				httprate.WithKeyFuncs(httprate.KeyByIP, httprate.KeyByEndpoint),
+			),
+		).Post(
 			"/web-import",
 			restHandler.WebImport,
 		)
