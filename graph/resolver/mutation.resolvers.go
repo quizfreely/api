@@ -860,8 +860,19 @@ func (r *mutationResolver) SetStudysetSeoIndexing(ctx context.Context, studysetI
 	return tag.RowsAffected() == 1, nil
 }
 
-// UpdateFsrsCard is the resolver for the updateFsrsCard field.
-func (r *mutationResolver) UpdateFsrsCard(ctx context.Context, termID string, card model.FSRSCardInput) (bool, error) {
+// Mutation returns graph.MutationResolver implementation.
+func (r *Resolver) Mutation() graph.MutationResolver { return &mutationResolver{r} }
+
+type mutationResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//    it when you're done.
+//  - You have helper methods in this file. Move them out to keep these resolver files clean.
+/*
+	func (r *mutationResolver) UpdateFsrsCard(ctx context.Context, termID string, card model.FSRSCardInput) (bool, error) {
 	authedUser := auth.AuthedUserContext(ctx)
 	if authedUser == nil || authedUser.ID == nil {
 		return false, errors.New("not authenticated")
@@ -912,8 +923,6 @@ DO UPDATE SET
 	}
 	return tag.RowsAffected() == 1, nil
 }
-
-// RecordFsrsReviewLog is the resolver for the recordFsrsReviewLog field.
 func (r *mutationResolver) RecordFsrsReviewLog(ctx context.Context, termID string, reviewLog model.FSRSReviewLogInput) (bool, error) {
 	authedUser := auth.AuthedUserContext(ctx)
 	if authedUser == nil || authedUser.ID == nil {
@@ -951,8 +960,4 @@ func (r *mutationResolver) RecordFsrsReviewLog(ctx context.Context, termID strin
 	}
 	return tag.RowsAffected() == 1, nil
 }
-
-// Mutation returns graph.MutationResolver implementation.
-func (r *Resolver) Mutation() graph.MutationResolver { return &mutationResolver{r} }
-
-type mutationResolver struct{ *Resolver }
+*/

@@ -52,26 +52,6 @@ func (r *termResolver) TopReverseConfusionPairs(ctx context.Context, obj *model.
 	return loader.GetTermTopReverseConfusionPairs(ctx, *obj.ID)
 }
 
-// FsrsCard is the resolver for the fsrsCard field.
-func (r *termResolver) FsrsCard(ctx context.Context, obj *model.Term) (*model.FSRSCard, error) {
-	authedUser := auth.AuthedUserContext(ctx)
-	if authedUser == nil || authedUser.ID == nil || obj.ID == nil {
-		return nil, nil
-	}
-
-	return loader.GetFSRSCardByTermID(ctx, *obj.ID)
-}
-
-// FsrsReviewLogs is the resolver for the fsrsReviewLogs field.
-func (r *termResolver) FsrsReviewLogs(ctx context.Context, obj *model.Term) ([]*model.FSRSReviewLog, error) {
-	authedUser := auth.AuthedUserContext(ctx)
-	if authedUser == nil || authedUser.ID == nil || obj.ID == nil {
-		return nil, nil
-	}
-
-	return loader.GetFSRSReviewLogsByTermID(ctx, *obj.ID)
-}
-
 // Term is the resolver for the term field.
 func (r *termConfusionPairResolver) Term(ctx context.Context, obj *model.TermConfusionPair) (*model.Term, error) {
 	if obj.TermID == nil {
@@ -100,3 +80,28 @@ func (r *Resolver) TermConfusionPair() graph.TermConfusionPairResolver {
 
 type termResolver struct{ *Resolver }
 type termConfusionPairResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//    it when you're done.
+//  - You have helper methods in this file. Move them out to keep these resolver files clean.
+/*
+	func (r *termResolver) FsrsCard(ctx context.Context, obj *model.Term) (*model.FSRSCard, error) {
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil || authedUser.ID == nil || obj.ID == nil {
+		return nil, nil
+	}
+
+	return loader.GetFSRSCardByTermID(ctx, *obj.ID)
+}
+func (r *termResolver) FsrsReviewLogs(ctx context.Context, obj *model.Term) ([]*model.FSRSReviewLog, error) {
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil || authedUser.ID == nil || obj.ID == nil {
+		return nil, nil
+	}
+
+	return loader.GetFSRSReviewLogsByTermID(ctx, *obj.ID)
+}
+*/
