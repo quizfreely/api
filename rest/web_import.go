@@ -13,8 +13,9 @@ import (
 	"github.com/go-chi/render"
 	"github.com/rs/zerolog/log"
 	"github.com/PuerkitoBio/goquery"
-	"os"
-	"path/filepath"
+	// "os"
+	// "path/filepath"
+	"strings"
 )
 
 func (rh *RESTHandler) WebImport(w http.ResponseWriter, r *http.Request) {
@@ -28,6 +29,14 @@ func (rh *RESTHandler) WebImport(w http.ResponseWriter, r *http.Request) {
 		render.Status(r, 400)
 		render.JSON(w, r, map[string]any{
 			"error": "invalid request body",
+		})
+		return
+	}
+
+	if !strings.HasPrefix(reqBody.URL, "https://quizlet.com") {
+		render.Status(r, 400)
+		render.JSON(w, r, map[string]any{
+			"error": "url must be a quizlet link, inputted url doesn't start with \"https://quizlet.com\"",
 		})
 		return
 	}
@@ -66,13 +75,11 @@ func (rh *RESTHandler) WebImport(w http.ResponseWriter, r *http.Request) {
 	terms, err := parse(reader)
 	if err != nil {
 
-		/* for debugging only */
-		tmpPath, tmpErr := saveToTempFile(reader)
-		if tmpErr == nil {
-			log.Error().Err(err).Str("file", tmpPath).Msg("web import parsing err")
-		} else {
-			log.Error().Err(err).Msg("web import parsing err")
-		}
+		/* for debugging ONLY */
+		// tmpPath, tmpErr := saveToTempFile(reader)
+		// if tmpErr == nil {
+		// 	log.Error().Err(err).Msg("err parsing. saved tmp file to inspect: " + tmpPath)
+		// }
 
 		log.Error().Err(err).Msg("web import parsing err")
 		render.Status(r, 500)
@@ -262,18 +269,18 @@ func parse(reader io.Reader) ([][]string, error) {
 
 // saveToTempFile dumps the raw bytes into a temporary file on the server (for debugging only)
 // returns filename (to log)
-func saveToTempFile(r io.Reader) (string, error) {
-	// Creates a file like /tmp/web-import-failed-123456789.html
-	tmpFile, err := os.CreateTemp("", "web-import-failed-*.html")
-	if err != nil {
-		return "", err
-	}
-	defer tmpFile.Close()
-
-	if _, err := io.Copy(tmpFile, r); err != nil {
-		return "", err
-	}
-
-	// Returns the absolute path so we can log it
-	return filepath.Abs(tmpFile.Name())
-}
+// func saveToTempFile(r io.Reader) (string, error) {
+// 	// Creates a file like /tmp/web-import-failed-123456789.html
+// 	tmpFile, err := os.CreateTemp("", "web-import-failed-*.html")
+// 	if err != nil {
+// 		return "", err
+// 	}
+// 	defer tmpFile.Close()
+//
+// 	if _, err := io.Copy(tmpFile, r); err != nil {
+// 		return "", err
+// 	}
+//
+// 	// Returns the absolute path so we can log it
+// 	return filepath.Abs(tmpFile.Name())
+// }
