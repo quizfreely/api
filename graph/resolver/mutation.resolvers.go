@@ -12,11 +12,13 @@ import (
 	"quizfreely/api/graph"
 	"quizfreely/api/graph/model"
 	"strings"
+	"time"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
 	pgx "github.com/jackc/pgx/v5"
 	"github.com/rs/zerolog/log"
 )
+
 
 // CreateStudyset is the resolver for the createStudyset field.
 func (r *mutationResolver) CreateStudyset(ctx context.Context, studyset model.StudysetInput, draft bool, folderID *string) (*model.Studyset, error) {
@@ -595,10 +597,16 @@ func (r *mutationResolver) RecordPracticeTest(ctx context.Context, input *model.
 		return nil, fmt.Errorf("not authenticated")
 	}
 
+	tx, err := r.DB.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
 	var practiceTest model.PracticeTest
-	err := pgxscan.Get(
+	err = pgxscan.Get(
 		ctx,
-		r.DB,
+		tx,
 		&practiceTest,
 		`INSERT INTO practice_tests
 	(timestamp, user_id, studyset_id, questions_correct, questions_total, questions)
@@ -623,6 +631,241 @@ RETURNING
 			return nil, fmt.Errorf("studyset not found or not accessible")
 		}
 		return nil, fmt.Errorf("database error in RecordPracticeTest: %w", err)
+	}
+
+	// ---- Automatically update term progress ----
+	nowStr := time.Now().Format(time.RFC3339)
+	termProgressMap := make(map[string]*model.TermProgressInput)
+
+	for _, q := range input.Questions {
+		if q == nil {
+			continue
+		}
+		var termID string
+		var answerWith model.AnswerWith
+		correct := false
+
+		if q.Mcq != nil && q.Mcq.Term != nil {
+			termID = q.Mcq.Term.ID
+			if q.Mcq.AnswerWith != nil {
+				answerWith = *q.Mcq.AnswerWith
+			}
+			if q.Mcq.Correct != nil {
+				correct = *q.Mcq.Correct
+			}
+		} else if q.TrueFalseQuestion != nil && q.TrueFalseQuestion.Term != nil {
+			termID = q.TrueFalseQuestion.Term.ID
+			if q.TrueFalseQuestion.AnswerWith != nil {
+				answerWith = *q.TrueFalseQuestion.AnswerWith
+			}
+			if q.TrueFalseQuestion.Correct != nil {
+				correct = *q.TrueFalseQuestion.Correct
+			}
+		} else if q.MatchQuestion != nil && q.MatchQuestion.Term != nil {
+			termID = q.MatchQuestion.Term.ID
+			if q.MatchQuestion.AnswerWith != nil {
+				answerWith = *q.MatchQuestion.AnswerWith
+			}
+			if q.MatchQuestion.Correct != nil {
+				correct = *q.MatchQuestion.Correct
+			}
+		} else if q.Frq != nil && q.Frq.Term != nil {
+			termID = q.Frq.Term.ID
+			if q.Frq.AnswerWith != nil {
+				answerWith = *q.Frq.AnswerWith
+			}
+			if q.Frq.Correct != nil && *q.Frq.Correct {
+				correct = true
+			}
+			if q.Frq.UserMarkedCorrect != nil && *q.Frq.UserMarkedCorrect {
+				correct = true
+			}
+		}
+
+		if termID == "" {
+			continue
+		}
+
+		tp, exists := termProgressMap[termID]
+		if !exists {
+			tp = &model.TermProgressInput{
+				TermID: termID,
+			}
+			termProgressMap[termID] = tp
+		}
+
+		var termCorrectIncrease int32
+		var termIncorrectIncrease int32
+		var defCorrectIncrease int32
+		var defIncorrectIncrease int32
+
+		if correct {
+			if answerWith == model.AnswerWithDef {
+				defCorrectIncrease = 1
+				tp.DefReviewedAt = &nowStr
+			} else {
+				termCorrectIncrease = 1
+				tp.TermReviewedAt = &nowStr
+			}
+		} else {
+			if answerWith == model.AnswerWithDef {
+				defIncorrectIncrease = 1
+				tp.DefReviewedAt = &nowStr
+				box := int32(1)
+				tp.DefLeitnerSystemBox = &box
+			} else {
+				termIncorrectIncrease = 1
+				tp.TermReviewedAt = &nowStr
+				box := int32(1)
+				tp.TermLeitnerSystemBox = &box
+			}
+		}
+
+		if tp.TermCorrectIncrease == nil {
+			tp.TermCorrectIncrease = &termCorrectIncrease
+		} else {
+			*tp.TermCorrectIncrease += termCorrectIncrease
+		}
+		if tp.TermIncorrectIncrease == nil {
+			tp.TermIncorrectIncrease = &termIncorrectIncrease
+		} else {
+			*tp.TermIncorrectIncrease += termIncorrectIncrease
+		}
+		if tp.DefCorrectIncrease == nil {
+			tp.DefCorrectIncrease = &defCorrectIncrease
+		} else {
+			*tp.DefCorrectIncrease += defCorrectIncrease
+		}
+		if tp.DefIncorrectIncrease == nil {
+			tp.DefIncorrectIncrease = &defIncorrectIncrease
+		} else {
+			*tp.DefIncorrectIncrease += defIncorrectIncrease
+		}
+	}
+
+	if len(termProgressMap) > 0 {
+		termProgress := make([]*model.TermProgressInput, 0, len(termProgressMap))
+		for _, tp := range termProgressMap {
+			termProgress = append(termProgress, tp)
+		}
+
+		valueStrings := make([]string, 0, len(termProgress))
+		valueArgs := make([]interface{}, 0, len(termProgress)*10)
+		termIDs := make([]string, len(termProgress))
+
+		for i, p := range termProgress {
+			termIDs[i] = p.TermID
+			base := i*10 + 1
+			valueStrings = append(valueStrings, fmt.Sprintf(
+				"($%d::uuid,$%d::uuid,$%d::timestamptz,$%d::timestamptz,CASE WHEN $%d IS NOT NULL THEN 1 ELSE 0 END,$%d::timestamptz,$%d::timestamptz,CASE WHEN $%d IS NOT NULL THEN 1 ELSE 0 END,$%d::int,$%d::int,COALESCE($%d::int,0),COALESCE($%d::int,0),COALESCE($%d::int,0),COALESCE($%d::int,0))",
+				base, base+1, base+2, base+2, base+2, base+3, base+3, base+3, base+4, base+5, base+6, base+7, base+8, base+9,
+			))
+
+			valueArgs = append(valueArgs,
+				p.TermID,
+				authedUser.ID,
+				p.TermReviewedAt,
+				p.DefReviewedAt,
+				p.TermLeitnerSystemBox,
+				p.DefLeitnerSystemBox,
+				p.TermCorrectIncrease,
+				p.TermIncorrectIncrease,
+				p.DefCorrectIncrease,
+				p.DefIncorrectIncrease,
+			)
+		}
+
+		query := fmt.Sprintf(`
+			INSERT INTO term_progress (
+				term_id, user_id,
+				term_first_reviewed_at, term_last_reviewed_at,
+				term_review_count,
+				def_first_reviewed_at, def_last_reviewed_at,
+				def_review_count,
+				term_leitner_system_box, def_leitner_system_box,
+				term_correct_count, term_incorrect_count,
+				def_correct_count, def_incorrect_count
+			)
+			SELECT v.term_id::uuid, v.user_id::uuid,
+				v.term_first_reviewed_at::timestamptz, v.term_last_reviewed_at::timestamptz,
+				v.term_review_count::int,
+				v.def_first_reviewed_at::timestamptz, v.def_last_reviewed_at::timestamptz,
+				v.def_review_count::int,
+				v.term_leitner_system_box::int, v.def_leitner_system_box::int,
+				v.term_correct_count::int, v.term_incorrect_count::int,
+				v.def_correct_count::int, v.def_incorrect_count::int
+			FROM (VALUES %s) AS v(
+				term_id, user_id,
+				term_first_reviewed_at, term_last_reviewed_at,
+				term_review_count,
+				def_first_reviewed_at, def_last_reviewed_at,
+				def_review_count,
+				term_leitner_system_box, def_leitner_system_box,
+				term_correct_count, term_incorrect_count,
+				def_correct_count, def_incorrect_count
+			)
+			JOIN terms t ON t.id = v.term_id::uuid
+			JOIN studysets s ON s.id = t.studyset_id
+			WHERE s.draft = false AND (s.private = false OR s.user_id = v.user_id::uuid)
+			ON CONFLICT (term_id, user_id) DO UPDATE SET
+				term_last_reviewed_at = COALESCE(EXCLUDED.term_last_reviewed_at, term_progress.term_last_reviewed_at),
+				def_last_reviewed_at = COALESCE(EXCLUDED.def_last_reviewed_at, term_progress.def_last_reviewed_at),
+				term_leitner_system_box = EXCLUDED.term_leitner_system_box,
+				def_leitner_system_box = EXCLUDED.def_leitner_system_box,
+				term_review_count = term_progress.term_review_count +
+					(CASE WHEN EXCLUDED.term_last_reviewed_at IS NOT NULL THEN 1 ELSE 0 END),
+				def_review_count = term_progress.def_review_count +
+					(CASE WHEN EXCLUDED.def_last_reviewed_at IS NOT NULL THEN 1 ELSE 0 END),
+				term_correct_count = term_progress.term_correct_count + EXCLUDED.term_correct_count,
+				term_incorrect_count = term_progress.term_incorrect_count + EXCLUDED.term_incorrect_count,
+				def_correct_count = term_progress.def_correct_count + EXCLUDED.def_correct_count,
+				def_incorrect_count = term_progress.def_incorrect_count + EXCLUDED.def_incorrect_count
+			RETURNING term_progress.id,
+				to_char(term_progress.term_first_reviewed_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as term_first_reviewed_at,
+				to_char(term_progress.term_last_reviewed_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as term_last_reviewed_at,
+				term_progress.term_review_count,
+				to_char(term_progress.def_first_reviewed_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as def_first_reviewed_at,
+				to_char(term_progress.def_last_reviewed_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as def_last_reviewed_at,
+				term_progress.def_review_count,
+				term_progress.term_leitner_system_box, term_progress.def_leitner_system_box,
+				term_progress.term_correct_count, term_progress.term_incorrect_count,
+				term_progress.def_correct_count, term_progress.def_incorrect_count
+		`, strings.Join(valueStrings, ","))
+
+		var results []*model.TermProgress
+		if err := pgxscan.Select(ctx, tx, &results, query, valueArgs...); err != nil {
+			return nil, fmt.Errorf("bulk upsert of term progress failed: %w", err)
+		}
+
+		if len(results) > 0 {
+			histVals := make([]string, 0, len(results))
+			histArgs := make([]interface{}, 0, len(results)*6)
+			for i, tp := range results {
+				base := i*6 + 1
+				histVals = append(histVals, fmt.Sprintf("($%d,$%d,$%d,$%d,$%d,$%d)", base, base+1, base+2, base+3, base+4, base+5))
+				histArgs = append(histArgs,
+					authedUser.ID,
+					termIDs[i],
+					tp.TermCorrectCount,
+					tp.TermIncorrectCount,
+					tp.DefCorrectCount,
+					tp.DefIncorrectCount,
+				)
+			}
+			histQuery := fmt.Sprintf(`
+				INSERT INTO term_progress_history (
+					user_id, term_id, term_correct_count, term_incorrect_count,
+					def_correct_count, def_incorrect_count
+				) VALUES %s`, strings.Join(histVals, ","))
+
+			if _, err := tx.Exec(ctx, histQuery, histArgs...); err != nil {
+				return nil, fmt.Errorf("failed to insert into term_progress_history: %w", err)
+			}
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
 	return &practiceTest, nil
