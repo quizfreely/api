@@ -633,7 +633,6 @@ RETURNING
 		return nil, fmt.Errorf("database error in RecordPracticeTest: %w", err)
 	}
 
-	// ---- Automatically update term progress ----
 	nowStr := time.Now().Format(time.RFC3339)
 	termProgressMap := make(map[string]*model.TermProgressInput)
 

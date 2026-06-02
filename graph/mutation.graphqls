@@ -20,6 +20,7 @@ type Mutation {
     setStudysetSeoIndexing(studysetId: ID!, approved: Boolean!): Boolean!
     updateFsrsCard(termId: ID!, card: FSRSCardInput!): Boolean!
     recordFsrsReviewLog(termId: ID!, reviewLog: FSRSReviewLogInput!): Boolean!
+    recordMatchSession(match: MatchSessionInput!): MatchSession
 }
 input PracticeTestInput {
     id: ID
@@ -33,7 +34,6 @@ input QuestionInput {
     questionType: QuestionType
     mcq: MCQInput
     trueFalseQuestion: TrueFalseQuestionInput
-    matchQuestion: MatchQuestionInput
     frq: FRQInput
 }
 input MCQInput {
@@ -51,17 +51,18 @@ input TrueFalseQuestionInput {
     answeredBool: Boolean
     distractor: TermInput
 }
-input MatchQuestionInput {
-    term: TermInput
-    answerWith: AnswerWith
-    correct: Boolean
-    answeredTerm: TermInput
-    group: Int
-}
 input FRQInput {
     term: TermInput
     answerWith: AnswerWith
     correct: Boolean
     userMarkedCorrect: Boolean
     answeredString: String
+}
+input MatchSessionInput {
+    durationMs: Int!
+    items: [MatchItemInput!]!
+    incorrectAttempts: [[]!]!
+}
+input MatchItemInput {
+    term
 }
