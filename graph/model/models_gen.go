@@ -101,14 +101,6 @@ type MCQInput struct {
 	CorrectChoiceIndex *int32       `json:"correctChoiceIndex,omitempty"`
 }
 
-type MatchQuestion struct {
-	Term         *Term       `json:"term,omitempty"`
-	AnswerWith   *AnswerWith `json:"answerWith,omitempty"`
-	Correct      *bool       `json:"correct,omitempty"`
-	AnsweredTerm *Term       `json:"answeredTerm,omitempty"`
-	Group        *int32      `json:"group,omitempty"`
-}
-
 type MatchSession struct {
 	DurationMs int32 `json:"durationMs"`
 }
@@ -146,11 +138,10 @@ type Query struct {
 }
 
 type Question struct {
-	QuestionType       *QuestionType      `json:"questionType,omitempty"`
-	Mcq                *Mcq               `json:"mcq,omitempty"`
-	TrueFalseQuestion  *TrueFalseQuestion `json:"trueFalseQuestion,omitempty"`
-	MatchQuestionInput *MatchQuestion     `json:"matchQuestionInput,omitempty"`
-	Frq                *Frq               `json:"frq,omitempty"`
+	QuestionType      *QuestionType      `json:"questionType,omitempty"`
+	Mcq               *Mcq               `json:"mcq,omitempty"`
+	TrueFalseQuestion *TrueFalseQuestion `json:"trueFalseQuestion,omitempty"`
+	Frq               *Frq               `json:"frq,omitempty"`
 }
 
 type QuestionInput struct {
@@ -454,20 +445,18 @@ type QuestionType string
 const (
 	QuestionTypeMcq       QuestionType = "MCQ"
 	QuestionTypeTrueFalse QuestionType = "TRUE_FALSE"
-	QuestionTypeMatch     QuestionType = "MATCH"
 	QuestionTypeFrq       QuestionType = "FRQ"
 )
 
 var AllQuestionType = []QuestionType{
 	QuestionTypeMcq,
 	QuestionTypeTrueFalse,
-	QuestionTypeMatch,
 	QuestionTypeFrq,
 }
 
 func (e QuestionType) IsValid() bool {
 	switch e {
-	case QuestionTypeMcq, QuestionTypeTrueFalse, QuestionTypeMatch, QuestionTypeFrq:
+	case QuestionTypeMcq, QuestionTypeTrueFalse, QuestionTypeFrq:
 		return true
 	}
 	return false

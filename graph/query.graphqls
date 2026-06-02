@@ -44,14 +44,12 @@ type PracticeTest {
 enum QuestionType {
     MCQ
     TRUE_FALSE
-    MATCH
     FRQ
 }
 type Question {
     questionType: QuestionType
     mcq: MCQ
     trueFalseQuestion: TrueFalseQuestion
-    matchQuestionInput: MatchQuestion
     frq: FRQ
 }
 type MCQ {
@@ -68,13 +66,6 @@ type TrueFalseQuestion {
     correct: Boolean
     answeredBool: Boolean
     distractor: Term
-}
-type MatchQuestion {
-    term: Term
-    answerWith: AnswerWith
-    correct: Boolean
-    answeredTerm: Term
-    group: Int
 }
 type FRQ {
     term: Term
