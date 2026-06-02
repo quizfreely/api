@@ -58,11 +58,13 @@ input FRQInput {
     userMarkedCorrect: Boolean
     answeredString: String
 }
+type MatchSession {
+    durationMs: Int!
+}
 input MatchSessionInput {
     durationMs: Int!
-    items: [MatchItemInput!]!
-    incorrectAttempts: [[]!]!
+    # items: [MatchItemInput!]!
 }
-input MatchItemInput {
-    term
-}
+# input MatchItemInput {
+#     term
+# }

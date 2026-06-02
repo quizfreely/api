@@ -19,7 +19,6 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-
 // CreateStudyset is the resolver for the createStudyset field.
 func (r *mutationResolver) CreateStudyset(ctx context.Context, studyset model.StudysetInput, draft bool, folderID *string) (*model.Studyset, error) {
 	authedUser := auth.AuthedUserContext(ctx)
@@ -660,14 +659,6 @@ RETURNING
 			if q.TrueFalseQuestion.Correct != nil {
 				correct = *q.TrueFalseQuestion.Correct
 			}
-		} else if q.MatchQuestion != nil && q.MatchQuestion.Term != nil {
-			termID = q.MatchQuestion.Term.ID
-			if q.MatchQuestion.AnswerWith != nil {
-				answerWith = *q.MatchQuestion.AnswerWith
-			}
-			if q.MatchQuestion.Correct != nil {
-				correct = *q.MatchQuestion.Correct
-			}
 		} else if q.Frq != nil && q.Frq.Term != nil {
 			termID = q.Frq.Term.ID
 			if q.Frq.AnswerWith != nil {
@@ -1192,6 +1183,11 @@ func (r *mutationResolver) RecordFsrsReviewLog(ctx context.Context, termID strin
 		return false, errors.New("DB Error in RecordFsrsReviewLog")
 	}
 	return tag.RowsAffected() == 1, nil
+}
+
+// RecordMatchSession is the resolver for the recordMatchSession field.
+func (r *mutationResolver) RecordMatchSession(ctx context.Context, match model.MatchSessionInput) (*model.MatchSession, error) {
+	panic(fmt.Errorf("not implemented: RecordMatchSession - recordMatchSession"))
 }
 
 // Mutation returns graph.MutationResolver implementation.

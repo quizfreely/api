@@ -109,12 +109,12 @@ type MatchQuestion struct {
 	Group        *int32      `json:"group,omitempty"`
 }
 
-type MatchQuestionInput struct {
-	Term         *TermInput  `json:"term,omitempty"`
-	AnswerWith   *AnswerWith `json:"answerWith,omitempty"`
-	Correct      *bool       `json:"correct,omitempty"`
-	AnsweredTerm *TermInput  `json:"answeredTerm,omitempty"`
-	Group        *int32      `json:"group,omitempty"`
+type MatchSession struct {
+	DurationMs int32 `json:"durationMs"`
+}
+
+type MatchSessionInput struct {
+	DurationMs int32 `json:"durationMs"`
 }
 
 type Mutation struct {
@@ -157,7 +157,6 @@ type QuestionInput struct {
 	QuestionType      *QuestionType           `json:"questionType,omitempty"`
 	Mcq               *MCQInput               `json:"mcq,omitempty"`
 	TrueFalseQuestion *TrueFalseQuestionInput `json:"trueFalseQuestion,omitempty"`
-	MatchQuestion     *MatchQuestionInput     `json:"matchQuestion,omitempty"`
 	Frq               *FRQInput               `json:"frq,omitempty"`
 }
 

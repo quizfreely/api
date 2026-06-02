@@ -130,6 +130,10 @@ type ComplexityRoot struct {
 		Term         func(childComplexity int) int
 	}
 
+	MatchSession struct {
+		DurationMs func(childComplexity int) int
+	}
+
 	Mutation struct {
 		CreateFolder             func(childComplexity int, name string) int
 		CreateStudyset           func(childComplexity int, studyset model.StudysetInput, draft bool, folderID *string) int
@@ -139,6 +143,7 @@ type ComplexityRoot struct {
 		DeleteTerms              func(childComplexity int, studysetID string, ids []string) int
 		RecordConfusedTerms      func(childComplexity int, confusedTerms []*model.TermConfusionPairInput) int
 		RecordFsrsReviewLog      func(childComplexity int, termID string, reviewLog model.FSRSReviewLogInput) int
+		RecordMatchSession       func(childComplexity int, match model.MatchSessionInput) int
 		RecordPracticeTest       func(childComplexity int, input *model.PracticeTestInput) int
 		RemoveStudysetFromFolder func(childComplexity int, studysetID string) int
 		RenameFolder             func(childComplexity int, id string, name string) int
@@ -334,6 +339,7 @@ type MutationResolver interface {
 	SetStudysetSeoIndexing(ctx context.Context, studysetID string, approved bool) (bool, error)
 	UpdateFsrsCard(ctx context.Context, termID string, card model.FSRSCardInput) (bool, error)
 	RecordFsrsReviewLog(ctx context.Context, termID string, reviewLog model.FSRSReviewLogInput) (bool, error)
+	RecordMatchSession(ctx context.Context, match model.MatchSessionInput) (*model.MatchSession, error)
 }
 type QueryResolver interface {
 	Authed(ctx context.Context) (bool, error)
@@ -770,6 +776,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.MatchQuestion.Term(childComplexity), true
 
+	case "MatchSession.durationMs":
+		if e.complexity.MatchSession.DurationMs == nil {
+			break
+		}
+
+		return e.complexity.MatchSession.DurationMs(childComplexity), true
+
 	case "Mutation.createFolder":
 		if e.complexity.Mutation.CreateFolder == nil {
 			break
@@ -865,6 +878,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.RecordFsrsReviewLog(childComplexity, args["termId"].(string), args["reviewLog"].(model.FSRSReviewLogInput)), true
+
+	case "Mutation.recordMatchSession":
+		if e.complexity.Mutation.RecordMatchSession == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_recordMatchSession_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.RecordMatchSession(childComplexity, args["match"].(model.MatchSessionInput)), true
 
 	case "Mutation.recordPracticeTest":
 		if e.complexity.Mutation.RecordPracticeTest == nil {
@@ -1914,7 +1939,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputFSRSCardInput,
 		ec.unmarshalInputFSRSReviewLogInput,
 		ec.unmarshalInputMCQInput,
-		ec.unmarshalInputMatchQuestionInput,
+		ec.unmarshalInputMatchSessionInput,
 		ec.unmarshalInputNewTermInput,
 		ec.unmarshalInputPracticeTestInput,
 		ec.unmarshalInputQuestionInput,
@@ -2207,6 +2232,17 @@ func (ec *executionContext) field_Mutation_recordFsrsReviewLog_args(ctx context.
 		return nil, err
 	}
 	args["reviewLog"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_recordMatchSession_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "match", ec.unmarshalNMatchSessionInput2quizfreelyᚋapiᚋgraphᚋmodelᚐMatchSessionInput)
+	if err != nil {
+		return nil, err
+	}
+	args["match"] = arg0
 	return args, nil
 }
 
@@ -5259,6 +5295,50 @@ func (ec *executionContext) fieldContext_MatchQuestion_group(_ context.Context, 
 	return fc, nil
 }
 
+func (ec *executionContext) _MatchSession_durationMs(ctx context.Context, field graphql.CollectedField, obj *model.MatchSession) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MatchSession_durationMs(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DurationMs, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int32)
+	fc.Result = res
+	return ec.marshalNInt2int32(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MatchSession_durationMs(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MatchSession",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_createStudyset(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_createStudyset(ctx, field)
 	if err != nil {
@@ -6572,6 +6652,62 @@ func (ec *executionContext) fieldContext_Mutation_recordFsrsReviewLog(ctx contex
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_recordFsrsReviewLog_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_recordMatchSession(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_recordMatchSession(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().RecordMatchSession(rctx, fc.Args["match"].(model.MatchSessionInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.MatchSession)
+	fc.Result = res
+	return ec.marshalOMatchSession2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐMatchSession(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_recordMatchSession(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "durationMs":
+				return ec.fieldContext_MatchSession_durationMs(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MatchSession", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_recordMatchSession_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -14475,55 +14611,27 @@ func (ec *executionContext) unmarshalInputMCQInput(ctx context.Context, obj any)
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputMatchQuestionInput(ctx context.Context, obj any) (model.MatchQuestionInput, error) {
-	var it model.MatchQuestionInput
+func (ec *executionContext) unmarshalInputMatchSessionInput(ctx context.Context, obj any) (model.MatchSessionInput, error) {
+	var it model.MatchSessionInput
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"term", "answerWith", "correct", "answeredTerm", "group"}
+	fieldsInOrder := [...]string{"durationMs"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
-		case "term":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("term"))
-			data, err := ec.unmarshalOTermInput2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermInput(ctx, v)
+		case "durationMs":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("durationMs"))
+			data, err := ec.unmarshalNInt2int32(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Term = data
-		case "answerWith":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("answerWith"))
-			data, err := ec.unmarshalOAnswerWith2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐAnswerWith(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.AnswerWith = data
-		case "correct":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("correct"))
-			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Correct = data
-		case "answeredTerm":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("answeredTerm"))
-			data, err := ec.unmarshalOTermInput2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.AnsweredTerm = data
-		case "group":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("group"))
-			data, err := ec.unmarshalOInt2ᚖint32(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Group = data
+			it.DurationMs = data
 		}
 	}
 
@@ -14640,7 +14748,7 @@ func (ec *executionContext) unmarshalInputQuestionInput(ctx context.Context, obj
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"questionType", "mcq", "trueFalseQuestion", "matchQuestion", "frq"}
+	fieldsInOrder := [...]string{"questionType", "mcq", "trueFalseQuestion", "frq"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -14668,13 +14776,6 @@ func (ec *executionContext) unmarshalInputQuestionInput(ctx context.Context, obj
 				return it, err
 			}
 			it.TrueFalseQuestion = data
-		case "matchQuestion":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("matchQuestion"))
-			data, err := ec.unmarshalOMatchQuestionInput2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐMatchQuestionInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.MatchQuestion = data
 		case "frq":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("frq"))
 			data, err := ec.unmarshalOFRQInput2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐFRQInput(ctx, v)
@@ -15567,6 +15668,45 @@ func (ec *executionContext) _MatchQuestion(ctx context.Context, sel ast.Selectio
 	return out
 }
 
+var matchSessionImplementors = []string{"MatchSession"}
+
+func (ec *executionContext) _MatchSession(ctx context.Context, sel ast.SelectionSet, obj *model.MatchSession) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, matchSessionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MatchSession")
+		case "durationMs":
+			out.Values[i] = ec._MatchSession_durationMs(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var mutationImplementors = []string{"Mutation"}
 
 func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -15679,6 +15819,10 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "recordMatchSession":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_recordMatchSession(ctx, field)
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -18183,6 +18327,11 @@ func (ec *executionContext) marshalNInt2ᚖint32(ctx context.Context, sel ast.Se
 	return res
 }
 
+func (ec *executionContext) unmarshalNMatchSessionInput2quizfreelyᚋapiᚋgraphᚋmodelᚐMatchSessionInput(ctx context.Context, v any) (model.MatchSessionInput, error) {
+	res, err := ec.unmarshalInputMatchSessionInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNNewTermInput2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐNewTermInputᚄ(ctx context.Context, v any) ([]*model.NewTermInput, error) {
 	var vSlice []any
 	vSlice = graphql.CoerceList(v)
@@ -18899,12 +19048,11 @@ func (ec *executionContext) marshalOMatchQuestion2ᚖquizfreelyᚋapiᚋgraphᚋ
 	return ec._MatchQuestion(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOMatchQuestionInput2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐMatchQuestionInput(ctx context.Context, v any) (*model.MatchQuestionInput, error) {
+func (ec *executionContext) marshalOMatchSession2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐMatchSession(ctx context.Context, sel ast.SelectionSet, v *model.MatchSession) graphql.Marshaler {
 	if v == nil {
-		return nil, nil
+		return graphql.Null
 	}
-	res, err := ec.unmarshalInputMatchQuestionInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
+	return ec._MatchSession(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOPracticeTest2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐPracticeTest(ctx context.Context, sel ast.SelectionSet, v []*model.PracticeTest) graphql.Marshaler {
