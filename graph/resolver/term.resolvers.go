@@ -72,6 +72,15 @@ func (r *termResolver) FsrsReviewLogs(ctx context.Context, obj *model.Term) ([]*
 	return loader.GetFSRSReviewLogsByTermID(ctx, *obj.ID)
 }
 
+// PracticeTests is the resolver for the practiceTests field.
+func (r *termResolver) PracticeTests(ctx context.Context, obj *model.Term) ([]*model.PracticeTest, error) {
+	if obj.ID == nil {
+		return []*model.PracticeTest{}, nil
+	}
+
+	return loader.GetPracticeTestsByTermID(ctx, *obj.ID)
+}
+
 // Term is the resolver for the term field.
 func (r *termConfusionPairResolver) Term(ctx context.Context, obj *model.TermConfusionPair) (*model.Term, error) {
 	if obj.TermID == nil {

@@ -646,6 +646,89 @@ ORDER BY input.og_order`,
 	return fsrsCards, nil
 }
 
+func (dr *dataReader) getPracticeTestsByTermIDs(ctx context.Context, termIDs []string) ([][]*model.PracticeTest, []error) {
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil || authedUser.ID == nil {
+		results := make([][]*model.PracticeTest, len(termIDs))
+		for i := range termIDs {
+			results[i] = []*model.PracticeTest{}
+		}
+		return results, nil
+	}
+
+	type dbPracticeTest struct {
+		ID               *string           `db:"id"`
+		Timestamp        *string           `db:"timestamp"`
+		StudysetID       *string           `db:"studyset_id"`
+		QuestionsCorrect *int32            `db:"questions_correct"`
+		QuestionsTotal   *int32            `db:"questions_total"`
+		Questions        []*model.Question `db:"questions"`
+		TermID           *string           `db:"term_id"`
+	}
+	var dbPracticeTests []*dbPracticeTest
+
+	err := pgxscan.Select(
+		ctx,
+		dr.db,
+		&dbPracticeTests,
+		`SELECT pt.id,
+	to_char(pt.timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as timestamp,
+	pt.studyset_id,
+    pt.questions_correct,
+    pt.questions_total,
+    pt.questions,
+    input.term_id
+FROM unnest($1::uuid[]) WITH ORDINALITY AS input(term_id, og_order)
+JOIN (
+    SELECT practice_test_id, term_id FROM practice_test_question_terms
+    UNION
+    SELECT practice_test_id, term_id FROM practice_test_distractor_terms
+) mapping ON mapping.term_id = input.term_id
+JOIN practice_tests pt ON pt.id = mapping.practice_test_id
+WHERE pt.user_id = $2
+ORDER BY input.og_order ASC, pt.timestamp DESC`,
+		termIDs,
+		authedUser.ID,
+	)
+	if err != nil {
+		return nil, []error{err}
+	}
+
+	grouped := make(map[string][]*model.PracticeTest)
+	for _, pt := range dbPracticeTests {
+		if pt.ID != nil && pt.TermID != nil {
+			// Avoid duplicates if same term is both question and distractor in same test
+			exists := false
+			for _, existing := range grouped[*pt.TermID] {
+				if *existing.ID == *pt.ID {
+					exists = true
+					break
+				}
+			}
+			if !exists {
+				grouped[*pt.TermID] = append(grouped[*pt.TermID], &model.PracticeTest{
+					ID:               pt.ID,
+					StudysetID:       pt.StudysetID,
+					Timestamp:        pt.Timestamp,
+					QuestionsCorrect: pt.QuestionsCorrect,
+					QuestionsTotal:   pt.QuestionsTotal,
+					Questions:        pt.Questions,
+				})
+			}
+		}
+	}
+
+	orderedPracticeTests := make([][]*model.PracticeTest, len(termIDs))
+	for i, id := range termIDs {
+		orderedPracticeTests[i] = grouped[id]
+		if orderedPracticeTests[i] == nil {
+			orderedPracticeTests[i] = []*model.PracticeTest{}
+		}
+	}
+
+	return orderedPracticeTests, nil
+}
+
 func (dr *dataReader) getFSRSReviewLogsByTermIDs(ctx context.Context, termIDs []string) ([][]*model.FSRSReviewLog, []error) {
 	authedUser := auth.AuthedUserContext(ctx)
 	if authedUser == nil || authedUser.ID == nil {
@@ -731,6 +814,7 @@ type Loaders struct {
 	PracticeTestByStudysetIDLoader     *dataloadgen.Loader[string, []*model.PracticeTest]
 	FSRSCardByTermIDLoader             *dataloadgen.Loader[string, *model.FSRSCard]
 	FSRSReviewLogsByTermIDLoader       *dataloadgen.Loader[string, []*model.FSRSReviewLog]
+	PracticeTestByTermIDLoader         *dataloadgen.Loader[string, []*model.PracticeTest]
 }
 
 // NewLoaders instantiates data loaders for the middleware
@@ -752,6 +836,7 @@ func NewLoaders(db *pgxpool.Pool, usercontentBaseURL *string) *Loaders {
 		PracticeTestByStudysetIDLoader:     dataloadgen.NewLoader(dr.getPracticeTestsByStudysetIDs, dataloadgen.WithWait(time.Millisecond)),
 		FSRSCardByTermIDLoader:             dataloadgen.NewLoader(dr.getFSRSCardsByTermIDs, dataloadgen.WithWait(time.Millisecond)),
 		FSRSReviewLogsByTermIDLoader:       dataloadgen.NewLoader(dr.getFSRSReviewLogsByTermIDs, dataloadgen.WithWait(time.Millisecond)),
+		PracticeTestByTermIDLoader:         dataloadgen.NewLoader(dr.getPracticeTestsByTermIDs, dataloadgen.WithWait(time.Millisecond)),
 	}
 }
 
@@ -892,4 +977,14 @@ func GetFSRSReviewLogsByTermID(ctx context.Context, termID string) ([]*model.FSR
 func GetFSRSReviewLogsByTermIDs(ctx context.Context, termIDs []string) ([][]*model.FSRSReviewLog, error) {
 	loaders := For(ctx)
 	return loaders.FSRSReviewLogsByTermIDLoader.LoadAll(ctx, termIDs)
+}
+
+func GetPracticeTestsByTermID(ctx context.Context, termID string) ([]*model.PracticeTest, error) {
+	loaders := For(ctx)
+	return loaders.PracticeTestByTermIDLoader.Load(ctx, termID)
+}
+
+func GetPracticeTestsByTermIDs(ctx context.Context, termIDs []string) ([][]*model.PracticeTest, error) {
+	loaders := For(ctx)
+	return loaders.PracticeTestByTermIDLoader.LoadAll(ctx, termIDs)
 }
