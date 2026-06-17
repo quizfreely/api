@@ -242,6 +242,7 @@ type ComplexityRoot struct {
 		FsrsCard                 func(childComplexity int) int
 		FsrsReviewLogs           func(childComplexity int) int
 		ID                       func(childComplexity int) int
+		PracticeTests            func(childComplexity int) int
 		Progress                 func(childComplexity int) int
 		ProgressHistory          func(childComplexity int) int
 		SortOrder                func(childComplexity int) int
@@ -378,6 +379,7 @@ type TermResolver interface {
 	TopReverseConfusionPairs(ctx context.Context, obj *model.Term) ([]*model.TermConfusionPair, error)
 	FsrsCard(ctx context.Context, obj *model.Term) (*model.FSRSCard, error)
 	FsrsReviewLogs(ctx context.Context, obj *model.Term) ([]*model.FSRSReviewLog, error)
+	PracticeTests(ctx context.Context, obj *model.Term) ([]*model.PracticeTest, error)
 }
 type TermConfusionPairResolver interface {
 	Term(ctx context.Context, obj *model.TermConfusionPair) (*model.Term, error)
@@ -1564,6 +1566,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Term.ID(childComplexity), true
+
+	case "Term.practiceTests":
+		if e.complexity.Term.PracticeTests == nil {
+			break
+		}
+
+		return e.complexity.Term.PracticeTests(childComplexity), true
 
 	case "Term.progress":
 		if e.complexity.Term.Progress == nil {
@@ -3166,6 +3175,8 @@ func (ec *executionContext) fieldContext_FRQ_term(_ context.Context, field graph
 				return ec.fieldContext_Term_fsrsCard(ctx, field)
 			case "fsrsReviewLogs":
 				return ec.fieldContext_Term_fsrsReviewLogs(ctx, field)
+			case "practiceTests":
+				return ec.fieldContext_Term_practiceTests(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Term_createdAt(ctx, field)
 			case "updatedAt":
@@ -4703,6 +4714,8 @@ func (ec *executionContext) fieldContext_MCQ_term(_ context.Context, field graph
 				return ec.fieldContext_Term_fsrsCard(ctx, field)
 			case "fsrsReviewLogs":
 				return ec.fieldContext_Term_fsrsReviewLogs(ctx, field)
+			case "practiceTests":
+				return ec.fieldContext_Term_practiceTests(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Term_createdAt(ctx, field)
 			case "updatedAt":
@@ -4856,6 +4869,8 @@ func (ec *executionContext) fieldContext_MCQ_answeredTerm(_ context.Context, fie
 				return ec.fieldContext_Term_fsrsCard(ctx, field)
 			case "fsrsReviewLogs":
 				return ec.fieldContext_Term_fsrsReviewLogs(ctx, field)
+			case "practiceTests":
+				return ec.fieldContext_Term_practiceTests(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Term_createdAt(ctx, field)
 			case "updatedAt":
@@ -4927,6 +4942,8 @@ func (ec *executionContext) fieldContext_MCQ_distractors(_ context.Context, fiel
 				return ec.fieldContext_Term_fsrsCard(ctx, field)
 			case "fsrsReviewLogs":
 				return ec.fieldContext_Term_fsrsReviewLogs(ctx, field)
+			case "practiceTests":
+				return ec.fieldContext_Term_practiceTests(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Term_createdAt(ctx, field)
 			case "updatedAt":
@@ -5247,6 +5264,8 @@ func (ec *executionContext) fieldContext_Mutation_createTerms(ctx context.Contex
 				return ec.fieldContext_Term_fsrsCard(ctx, field)
 			case "fsrsReviewLogs":
 				return ec.fieldContext_Term_fsrsReviewLogs(ctx, field)
+			case "practiceTests":
+				return ec.fieldContext_Term_practiceTests(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Term_createdAt(ctx, field)
 			case "updatedAt":
@@ -5329,6 +5348,8 @@ func (ec *executionContext) fieldContext_Mutation_updateTerms(ctx context.Contex
 				return ec.fieldContext_Term_fsrsCard(ctx, field)
 			case "fsrsReviewLogs":
 				return ec.fieldContext_Term_fsrsReviewLogs(ctx, field)
+			case "practiceTests":
+				return ec.fieldContext_Term_practiceTests(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Term_createdAt(ctx, field)
 			case "updatedAt":
@@ -7138,6 +7159,8 @@ func (ec *executionContext) fieldContext_Query_term(ctx context.Context, field g
 				return ec.fieldContext_Term_fsrsCard(ctx, field)
 			case "fsrsReviewLogs":
 				return ec.fieldContext_Term_fsrsReviewLogs(ctx, field)
+			case "practiceTests":
+				return ec.fieldContext_Term_practiceTests(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Term_createdAt(ctx, field)
 			case "updatedAt":
@@ -8985,6 +9008,8 @@ func (ec *executionContext) fieldContext_Studyset_terms(_ context.Context, field
 				return ec.fieldContext_Term_fsrsCard(ctx, field)
 			case "fsrsReviewLogs":
 				return ec.fieldContext_Term_fsrsReviewLogs(ctx, field)
+			case "practiceTests":
+				return ec.fieldContext_Term_practiceTests(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Term_createdAt(ctx, field)
 			case "updatedAt":
@@ -10293,6 +10318,64 @@ func (ec *executionContext) fieldContext_Term_fsrsReviewLogs(_ context.Context, 
 	return fc, nil
 }
 
+func (ec *executionContext) _Term_practiceTests(ctx context.Context, field graphql.CollectedField, obj *model.Term) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Term_practiceTests(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Term().PracticeTests(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.PracticeTest)
+	fc.Result = res
+	return ec.marshalNPracticeTest2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐPracticeTestᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Term_practiceTests(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Term",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_PracticeTest_id(ctx, field)
+			case "timestamp":
+				return ec.fieldContext_PracticeTest_timestamp(ctx, field)
+			case "studysetId":
+				return ec.fieldContext_PracticeTest_studysetId(ctx, field)
+			case "questionsCorrect":
+				return ec.fieldContext_PracticeTest_questionsCorrect(ctx, field)
+			case "questionsTotal":
+				return ec.fieldContext_PracticeTest_questionsTotal(ctx, field)
+			case "questions":
+				return ec.fieldContext_PracticeTest_questions(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PracticeTest", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Term_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.Term) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Term_createdAt(ctx, field)
 	if err != nil {
@@ -10482,6 +10565,8 @@ func (ec *executionContext) fieldContext_TermConfusionPair_term(_ context.Contex
 				return ec.fieldContext_Term_fsrsCard(ctx, field)
 			case "fsrsReviewLogs":
 				return ec.fieldContext_Term_fsrsReviewLogs(ctx, field)
+			case "practiceTests":
+				return ec.fieldContext_Term_practiceTests(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Term_createdAt(ctx, field)
 			case "updatedAt":
@@ -10556,6 +10641,8 @@ func (ec *executionContext) fieldContext_TermConfusionPair_confusedTerm(_ contex
 				return ec.fieldContext_Term_fsrsCard(ctx, field)
 			case "fsrsReviewLogs":
 				return ec.fieldContext_Term_fsrsReviewLogs(ctx, field)
+			case "practiceTests":
+				return ec.fieldContext_Term_practiceTests(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Term_createdAt(ctx, field)
 			case "updatedAt":
@@ -11556,6 +11643,8 @@ func (ec *executionContext) fieldContext_TrueFalseQuestion_term(_ context.Contex
 				return ec.fieldContext_Term_fsrsCard(ctx, field)
 			case "fsrsReviewLogs":
 				return ec.fieldContext_Term_fsrsReviewLogs(ctx, field)
+			case "practiceTests":
+				return ec.fieldContext_Term_practiceTests(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Term_createdAt(ctx, field)
 			case "updatedAt":
@@ -11750,6 +11839,8 @@ func (ec *executionContext) fieldContext_TrueFalseQuestion_distractor(_ context.
 				return ec.fieldContext_Term_fsrsCard(ctx, field)
 			case "fsrsReviewLogs":
 				return ec.fieldContext_Term_fsrsReviewLogs(ctx, field)
+			case "practiceTests":
+				return ec.fieldContext_Term_practiceTests(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Term_createdAt(ctx, field)
 			case "updatedAt":
@@ -16826,6 +16917,42 @@ func (ec *executionContext) _Term(ctx context.Context, sel ast.SelectionSet, obj
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "practiceTests":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Term_practiceTests(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "createdAt":
 			out.Values[i] = ec._Term_createdAt(ctx, field, obj)
 		case "updatedAt":
@@ -17943,6 +18070,60 @@ func (ec *executionContext) marshalNPageInfo2ᚖquizfreelyᚋapiᚋgraphᚋmodel
 		return graphql.Null
 	}
 	return ec._PageInfo(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNPracticeTest2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐPracticeTestᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.PracticeTest) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNPracticeTest2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐPracticeTest(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNPracticeTest2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐPracticeTest(ctx context.Context, sel ast.SelectionSet, v *model.PracticeTest) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._PracticeTest(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNQuestion2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐQuestion(ctx context.Context, sel ast.SelectionSet, v *model.Question) graphql.Marshaler {

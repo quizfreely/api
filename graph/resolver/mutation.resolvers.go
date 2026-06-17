@@ -635,6 +635,9 @@ RETURNING
 	nowStr := time.Now().Format(time.RFC3339)
 	termProgressMap := make(map[string]*model.TermProgressInput)
 
+	var questionTermIDs []string
+	var distractorTermIDs []string
+
 	for _, q := range input.Questions {
 		if q == nil {
 			continue
@@ -645,6 +648,12 @@ RETURNING
 
 		if q.Mcq != nil && q.Mcq.Term != nil {
 			termID = q.Mcq.Term.ID
+			questionTermIDs = append(questionTermIDs, termID)
+			for _, d := range q.Mcq.Distractors {
+				if d != nil {
+					distractorTermIDs = append(distractorTermIDs, d.ID)
+				}
+			}
 			if q.Mcq.AnswerWith != nil {
 				answerWith = *q.Mcq.AnswerWith
 			}
@@ -653,6 +662,10 @@ RETURNING
 			}
 		} else if q.TrueFalseQuestion != nil && q.TrueFalseQuestion.Term != nil {
 			termID = q.TrueFalseQuestion.Term.ID
+			questionTermIDs = append(questionTermIDs, termID)
+			if q.TrueFalseQuestion.Distractor != nil {
+				distractorTermIDs = append(distractorTermIDs, q.TrueFalseQuestion.Distractor.ID)
+			}
 			if q.TrueFalseQuestion.AnswerWith != nil {
 				answerWith = *q.TrueFalseQuestion.AnswerWith
 			}
@@ -661,6 +674,7 @@ RETURNING
 			}
 		} else if q.Frq != nil && q.Frq.Term != nil {
 			termID = q.Frq.Term.ID
+			questionTermIDs = append(questionTermIDs, termID)
 			if q.Frq.AnswerWith != nil {
 				answerWith = *q.Frq.AnswerWith
 			}
@@ -730,6 +744,34 @@ RETURNING
 			tp.DefIncorrectIncrease = &defIncorrectIncrease
 		} else {
 			*tp.DefIncorrectIncrease += defIncorrectIncrease
+		}
+	}
+
+	if len(questionTermIDs) > 0 {
+		placeholders := make([]string, len(questionTermIDs))
+		args := make([]interface{}, len(questionTermIDs)+1)
+		args[0] = practiceTest.ID
+		for i, termID := range questionTermIDs {
+			placeholders[i] = fmt.Sprintf("($1, $%d)", i+2)
+			args[i+1] = termID
+		}
+		sql := fmt.Sprintf("INSERT INTO practice_test_question_terms (practice_test_id, term_id) VALUES %s", strings.Join(placeholders, ","))
+		if _, err := tx.Exec(ctx, sql, args...); err != nil {
+			return nil, fmt.Errorf("failed to insert question terms: %w", err)
+		}
+	}
+
+	if len(distractorTermIDs) > 0 {
+		placeholders := make([]string, len(distractorTermIDs))
+		args := make([]interface{}, len(distractorTermIDs)+1)
+		args[0] = practiceTest.ID
+		for i, termID := range distractorTermIDs {
+			placeholders[i] = fmt.Sprintf("($1, $%d)", i+2)
+			args[i+1] = termID
+		}
+		sql := fmt.Sprintf("INSERT INTO practice_test_distractor_terms (practice_test_id, term_id) VALUES %s", strings.Join(placeholders, ","))
+		if _, err := tx.Exec(ctx, sql, args...); err != nil {
+			return nil, fmt.Errorf("failed to insert distractor terms: %w", err)
 		}
 	}
 

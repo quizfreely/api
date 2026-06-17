@@ -11,6 +11,7 @@ type Term {
     topReverseConfusionPairs: [TermConfusionPair]
     fsrsCard: FSRSCard
     fsrsReviewLogs: [FSRSReviewLog!]
+    practiceTests: [PracticeTest!]!
     createdAt: String
     updatedAt: String
 }
