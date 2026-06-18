@@ -1,4 +1,4 @@
-\restrict A5mMdu7dRkrRCNi8bPOHI8RPg76VnfLDvUgmD5npwU6xNIvkadW1a7IcpUgaNR7
+\restrict NZsfAfUszKpbPAzfXYgElZj9N7UALmc4Dzv2FDDXNbSrf7vQ8jPHitI6QBxMUb9
 
 -- Dumped from database version 18.2
 -- Dumped by pg_dump version 18.2
@@ -215,6 +215,28 @@ CREATE TABLE public.fsrs_review_logs (
 
 CREATE TABLE public.images (
     object_key text NOT NULL
+);
+
+
+--
+-- Name: practice_test_distractor_terms; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.practice_test_distractor_terms (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    practice_test_id uuid NOT NULL,
+    term_id uuid NOT NULL
+);
+
+
+--
+-- Name: practice_test_question_terms; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.practice_test_question_terms (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    practice_test_id uuid NOT NULL,
+    term_id uuid NOT NULL
 );
 
 
@@ -455,6 +477,22 @@ ALTER TABLE ONLY public.images
 
 
 --
+-- Name: practice_test_distractor_terms practice_test_distractor_terms_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.practice_test_distractor_terms
+    ADD CONSTRAINT practice_test_distractor_terms_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: practice_test_question_terms practice_test_question_terms_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.practice_test_question_terms
+    ADD CONSTRAINT practice_test_question_terms_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: practice_tests practice_tests_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -548,6 +586,34 @@ ALTER TABLE ONLY public.term_progress
 
 ALTER TABLE ONLY public.terms
     ADD CONSTRAINT terms_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: idx_ptdt_practice_test_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ptdt_practice_test_id ON public.practice_test_distractor_terms USING btree (practice_test_id);
+
+
+--
+-- Name: idx_ptdt_term_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ptdt_term_id ON public.practice_test_distractor_terms USING btree (term_id);
+
+
+--
+-- Name: idx_ptqt_practice_test_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ptqt_practice_test_id ON public.practice_test_question_terms USING btree (practice_test_id);
+
+
+--
+-- Name: idx_ptqt_term_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ptqt_term_id ON public.practice_test_question_terms USING btree (term_id);
 
 
 --
@@ -647,6 +713,38 @@ ALTER TABLE ONLY public.fsrs_review_logs
 
 ALTER TABLE ONLY public.fsrs_review_logs
     ADD CONSTRAINT fsrs_review_logs_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id);
+
+
+--
+-- Name: practice_test_distractor_terms practice_test_distractor_terms_practice_test_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.practice_test_distractor_terms
+    ADD CONSTRAINT practice_test_distractor_terms_practice_test_id_fkey FOREIGN KEY (practice_test_id) REFERENCES public.practice_tests(id) ON DELETE CASCADE;
+
+
+--
+-- Name: practice_test_distractor_terms practice_test_distractor_terms_term_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.practice_test_distractor_terms
+    ADD CONSTRAINT practice_test_distractor_terms_term_id_fkey FOREIGN KEY (term_id) REFERENCES public.terms(id) ON DELETE CASCADE;
+
+
+--
+-- Name: practice_test_question_terms practice_test_question_terms_practice_test_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.practice_test_question_terms
+    ADD CONSTRAINT practice_test_question_terms_practice_test_id_fkey FOREIGN KEY (practice_test_id) REFERENCES public.practice_tests(id) ON DELETE CASCADE;
+
+
+--
+-- Name: practice_test_question_terms practice_test_question_terms_term_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.practice_test_question_terms
+    ADD CONSTRAINT practice_test_question_terms_term_id_fkey FOREIGN KEY (term_id) REFERENCES public.terms(id) ON DELETE CASCADE;
 
 
 --
@@ -789,7 +887,7 @@ ALTER TABLE ONLY public.terms
 -- PostgreSQL database dump complete
 --
 
-\unrestrict A5mMdu7dRkrRCNi8bPOHI8RPg76VnfLDvUgmD5npwU6xNIvkadW1a7IcpUgaNR7
+\unrestrict NZsfAfUszKpbPAzfXYgElZj9N7UALmc4Dzv2FDDXNbSrf7vQ8jPHitI6QBxMUb9
 
 
 --
@@ -827,4 +925,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('202603071640'),
     ('202603212200'),
     ('202605031122'),
-    ('202605031337');
+    ('202605031337'),
+    ('202606170845');
