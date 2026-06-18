@@ -20,7 +20,7 @@ type Mutation {
     setStudysetSeoIndexing(studysetId: ID!, approved: Boolean!): Boolean!
     updateFsrsCard(termId: ID!, card: FSRSCardInput!): Boolean!
     recordFsrsReviewLog(termId: ID!, reviewLog: FSRSReviewLogInput!): Boolean!
-    recordMatchSession(match: MatchSessionInput!): MatchSession
+    recordMatchActivity(input: MatchActivityInput!): MatchActivity
 }
 input PracticeTestInput {
     id: ID
@@ -58,13 +58,14 @@ input FRQInput {
     userMarkedCorrect: Boolean
     answeredString: String
 }
-type MatchSession {
+type MatchActivity {
     durationMs: Int!
+    endTimestamp: String!
+    termsIds: [ID!]!
+    incorrectPairIds: [[ID!]!]!
 }
-input MatchSessionInput {
+input MatchActivityInput {
     durationMs: Int!
-    # items: [MatchItemInput!]!
+    termsIds: [ID!]!
+    incorrectPairIds: [[ID!]!]!
 }
-# input MatchItemInput {
-#     term
-# }
