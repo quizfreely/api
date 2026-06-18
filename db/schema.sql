@@ -1,4 +1,4 @@
-\restrict NZsfAfUszKpbPAzfXYgElZj9N7UALmc4Dzv2FDDXNbSrf7vQ8jPHitI6QBxMUb9
+\restrict l32SudQCDrsb4bnxncQ4zxsUtcBrRo6ogNc20mp37QnGa0vsnrFF9V2F5L3mqe6
 
 -- Dumped from database version 18.2
 -- Dumped by pg_dump version 18.2
@@ -143,7 +143,8 @@ CREATE TABLE auth.users (
     oauth_google_sub text,
     oauth_google_email text,
     mod_perms boolean DEFAULT false NOT NULL,
-    oauth_google_name text
+    oauth_google_name text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -887,7 +888,7 @@ ALTER TABLE ONLY public.terms
 -- PostgreSQL database dump complete
 --
 
-\unrestrict NZsfAfUszKpbPAzfXYgElZj9N7UALmc4Dzv2FDDXNbSrf7vQ8jPHitI6QBxMUb9
+\unrestrict l32SudQCDrsb4bnxncQ4zxsUtcBrRo6ogNc20mp37QnGa0vsnrFF9V2F5L3mqe6
 
 
 --
@@ -926,4 +927,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('202603212200'),
     ('202605031122'),
     ('202605031337'),
-    ('202606170845');
+    ('202606170845'),
+    ('202606180946');
