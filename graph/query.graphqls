@@ -36,41 +36,39 @@ enum AnswerWith {
 type PracticeTest {
     id: ID!
     timestamp: String!
-    studysetId: ID!
+    studysetIds: [ID!]!
     questionsCorrect: Int
     questionsTotal: Int
-    questions: [Question!]
-}
-enum QuestionType {
-    MCQ
-    TRUE_FALSE
-    FRQ
+    questions: [Question!]!
 }
 type Question {
-    questionType: QuestionType
     mcq: MCQ
-    trueFalseQuestion: TrueFalseQuestion
+    trueFalseQuestion: TFQ
     frq: FRQ
 }
-type MCQ {
-    term: Term
-    answerWith: AnswerWith
-    correct: Boolean
-    answeredTerm: Term
-    distractors: [Term]
-    correctChoiceIndex: Int
+type TermATP {
+    id: ID!
+    term: String!
+    def: String!
 }
-type TrueFalseQuestion {
-    term: Term
-    answerWith: AnswerWith
-    correct: Boolean
-    answeredBool: Boolean
-    distractor: Term
+type MCQ {
+    term: TermATP!
+    answerWith: AnswerWith!
+    correct: Boolean!
+    answeredIndex: Int!
+    distractors: [TermATP!]!
+}
+type TFQ {
+    term: TermATP!
+    answerWith: AnswerWith!
+    correct: Boolean!
+    answeredBool: Boolean!
+    distractor: TermATP
 }
 type FRQ {
-    term: Term
-    answerWith: AnswerWith
-    correct: Boolean
+    term: TermATP!
+    answerWith: AnswerWith!
+    correct: Boolean!
     userMarkedCorrect: Boolean
-    answeredString: String
+    answeredString: String!
 }

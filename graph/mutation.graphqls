@@ -8,8 +8,8 @@ type Mutation {
     updateUser(displayName: String): AuthedUser
     updateTermProgress(termProgress: [TermProgressInput!]!): [TermProgress!]
     recordConfusedTerms(confusedTerms: [TermConfusionPairInput]): Boolean
-    recordPracticeTest(input: PracticeTestInput): PracticeTest
-    updatePracticeTest(input: PracticeTestInput): PracticeTest
+    recordPracticeTest(input: PracticeTestInput!): PracticeTest
+    updatePracticeTest(id: ID!, input: PracticeTestInput!): PracticeTest
     createFolder(name: String!): Folder
     renameFolder(id: ID!, name: String!): Folder
     deleteFolder(id: ID!): ID
@@ -23,40 +23,39 @@ type Mutation {
     recordMatchActivity(input: MatchActivityInput!): MatchActivity
 }
 input PracticeTestInput {
-    id: ID
     timestamp: String
-    studysetId: ID
-    questionsCorrect: Int
-    questionsTotal: Int
-    questions: [QuestionInput!]
+    questions: [QuestionInput!]!
 }
-input QuestionInput {
-    questionType: QuestionType
+input QuestionInput @oneOf {
     mcq: MCQInput
-    trueFalseQuestion: TrueFalseQuestionInput
+    tfq: TFQInput
     frq: FRQInput
 }
-input MCQInput {
-    term: TermInput
-    answerWith: AnswerWith
-    correct: Boolean
-    answeredTerm: TermInput
-    distractors: [TermInput]
-    correctChoiceIndex: Int
+input TermATPInput {
+    id: ID!
+    term: String!
+    def: String!
 }
-input TrueFalseQuestionInput {
-    term: TermInput
-    answerWith: AnswerWith
-    correct: Boolean
-    answeredBool: Boolean
-    distractor: TermInput
+input MCQInput {
+    term: TermATPInput!
+    answerWith: AnswerWith!
+    correct: Boolean!
+    answeredIndex: Int!
+    distractors: [TermATPInput!]!
+}
+input TFQInput {
+    term: TermATPInput!
+    answerWith: AnswerWith!
+    correct: Boolean!
+    answeredBool: Boolean!
+    distractor: TermATPInput
 }
 input FRQInput {
-    term: TermInput
-    answerWith: AnswerWith
-    correct: Boolean
+    term: TermATPInput!
+    answerWith: AnswerWith!
+    correct: Boolean!
     userMarkedCorrect: Boolean
-    answeredString: String
+    answeredString: String!
 }
 type MatchActivity {
     durationMs: Int!
