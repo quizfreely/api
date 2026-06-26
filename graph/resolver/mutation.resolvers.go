@@ -712,6 +712,32 @@ func (r *mutationResolver) RecordPracticeTest(ctx context.Context, input model.P
 		}
 	}
 
+	allTermIDs := append(questionTermIDs, distractorTermIDs...)
+	var studysetIDs []string
+	if len(allTermIDs) > 0 {
+		var studysets []struct {
+			ID      string `db:"id"`
+			Private bool   `db:"private"`
+			UserID  string `db:"user_id"`
+			Draft   bool   `db:"draft"`
+		}
+		err = pgxscan.Select(ctx, tx, &studysets, `
+			SELECT id, private, user_id, draft
+			FROM studysets
+			WHERE id IN (SELECT DISTINCT studyset_id FROM terms WHERE id = ANY($1))
+		`, allTermIDs)
+		if err != nil {
+			return nil, fmt.Errorf("database error checking studysets: %w", err)
+		}
+
+		for _, s := range studysets {
+			if s.Draft || (s.Private && (authedUser.ID == nil || s.UserID != *authedUser.ID)) {
+				return nil, fmt.Errorf("studyset not found or not accessible")
+			}
+			studysetIDs = append(studysetIDs, s.ID)
+		}
+	}
+
 	var practiceTest model.PracticeTest
 	err = pgxscan.Get(
 		ctx,
@@ -760,6 +786,20 @@ RETURNING
 		sql := fmt.Sprintf("INSERT INTO practice_test_distractor_terms (practice_test_id, term_id) VALUES %s", strings.Join(placeholders, ","))
 		if _, err := tx.Exec(ctx, sql, args...); err != nil {
 			return nil, fmt.Errorf("failed to insert distractor terms: %w", err)
+		}
+	}
+
+	if len(studysetIDs) > 0 {
+		placeholders := make([]string, len(studysetIDs))
+		args := make([]interface{}, len(studysetIDs)+1)
+		args[0] = practiceTest.ID
+		for i, studysetID := range studysetIDs {
+			placeholders[i] = fmt.Sprintf("($1, $%d)", i+2)
+			args[i+1] = studysetID
+		}
+		sql := fmt.Sprintf("INSERT INTO practice_test_studysets (practice_test_id, studyset_id) VALUES %s", strings.Join(placeholders, ","))
+		if _, err := tx.Exec(ctx, sql, args...); err != nil {
+			return nil, fmt.Errorf("failed to insert practice test studysets: %w", err)
 		}
 	}
 
@@ -898,8 +938,16 @@ func (r *mutationResolver) UpdatePracticeTest(ctx context.Context, id string, in
 		return nil, fmt.Errorf("not authenticated")
 	}
 
+	tx, err := r.DB.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
 	var questionsCorrect int32 = 0
 	var questionsTotal int32 = int32(len(input.Questions))
+	var questionTermIDs []string
+	var distractorTermIDs []string
 
 	for _, q := range input.Questions {
 		if q == nil {
@@ -908,12 +956,29 @@ func (r *mutationResolver) UpdatePracticeTest(ctx context.Context, id string, in
 		correct := false
 		if q.Mcq != nil {
 			correct = q.Mcq.Correct
+			if q.Mcq.Term != nil {
+				questionTermIDs = append(questionTermIDs, q.Mcq.Term.ID)
+			}
+			for _, d := range q.Mcq.Distractors {
+				if d != nil {
+					distractorTermIDs = append(distractorTermIDs, d.ID)
+				}
+			}
 		} else if q.Tfq != nil {
 			correct = q.Tfq.Correct
+			if q.Tfq.Term != nil {
+				questionTermIDs = append(questionTermIDs, q.Tfq.Term.ID)
+			}
+			if q.Tfq.Distractor != nil {
+				distractorTermIDs = append(distractorTermIDs, q.Tfq.Distractor.ID)
+			}
 		} else if q.Frq != nil {
 			correct = q.Frq.Correct
 			if q.Frq.UserMarkedCorrect != nil && *q.Frq.UserMarkedCorrect {
 				correct = true
+			}
+			if q.Frq.Term != nil {
+				questionTermIDs = append(questionTermIDs, q.Frq.Term.ID)
 			}
 		}
 		if correct {
@@ -921,10 +986,36 @@ func (r *mutationResolver) UpdatePracticeTest(ctx context.Context, id string, in
 		}
 	}
 
+	allTermIDs := append(questionTermIDs, distractorTermIDs...)
+	var studysetIDs []string
+	if len(allTermIDs) > 0 {
+		var studysets []struct {
+			ID      string `db:"id"`
+			Private bool   `db:"private"`
+			UserID  string `db:"user_id"`
+			Draft   bool   `db:"draft"`
+		}
+		err = pgxscan.Select(ctx, tx, &studysets, `
+			SELECT id, private, user_id, draft
+			FROM studysets
+			WHERE id IN (SELECT DISTINCT studyset_id FROM terms WHERE id = ANY($1))
+		`, allTermIDs)
+		if err != nil {
+			return nil, fmt.Errorf("database error checking studysets: %w", err)
+		}
+
+		for _, s := range studysets {
+			if s.Draft || (s.Private && (authedUser.ID == nil || s.UserID != *authedUser.ID)) {
+				return nil, fmt.Errorf("studyset not found or not accessible")
+			}
+			studysetIDs = append(studysetIDs, s.ID)
+		}
+	}
+
 	var practiceTest model.PracticeTest
-	err := pgxscan.Get(
+	err = pgxscan.Get(
 		ctx,
-		r.DB,
+		tx,
 		&practiceTest,
 		`UPDATE practice_tests SET questions_correct = $3, questions_total = $4, questions = $5
 WHERE user_id = $1 AND id = $2
@@ -941,7 +1032,70 @@ RETURNING
 		input.Questions,
 	)
 	if err != nil {
+		if pgxscan.NotFound(err) {
+			return nil, fmt.Errorf("practice test not found")
+		}
 		return nil, fmt.Errorf("database error in updatePracticeTest: %w", err)
+	}
+
+	// Update mappings
+	_, err = tx.Exec(ctx, "DELETE FROM practice_test_question_terms WHERE practice_test_id = $1", id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to delete old question terms: %w", err)
+	}
+	_, err = tx.Exec(ctx, "DELETE FROM practice_test_distractor_terms WHERE practice_test_id = $1", id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to delete old distractor terms: %w", err)
+	}
+	_, err = tx.Exec(ctx, "DELETE FROM practice_test_studysets WHERE practice_test_id = $1", id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to delete old practice test studysets: %w", err)
+	}
+
+	if len(questionTermIDs) > 0 {
+		placeholders := make([]string, len(questionTermIDs))
+		args := make([]interface{}, len(questionTermIDs)+1)
+		args[0] = id
+		for i, termID := range questionTermIDs {
+			placeholders[i] = fmt.Sprintf("($1, $%d)", i+2)
+			args[i+1] = termID
+		}
+		sql := fmt.Sprintf("INSERT INTO practice_test_question_terms (practice_test_id, term_id) VALUES %s", strings.Join(placeholders, ","))
+		if _, err := tx.Exec(ctx, sql, args...); err != nil {
+			return nil, fmt.Errorf("failed to insert question terms: %w", err)
+		}
+	}
+
+	if len(distractorTermIDs) > 0 {
+		placeholders := make([]string, len(distractorTermIDs))
+		args := make([]interface{}, len(distractorTermIDs)+1)
+		args[0] = id
+		for i, termID := range distractorTermIDs {
+			placeholders[i] = fmt.Sprintf("($1, $%d)", i+2)
+			args[i+1] = termID
+		}
+		sql := fmt.Sprintf("INSERT INTO practice_test_distractor_terms (practice_test_id, term_id) VALUES %s", strings.Join(placeholders, ","))
+		if _, err := tx.Exec(ctx, sql, args...); err != nil {
+			return nil, fmt.Errorf("failed to insert distractor terms: %w", err)
+		}
+	}
+
+	if len(studysetIDs) > 0 {
+		placeholders := make([]string, len(studysetIDs))
+		args := make([]interface{}, len(studysetIDs)+1)
+		args[0] = id
+		for i, studysetID := range studysetIDs {
+			placeholders[i] = fmt.Sprintf("($1, $%d)", i+2)
+			args[i+1] = studysetID
+		}
+		sql := fmt.Sprintf("INSERT INTO practice_test_studysets (practice_test_id, studyset_id) VALUES %s", strings.Join(placeholders, ","))
+		if _, err := tx.Exec(ctx, sql, args...); err != nil {
+			return nil, fmt.Errorf("failed to insert practice test studysets: %w", err)
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
 	return &practiceTest, nil

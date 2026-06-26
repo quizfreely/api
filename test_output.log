@@ -1,0 +1,12 @@
+2026/06/26 21:05:44 github.com/testcontainers/testcontainers-go - Connected to docker:
+  Server Version: 29.2.1
+  API Version: 1.51
+  Operating System: Ubuntu 24.04.4 LTS
+  Total Memory: 7959 MB
+  Testcontainers for Go Version: v0.40.0
+  Resolved Docker Host: unix:///var/run/docker.sock
+  Resolved Docker Socket Path: /var/run/docker.sock
+  Test SessionID: 2b97c162846aca6d510281e951c1f2622049fa3aa98207745b423ab2e5f95833
+  Test ProcessID: a5daa2e7-7520-4609-a5ad-0ec306aad746
+2026/06/26 21:05:44 No image auth found for https://index.docker.io/v1/. Setting empty credentials for the image: postgres:16. This is expected for public images. Details: credentials not found in native keychain
+2026/06/26 21:05:47 🐳 Creating container for image postgres:16

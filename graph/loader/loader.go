@@ -533,7 +533,7 @@ func (dr *dataReader) getPracticeTestsByStudysetIDs(ctx context.Context, studyse
 		ctx,
 		dr.db,
 		&dbPracticeTests,
-		`SELECT DISTINCT ON (input.og_order, pt.id)
+		`SELECT
 	pt.id,
 	to_char(pt.timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as timestamp,
     pt.questions_correct,
@@ -541,15 +541,10 @@ func (dr *dataReader) getPracticeTestsByStudysetIDs(ctx context.Context, studyse
     pt.questions,
 	input.studyset_id
 FROM unnest($1::uuid[]) WITH ORDINALITY AS input(studyset_id, og_order)
-JOIN (
-    SELECT practice_test_id, term_id FROM practice_test_question_terms
-    UNION
-    SELECT practice_test_id, term_id FROM practice_test_distractor_terms
-) mapping ON TRUE
-JOIN terms t ON mapping.term_id = t.id AND t.studyset_id = input.studyset_id
-JOIN practice_tests pt ON pt.id = mapping.practice_test_id
+JOIN practice_test_studysets pts ON pts.studyset_id = input.studyset_id
+JOIN practice_tests pt ON pt.id = pts.practice_test_id
 WHERE pt.user_id = $2
-ORDER BY input.og_order ASC, pt.id, pt.timestamp DESC`,
+ORDER BY input.og_order ASC, pt.timestamp DESC`,
 		studysetIDs,
 		authedUser.ID,
 	)
@@ -689,6 +684,7 @@ JOIN (
 ) mapping ON mapping.term_id = input.term_id
 JOIN practice_tests pt ON pt.id = mapping.practice_test_id
 WHERE pt.user_id = $2
+GROUP BY input.term_id, input.og_order, pt.id
 ORDER BY input.og_order ASC, pt.timestamp DESC`,
 		termIDs,
 		authedUser.ID,
@@ -700,23 +696,13 @@ ORDER BY input.og_order ASC, pt.timestamp DESC`,
 	grouped := make(map[string][]*model.PracticeTest)
 	for _, pt := range dbPracticeTests {
 		if pt.ID != nil && pt.TermID != nil {
-			// Avoid duplicates if same term is both question and distractor in same test
-			exists := false
-			for _, existing := range grouped[*pt.TermID] {
-				if *existing.ID == *pt.ID {
-					exists = true
-					break
-				}
-			}
-			if !exists {
-				grouped[*pt.TermID] = append(grouped[*pt.TermID], &model.PracticeTest{
-					ID:               pt.ID,
-					Timestamp:        pt.Timestamp,
-					QuestionsCorrect: pt.QuestionsCorrect,
-					QuestionsTotal:   pt.QuestionsTotal,
-					Questions:        pt.Questions,
-				})
-			}
+			grouped[*pt.TermID] = append(grouped[*pt.TermID], &model.PracticeTest{
+				ID:               pt.ID,
+				Timestamp:        pt.Timestamp,
+				QuestionsCorrect: pt.QuestionsCorrect,
+				QuestionsTotal:   pt.QuestionsTotal,
+				Questions:        pt.Questions,
+			})
 		}
 	}
 
