@@ -18,7 +18,26 @@ import (
 
 // StudysetIds is the resolver for the studysetIds field.
 func (r *practiceTestResolver) StudysetIds(ctx context.Context, obj *model.PracticeTest) ([]string, error) {
-	panic(fmt.Errorf("not implemented: StudysetIds - studysetIds"))
+	if obj == nil || obj.ID == nil {
+		return nil, nil
+	}
+
+	var ids []string
+	sql := `
+		SELECT DISTINCT t.studyset_id
+		FROM (
+			SELECT term_id FROM practice_test_question_terms WHERE practice_test_id = $1
+			UNION
+			SELECT term_id FROM practice_test_distractor_terms WHERE practice_test_id = $1
+		) mapping
+		JOIN terms t ON t.id = mapping.term_id
+	`
+	err := pgxscan.Select(ctx, r.DB, &ids, sql, *obj.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch studyset ids for practice test: %w", err)
+	}
+
+	return ids, nil
 }
 
 // Authed is the resolver for the authed field.
@@ -955,7 +974,6 @@ func (r *queryResolver) PracticeTest(ctx context.Context, id string) (*model.Pra
 		r.DB,
 		&practiceTest,
 		`SELECT id,
-	studyset_id,
 	to_char(timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as timestamp,
 	questions_correct,
 	questions_total,
