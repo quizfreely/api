@@ -23,15 +23,7 @@ func (r *practiceTestResolver) StudysetIds(ctx context.Context, obj *model.Pract
 	}
 
 	var ids []string
-	sql := `
-		SELECT DISTINCT t.studyset_id
-		FROM (
-			SELECT term_id FROM practice_test_question_terms WHERE practice_test_id = $1
-			UNION
-			SELECT term_id FROM practice_test_distractor_terms WHERE practice_test_id = $1
-		) mapping
-		JOIN terms t ON t.id = mapping.term_id
-	`
+	sql := `SELECT studyset_id FROM practice_test_studysets WHERE practice_test_id = $1`
 	err := pgxscan.Select(ctx, r.DB, &ids, sql, *obj.ID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch studyset ids for practice test: %w", err)

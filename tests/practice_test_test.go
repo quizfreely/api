@@ -182,5 +182,5 @@ func TestPracticeTestLifecycle(t *testing.T) {
 	resp, _ = http.DefaultClient.Do(req)
 	var privateResult map[string]interface{}
 	json.NewDecoder(resp.Body).Decode(&privateResult)
-	require.Nil(t, privateResult["errors"], "user2 should be able to record PT even for terms in private sets as per user instructions")
+	require.NotNil(t, privateResult["errors"], "user2 should NOT be able to record PT for user1's private set")
 }
