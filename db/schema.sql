@@ -1,7 +1,7 @@
-\restrict l32SudQCDrsb4bnxncQ4zxsUtcBrRo6ogNc20mp37QnGa0vsnrFF9V2F5L3mqe6
+\restrict qpA11NEyTPlSP6OsbX3VjI4yML3wJQY71BSgV5YgTxaMdZ697b7LiloqThBcV4m
 
--- Dumped from database version 18.2
--- Dumped by pg_dump version 18.2
+-- Dumped from database version 18.4
+-- Dumped by pg_dump version 18.4
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -242,6 +242,16 @@ CREATE TABLE public.practice_test_question_terms (
 
 
 --
+-- Name: practice_test_studysets; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.practice_test_studysets (
+    practice_test_id uuid NOT NULL,
+    studyset_id uuid NOT NULL
+);
+
+
+--
 -- Name: practice_tests; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -249,7 +259,6 @@ CREATE TABLE public.practice_tests (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     "timestamp" timestamp with time zone DEFAULT now() NOT NULL,
     user_id uuid NOT NULL,
-    studyset_id uuid NOT NULL,
     questions_correct smallint,
     questions_total smallint,
     questions jsonb
@@ -494,6 +503,14 @@ ALTER TABLE ONLY public.practice_test_question_terms
 
 
 --
+-- Name: practice_test_studysets practice_test_studysets_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.practice_test_studysets
+    ADD CONSTRAINT practice_test_studysets_pkey PRIMARY KEY (practice_test_id, studyset_id);
+
+
+--
 -- Name: practice_tests practice_tests_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -615,6 +632,13 @@ CREATE INDEX idx_ptqt_practice_test_id ON public.practice_test_question_terms US
 --
 
 CREATE INDEX idx_ptqt_term_id ON public.practice_test_question_terms USING btree (term_id);
+
+
+--
+-- Name: idx_pts_studyset_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_pts_studyset_id ON public.practice_test_studysets USING btree (studyset_id);
 
 
 --
@@ -749,11 +773,19 @@ ALTER TABLE ONLY public.practice_test_question_terms
 
 
 --
--- Name: practice_tests practice_tests_studyset_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: practice_test_studysets practice_test_studysets_practice_test_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.practice_tests
-    ADD CONSTRAINT practice_tests_studyset_id_fkey FOREIGN KEY (studyset_id) REFERENCES public.studysets(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.practice_test_studysets
+    ADD CONSTRAINT practice_test_studysets_practice_test_id_fkey FOREIGN KEY (practice_test_id) REFERENCES public.practice_tests(id) ON DELETE CASCADE;
+
+
+--
+-- Name: practice_test_studysets practice_test_studysets_studyset_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.practice_test_studysets
+    ADD CONSTRAINT practice_test_studysets_studyset_id_fkey FOREIGN KEY (studyset_id) REFERENCES public.studysets(id) ON DELETE CASCADE;
 
 
 --
@@ -888,7 +920,7 @@ ALTER TABLE ONLY public.terms
 -- PostgreSQL database dump complete
 --
 
-\unrestrict l32SudQCDrsb4bnxncQ4zxsUtcBrRo6ogNc20mp37QnGa0vsnrFF9V2F5L3mqe6
+\unrestrict qpA11NEyTPlSP6OsbX3VjI4yML3wJQY71BSgV5YgTxaMdZ697b7LiloqThBcV4m
 
 
 --
@@ -928,4 +960,7 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('202605031122'),
     ('202605031337'),
     ('202606170845'),
-    ('202606180946');
+    ('202606180946'),
+    ('202606251140'),
+    ('202606252121'),
+    ('202606261000');
