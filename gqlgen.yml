@@ -211,3 +211,7 @@ models:
         resolver: true
       studysetCount:
         resolver: true
+  PracticeTest:
+    fields:
+      studysetIds:
+        resolver: true
