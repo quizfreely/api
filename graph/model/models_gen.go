@@ -10,19 +10,19 @@ import (
 )
 
 type Frq struct {
-	Term              *Term       `json:"term,omitempty"`
-	AnswerWith        *AnswerWith `json:"answerWith,omitempty"`
-	Correct           *bool       `json:"correct,omitempty"`
-	UserMarkedCorrect *bool       `json:"userMarkedCorrect,omitempty"`
-	AnsweredString    *string     `json:"answeredString,omitempty"`
+	Term              *TermAtp   `json:"term"`
+	AnswerWith        AnswerWith `json:"answerWith"`
+	Correct           bool       `json:"correct"`
+	UserMarkedCorrect *bool      `json:"userMarkedCorrect,omitempty"`
+	AnsweredString    string     `json:"answeredString"`
 }
 
 type FRQInput struct {
-	Term              *TermInput  `json:"term,omitempty"`
-	AnswerWith        *AnswerWith `json:"answerWith,omitempty"`
-	Correct           *bool       `json:"correct,omitempty"`
-	UserMarkedCorrect *bool       `json:"userMarkedCorrect,omitempty"`
-	AnsweredString    *string     `json:"answeredString,omitempty"`
+	Term              *TermATPInput `json:"term"`
+	AnswerWith        AnswerWith    `json:"answerWith"`
+	Correct           bool          `json:"correct"`
+	UserMarkedCorrect *bool         `json:"userMarkedCorrect,omitempty"`
+	AnsweredString    string        `json:"answeredString"`
 }
 
 type FSRSCard struct {
@@ -84,29 +84,32 @@ type FolderEdge struct {
 }
 
 type Mcq struct {
-	Term               *Term       `json:"term,omitempty"`
-	AnswerWith         *AnswerWith `json:"answerWith,omitempty"`
-	Correct            *bool       `json:"correct,omitempty"`
-	AnsweredTerm       *Term       `json:"answeredTerm,omitempty"`
-	Distractors        []*Term     `json:"distractors,omitempty"`
-	CorrectChoiceIndex *int32      `json:"correctChoiceIndex,omitempty"`
+	Term          *TermAtp   `json:"term"`
+	AnswerWith    AnswerWith `json:"answerWith"`
+	Correct       bool       `json:"correct"`
+	AnsweredIndex int32      `json:"answeredIndex"`
+	Distractors   []*TermAtp `json:"distractors"`
 }
 
 type MCQInput struct {
-	Term               *TermInput   `json:"term,omitempty"`
-	AnswerWith         *AnswerWith  `json:"answerWith,omitempty"`
-	Correct            *bool        `json:"correct,omitempty"`
-	AnsweredTerm       *TermInput   `json:"answeredTerm,omitempty"`
-	Distractors        []*TermInput `json:"distractors,omitempty"`
-	CorrectChoiceIndex *int32       `json:"correctChoiceIndex,omitempty"`
+	Term          *TermATPInput   `json:"term"`
+	AnswerWith    AnswerWith      `json:"answerWith"`
+	Correct       bool            `json:"correct"`
+	AnsweredIndex int32           `json:"answeredIndex"`
+	Distractors   []*TermATPInput `json:"distractors"`
 }
 
-type MatchSession struct {
-	DurationMs int32 `json:"durationMs"`
+type MatchActivity struct {
+	DurationMs       int32      `json:"durationMs"`
+	EndTimestamp     string     `json:"endTimestamp"`
+	TermsIds         []string   `json:"termsIds"`
+	IncorrectPairIds [][]string `json:"incorrectPairIds"`
 }
 
-type MatchSessionInput struct {
-	DurationMs int32 `json:"durationMs"`
+type MatchActivityInput struct {
+	DurationMs       int32      `json:"durationMs"`
+	TermsIds         []string   `json:"termsIds"`
+	IncorrectPairIds [][]string `json:"incorrectPairIds"`
 }
 
 type Mutation struct {
@@ -126,29 +129,23 @@ type PageInfo struct {
 }
 
 type PracticeTestInput struct {
-	ID               *string          `json:"id,omitempty"`
-	Timestamp        *string          `json:"timestamp,omitempty"`
-	StudysetID       *string          `json:"studysetId,omitempty"`
-	QuestionsCorrect *int32           `json:"questionsCorrect,omitempty"`
-	QuestionsTotal   *int32           `json:"questionsTotal,omitempty"`
-	Questions        []*QuestionInput `json:"questions,omitempty"`
+	Timestamp *string          `json:"timestamp,omitempty"`
+	Questions []*QuestionInput `json:"questions"`
 }
 
 type Query struct {
 }
 
 type Question struct {
-	QuestionType      *QuestionType      `json:"questionType,omitempty"`
-	Mcq               *Mcq               `json:"mcq,omitempty"`
-	TrueFalseQuestion *TrueFalseQuestion `json:"trueFalseQuestion,omitempty"`
-	Frq               *Frq               `json:"frq,omitempty"`
+	Mcq               *Mcq `json:"mcq,omitempty"`
+	TrueFalseQuestion *Tfq `json:"trueFalseQuestion,omitempty"`
+	Frq               *Frq `json:"frq,omitempty"`
 }
 
 type QuestionInput struct {
-	QuestionType      *QuestionType           `json:"questionType,omitempty"`
-	Mcq               *MCQInput               `json:"mcq,omitempty"`
-	TrueFalseQuestion *TrueFalseQuestionInput `json:"trueFalseQuestion,omitempty"`
-	Frq               *FRQInput               `json:"frq,omitempty"`
+	Mcq *MCQInput `json:"mcq,omitempty"`
+	Tfq *TFQInput `json:"tfq,omitempty"`
+	Frq *FRQInput `json:"frq,omitempty"`
 }
 
 type StudysetConnection struct {
@@ -165,6 +162,34 @@ type StudysetInput struct {
 	Title     string  `json:"title"`
 	Private   bool    `json:"private"`
 	SubjectID *string `json:"subjectId,omitempty"`
+}
+
+type Tfq struct {
+	Term         *TermAtp   `json:"term"`
+	AnswerWith   AnswerWith `json:"answerWith"`
+	Correct      bool       `json:"correct"`
+	AnsweredBool bool       `json:"answeredBool"`
+	Distractor   *TermAtp   `json:"distractor,omitempty"`
+}
+
+type TFQInput struct {
+	Term         *TermATPInput `json:"term"`
+	AnswerWith   AnswerWith    `json:"answerWith"`
+	Correct      bool          `json:"correct"`
+	AnsweredBool bool          `json:"answeredBool"`
+	Distractor   *TermATPInput `json:"distractor,omitempty"`
+}
+
+type TermAtp struct {
+	ID   string `json:"id"`
+	Term string `json:"term"`
+	Def  string `json:"def"`
+}
+
+type TermATPInput struct {
+	ID   string `json:"id"`
+	Term string `json:"term"`
+	Def  string `json:"def"`
 }
 
 type TermConfusionPairInput struct {
@@ -192,22 +217,6 @@ type TermProgressInput struct {
 	TermIncorrectIncrease *int32  `json:"termIncorrectIncrease,omitempty"`
 	DefCorrectIncrease    *int32  `json:"defCorrectIncrease,omitempty"`
 	DefIncorrectIncrease  *int32  `json:"defIncorrectIncrease,omitempty"`
-}
-
-type TrueFalseQuestion struct {
-	Term         *Term       `json:"term,omitempty"`
-	AnswerWith   *AnswerWith `json:"answerWith,omitempty"`
-	Correct      *bool       `json:"correct,omitempty"`
-	AnsweredBool *bool       `json:"answeredBool,omitempty"`
-	Distractor   *Term       `json:"distractor,omitempty"`
-}
-
-type TrueFalseQuestionInput struct {
-	Term         *TermInput  `json:"term,omitempty"`
-	AnswerWith   *AnswerWith `json:"answerWith,omitempty"`
-	Correct      *bool       `json:"correct,omitempty"`
-	AnsweredBool *bool       `json:"answeredBool,omitempty"`
-	Distractor   *TermInput  `json:"distractor,omitempty"`
 }
 
 type AnswerWith string
@@ -435,63 +444,6 @@ func (e *FSRSState) UnmarshalJSON(b []byte) error {
 }
 
 func (e FSRSState) MarshalJSON() ([]byte, error) {
-	var buf bytes.Buffer
-	e.MarshalGQL(&buf)
-	return buf.Bytes(), nil
-}
-
-type QuestionType string
-
-const (
-	QuestionTypeMcq       QuestionType = "MCQ"
-	QuestionTypeTrueFalse QuestionType = "TRUE_FALSE"
-	QuestionTypeFrq       QuestionType = "FRQ"
-)
-
-var AllQuestionType = []QuestionType{
-	QuestionTypeMcq,
-	QuestionTypeTrueFalse,
-	QuestionTypeFrq,
-}
-
-func (e QuestionType) IsValid() bool {
-	switch e {
-	case QuestionTypeMcq, QuestionTypeTrueFalse, QuestionTypeFrq:
-		return true
-	}
-	return false
-}
-
-func (e QuestionType) String() string {
-	return string(e)
-}
-
-func (e *QuestionType) UnmarshalGQL(v any) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = QuestionType(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid QuestionType", str)
-	}
-	return nil
-}
-
-func (e QuestionType) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
-func (e *QuestionType) UnmarshalJSON(b []byte) error {
-	s, err := strconv.Unquote(string(b))
-	if err != nil {
-		return err
-	}
-	return e.UnmarshalGQL(s)
-}
-
-func (e QuestionType) MarshalJSON() ([]byte, error) {
 	var buf bytes.Buffer
 	e.MarshalGQL(&buf)
 	return buf.Bytes(), nil

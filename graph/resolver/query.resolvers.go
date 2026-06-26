@@ -16,6 +16,11 @@ import (
 	"github.com/georgysavva/scany/v2/pgxscan"
 )
 
+// StudysetIds is the resolver for the studysetIds field.
+func (r *practiceTestResolver) StudysetIds(ctx context.Context, obj *model.PracticeTest) ([]string, error) {
+	panic(fmt.Errorf("not implemented: StudysetIds - studysetIds"))
+}
+
 // Authed is the resolver for the authed field.
 func (r *queryResolver) Authed(ctx context.Context) (bool, error) {
 	authed := auth.AuthedUserContext(ctx) != nil
@@ -1209,7 +1214,11 @@ func (r *queryResolver) MySavedStudysetCount(ctx context.Context) (int32, error)
 	return count, nil
 }
 
+// PracticeTest returns graph.PracticeTestResolver implementation.
+func (r *Resolver) PracticeTest() graph.PracticeTestResolver { return &practiceTestResolver{r} }
+
 // Query returns graph.QueryResolver implementation.
 func (r *Resolver) Query() graph.QueryResolver { return &queryResolver{r} }
 
+type practiceTestResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }

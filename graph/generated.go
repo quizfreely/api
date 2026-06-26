@@ -41,6 +41,7 @@ type Config struct {
 type ResolverRoot interface {
 	Folder() FolderResolver
 	Mutation() MutationResolver
+	PracticeTest() PracticeTestResolver
 	Query() QueryResolver
 	Studyset() StudysetResolver
 	Subject() SubjectResolver
@@ -114,16 +115,18 @@ type ComplexityRoot struct {
 	}
 
 	MCQ struct {
-		AnswerWith         func(childComplexity int) int
-		AnsweredTerm       func(childComplexity int) int
-		Correct            func(childComplexity int) int
-		CorrectChoiceIndex func(childComplexity int) int
-		Distractors        func(childComplexity int) int
-		Term               func(childComplexity int) int
+		AnswerWith    func(childComplexity int) int
+		AnsweredIndex func(childComplexity int) int
+		Correct       func(childComplexity int) int
+		Distractors   func(childComplexity int) int
+		Term          func(childComplexity int) int
 	}
 
-	MatchSession struct {
-		DurationMs func(childComplexity int) int
+	MatchActivity struct {
+		DurationMs       func(childComplexity int) int
+		EndTimestamp     func(childComplexity int) int
+		IncorrectPairIds func(childComplexity int) int
+		TermsIds         func(childComplexity int) int
 	}
 
 	Mutation struct {
@@ -135,8 +138,8 @@ type ComplexityRoot struct {
 		DeleteTerms              func(childComplexity int, studysetID string, ids []string) int
 		RecordConfusedTerms      func(childComplexity int, confusedTerms []*model.TermConfusionPairInput) int
 		RecordFsrsReviewLog      func(childComplexity int, termID string, reviewLog model.FSRSReviewLogInput) int
-		RecordMatchSession       func(childComplexity int, match model.MatchSessionInput) int
-		RecordPracticeTest       func(childComplexity int, input *model.PracticeTestInput) int
+		RecordMatchActivity      func(childComplexity int, input model.MatchActivityInput) int
+		RecordPracticeTest       func(childComplexity int, input model.PracticeTestInput) int
 		RemoveStudysetFromFolder func(childComplexity int, studysetID string) int
 		RenameFolder             func(childComplexity int, id string, name string) int
 		SaveStudyset             func(childComplexity int, studysetID string) int
@@ -144,7 +147,7 @@ type ComplexityRoot struct {
 		SetStudysetSeoIndexing   func(childComplexity int, studysetID string, approved bool) int
 		UnsaveStudyset           func(childComplexity int, studysetID string) int
 		UpdateFsrsCard           func(childComplexity int, termID string, card model.FSRSCardInput) int
-		UpdatePracticeTest       func(childComplexity int, input *model.PracticeTestInput) int
+		UpdatePracticeTest       func(childComplexity int, id string, input model.PracticeTestInput) int
 		UpdateStudyset           func(childComplexity int, id string, studyset *model.StudysetInput, draft bool) int
 		UpdateTermProgress       func(childComplexity int, termProgress []*model.TermProgressInput) int
 		UpdateTerms              func(childComplexity int, studysetID string, terms []*model.TermInput) int
@@ -163,7 +166,7 @@ type ComplexityRoot struct {
 		Questions        func(childComplexity int) int
 		QuestionsCorrect func(childComplexity int) int
 		QuestionsTotal   func(childComplexity int) int
-		StudysetID       func(childComplexity int) int
+		StudysetIds      func(childComplexity int) int
 		Timestamp        func(childComplexity int) int
 	}
 
@@ -196,7 +199,6 @@ type ComplexityRoot struct {
 	Question struct {
 		Frq               func(childComplexity int) int
 		Mcq               func(childComplexity int) int
-		QuestionType      func(childComplexity int) int
 		TrueFalseQuestion func(childComplexity int) int
 	}
 
@@ -235,6 +237,14 @@ type ComplexityRoot struct {
 		Studysets     func(childComplexity int, first *int32, after *string, last *int32, before *string) int
 	}
 
+	TFQ struct {
+		AnswerWith   func(childComplexity int) int
+		AnsweredBool func(childComplexity int) int
+		Correct      func(childComplexity int) int
+		Distractor   func(childComplexity int) int
+		Term         func(childComplexity int) int
+	}
+
 	Term struct {
 		CreatedAt                func(childComplexity int) int
 		Def                      func(childComplexity int) int
@@ -251,6 +261,12 @@ type ComplexityRoot struct {
 		TopConfusionPairs        func(childComplexity int) int
 		TopReverseConfusionPairs func(childComplexity int) int
 		UpdatedAt                func(childComplexity int) int
+	}
+
+	TermATP struct {
+		Def  func(childComplexity int) int
+		ID   func(childComplexity int) int
+		Term func(childComplexity int) int
 	}
 
 	TermConfusionPair struct {
@@ -287,14 +303,6 @@ type ComplexityRoot struct {
 		Timestamp          func(childComplexity int) int
 	}
 
-	TrueFalseQuestion struct {
-		AnswerWith   func(childComplexity int) int
-		AnsweredBool func(childComplexity int) int
-		Correct      func(childComplexity int) int
-		Distractor   func(childComplexity int) int
-		Term         func(childComplexity int) int
-	}
-
 	User struct {
 		DisplayName   func(childComplexity int) int
 		ID            func(childComplexity int) int
@@ -319,8 +327,8 @@ type MutationResolver interface {
 	UpdateUser(ctx context.Context, displayName *string) (*model.AuthedUser, error)
 	UpdateTermProgress(ctx context.Context, termProgress []*model.TermProgressInput) ([]*model.TermProgress, error)
 	RecordConfusedTerms(ctx context.Context, confusedTerms []*model.TermConfusionPairInput) (*bool, error)
-	RecordPracticeTest(ctx context.Context, input *model.PracticeTestInput) (*model.PracticeTest, error)
-	UpdatePracticeTest(ctx context.Context, input *model.PracticeTestInput) (*model.PracticeTest, error)
+	RecordPracticeTest(ctx context.Context, input model.PracticeTestInput) (*model.PracticeTest, error)
+	UpdatePracticeTest(ctx context.Context, id string, input model.PracticeTestInput) (*model.PracticeTest, error)
 	CreateFolder(ctx context.Context, name string) (*model.Folder, error)
 	RenameFolder(ctx context.Context, id string, name string) (*model.Folder, error)
 	DeleteFolder(ctx context.Context, id string) (*string, error)
@@ -331,7 +339,10 @@ type MutationResolver interface {
 	SetStudysetSeoIndexing(ctx context.Context, studysetID string, approved bool) (bool, error)
 	UpdateFsrsCard(ctx context.Context, termID string, card model.FSRSCardInput) (bool, error)
 	RecordFsrsReviewLog(ctx context.Context, termID string, reviewLog model.FSRSReviewLogInput) (bool, error)
-	RecordMatchSession(ctx context.Context, match model.MatchSessionInput) (*model.MatchSession, error)
+	RecordMatchActivity(ctx context.Context, input model.MatchActivityInput) (*model.MatchActivity, error)
+}
+type PracticeTestResolver interface {
+	StudysetIds(ctx context.Context, obj *model.PracticeTest) ([]string, error)
 }
 type QueryResolver interface {
 	Authed(ctx context.Context) (bool, error)
@@ -699,12 +710,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.MCQ.AnswerWith(childComplexity), true
 
-	case "MCQ.answeredTerm":
-		if e.complexity.MCQ.AnsweredTerm == nil {
+	case "MCQ.answeredIndex":
+		if e.complexity.MCQ.AnsweredIndex == nil {
 			break
 		}
 
-		return e.complexity.MCQ.AnsweredTerm(childComplexity), true
+		return e.complexity.MCQ.AnsweredIndex(childComplexity), true
 
 	case "MCQ.correct":
 		if e.complexity.MCQ.Correct == nil {
@@ -712,13 +723,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.MCQ.Correct(childComplexity), true
-
-	case "MCQ.correctChoiceIndex":
-		if e.complexity.MCQ.CorrectChoiceIndex == nil {
-			break
-		}
-
-		return e.complexity.MCQ.CorrectChoiceIndex(childComplexity), true
 
 	case "MCQ.distractors":
 		if e.complexity.MCQ.Distractors == nil {
@@ -734,12 +738,33 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.MCQ.Term(childComplexity), true
 
-	case "MatchSession.durationMs":
-		if e.complexity.MatchSession.DurationMs == nil {
+	case "MatchActivity.durationMs":
+		if e.complexity.MatchActivity.DurationMs == nil {
 			break
 		}
 
-		return e.complexity.MatchSession.DurationMs(childComplexity), true
+		return e.complexity.MatchActivity.DurationMs(childComplexity), true
+
+	case "MatchActivity.endTimestamp":
+		if e.complexity.MatchActivity.EndTimestamp == nil {
+			break
+		}
+
+		return e.complexity.MatchActivity.EndTimestamp(childComplexity), true
+
+	case "MatchActivity.incorrectPairIds":
+		if e.complexity.MatchActivity.IncorrectPairIds == nil {
+			break
+		}
+
+		return e.complexity.MatchActivity.IncorrectPairIds(childComplexity), true
+
+	case "MatchActivity.termsIds":
+		if e.complexity.MatchActivity.TermsIds == nil {
+			break
+		}
+
+		return e.complexity.MatchActivity.TermsIds(childComplexity), true
 
 	case "Mutation.createFolder":
 		if e.complexity.Mutation.CreateFolder == nil {
@@ -837,17 +862,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Mutation.RecordFsrsReviewLog(childComplexity, args["termId"].(string), args["reviewLog"].(model.FSRSReviewLogInput)), true
 
-	case "Mutation.recordMatchSession":
-		if e.complexity.Mutation.RecordMatchSession == nil {
+	case "Mutation.recordMatchActivity":
+		if e.complexity.Mutation.RecordMatchActivity == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_recordMatchSession_args(ctx, rawArgs)
+		args, err := ec.field_Mutation_recordMatchActivity_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.RecordMatchSession(childComplexity, args["match"].(model.MatchSessionInput)), true
+		return e.complexity.Mutation.RecordMatchActivity(childComplexity, args["input"].(model.MatchActivityInput)), true
 
 	case "Mutation.recordPracticeTest":
 		if e.complexity.Mutation.RecordPracticeTest == nil {
@@ -859,7 +884,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.RecordPracticeTest(childComplexity, args["input"].(*model.PracticeTestInput)), true
+		return e.complexity.Mutation.RecordPracticeTest(childComplexity, args["input"].(model.PracticeTestInput)), true
 
 	case "Mutation.removeStudysetFromFolder":
 		if e.complexity.Mutation.RemoveStudysetFromFolder == nil {
@@ -955,7 +980,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdatePracticeTest(childComplexity, args["input"].(*model.PracticeTestInput)), true
+		return e.complexity.Mutation.UpdatePracticeTest(childComplexity, args["id"].(string), args["input"].(model.PracticeTestInput)), true
 
 	case "Mutation.updateStudyset":
 		if e.complexity.Mutation.UpdateStudyset == nil {
@@ -1061,12 +1086,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.PracticeTest.QuestionsTotal(childComplexity), true
 
-	case "PracticeTest.studysetId":
-		if e.complexity.PracticeTest.StudysetID == nil {
+	case "PracticeTest.studysetIds":
+		if e.complexity.PracticeTest.StudysetIds == nil {
 			break
 		}
 
-		return e.complexity.PracticeTest.StudysetID(childComplexity), true
+		return e.complexity.PracticeTest.StudysetIds(childComplexity), true
 
 	case "PracticeTest.timestamp":
 		if e.complexity.PracticeTest.Timestamp == nil {
@@ -1345,13 +1370,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Question.Mcq(childComplexity), true
 
-	case "Question.questionType":
-		if e.complexity.Question.QuestionType == nil {
-			break
-		}
-
-		return e.complexity.Question.QuestionType(childComplexity), true
-
 	case "Question.trueFalseQuestion":
 		if e.complexity.Question.TrueFalseQuestion == nil {
 			break
@@ -1525,6 +1543,41 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Subject.Studysets(childComplexity, args["first"].(*int32), args["after"].(*string), args["last"].(*int32), args["before"].(*string)), true
 
+	case "TFQ.answerWith":
+		if e.complexity.TFQ.AnswerWith == nil {
+			break
+		}
+
+		return e.complexity.TFQ.AnswerWith(childComplexity), true
+
+	case "TFQ.answeredBool":
+		if e.complexity.TFQ.AnsweredBool == nil {
+			break
+		}
+
+		return e.complexity.TFQ.AnsweredBool(childComplexity), true
+
+	case "TFQ.correct":
+		if e.complexity.TFQ.Correct == nil {
+			break
+		}
+
+		return e.complexity.TFQ.Correct(childComplexity), true
+
+	case "TFQ.distractor":
+		if e.complexity.TFQ.Distractor == nil {
+			break
+		}
+
+		return e.complexity.TFQ.Distractor(childComplexity), true
+
+	case "TFQ.term":
+		if e.complexity.TFQ.Term == nil {
+			break
+		}
+
+		return e.complexity.TFQ.Term(childComplexity), true
+
 	case "Term.createdAt":
 		if e.complexity.Term.CreatedAt == nil {
 			break
@@ -1629,6 +1682,27 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Term.UpdatedAt(childComplexity), true
+
+	case "TermATP.def":
+		if e.complexity.TermATP.Def == nil {
+			break
+		}
+
+		return e.complexity.TermATP.Def(childComplexity), true
+
+	case "TermATP.id":
+		if e.complexity.TermATP.ID == nil {
+			break
+		}
+
+		return e.complexity.TermATP.ID(childComplexity), true
+
+	case "TermATP.term":
+		if e.complexity.TermATP.Term == nil {
+			break
+		}
+
+		return e.complexity.TermATP.Term(childComplexity), true
 
 	case "TermConfusionPair.answeredWith":
 		if e.complexity.TermConfusionPair.AnsweredWith == nil {
@@ -1805,41 +1879,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.TermProgressHistory.Timestamp(childComplexity), true
 
-	case "TrueFalseQuestion.answerWith":
-		if e.complexity.TrueFalseQuestion.AnswerWith == nil {
-			break
-		}
-
-		return e.complexity.TrueFalseQuestion.AnswerWith(childComplexity), true
-
-	case "TrueFalseQuestion.answeredBool":
-		if e.complexity.TrueFalseQuestion.AnsweredBool == nil {
-			break
-		}
-
-		return e.complexity.TrueFalseQuestion.AnsweredBool(childComplexity), true
-
-	case "TrueFalseQuestion.correct":
-		if e.complexity.TrueFalseQuestion.Correct == nil {
-			break
-		}
-
-		return e.complexity.TrueFalseQuestion.Correct(childComplexity), true
-
-	case "TrueFalseQuestion.distractor":
-		if e.complexity.TrueFalseQuestion.Distractor == nil {
-			break
-		}
-
-		return e.complexity.TrueFalseQuestion.Distractor(childComplexity), true
-
-	case "TrueFalseQuestion.term":
-		if e.complexity.TrueFalseQuestion.Term == nil {
-			break
-		}
-
-		return e.complexity.TrueFalseQuestion.Term(childComplexity), true
-
 	case "User.displayName":
 		if e.complexity.User.DisplayName == nil {
 			break
@@ -1897,15 +1936,16 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputFSRSCardInput,
 		ec.unmarshalInputFSRSReviewLogInput,
 		ec.unmarshalInputMCQInput,
-		ec.unmarshalInputMatchSessionInput,
+		ec.unmarshalInputMatchActivityInput,
 		ec.unmarshalInputNewTermInput,
 		ec.unmarshalInputPracticeTestInput,
 		ec.unmarshalInputQuestionInput,
 		ec.unmarshalInputStudysetInput,
+		ec.unmarshalInputTFQInput,
+		ec.unmarshalInputTermATPInput,
 		ec.unmarshalInputTermConfusionPairInput,
 		ec.unmarshalInputTermInput,
 		ec.unmarshalInputTermProgressInput,
-		ec.unmarshalInputTrueFalseQuestionInput,
 	)
 	first := true
 
@@ -2193,21 +2233,21 @@ func (ec *executionContext) field_Mutation_recordFsrsReviewLog_args(ctx context.
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_recordMatchSession_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+func (ec *executionContext) field_Mutation_recordMatchActivity_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "match", ec.unmarshalNMatchSessionInput2quizfreelyᚋapiᚋgraphᚋmodelᚐMatchSessionInput)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNMatchActivityInput2quizfreelyᚋapiᚋgraphᚋmodelᚐMatchActivityInput)
 	if err != nil {
 		return nil, err
 	}
-	args["match"] = arg0
+	args["input"] = arg0
 	return args, nil
 }
 
 func (ec *executionContext) field_Mutation_recordPracticeTest_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalOPracticeTestInput2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐPracticeTestInput)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNPracticeTestInput2quizfreelyᚋapiᚋgraphᚋmodelᚐPracticeTestInput)
 	if err != nil {
 		return nil, err
 	}
@@ -2315,11 +2355,16 @@ func (ec *executionContext) field_Mutation_updateFsrsCard_args(ctx context.Conte
 func (ec *executionContext) field_Mutation_updatePracticeTest_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalOPracticeTestInput2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐPracticeTestInput)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
 	if err != nil {
 		return nil, err
 	}
-	args["input"] = arg0
+	args["id"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNPracticeTestInput2quizfreelyᚋapiᚋgraphᚋmodelᚐPracticeTestInput)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg1
 	return args, nil
 }
 
@@ -3136,11 +3181,14 @@ func (ec *executionContext) _FRQ_term(ctx context.Context, field graphql.Collect
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Term)
+	res := resTmp.(*model.TermAtp)
 	fc.Result = res
-	return ec.marshalOTerm2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTerm(ctx, field.Selections, res)
+	return ec.marshalNTermATP2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermAtp(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_FRQ_term(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -3152,37 +3200,13 @@ func (ec *executionContext) fieldContext_FRQ_term(_ context.Context, field graph
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
-				return ec.fieldContext_Term_id(ctx, field)
+				return ec.fieldContext_TermATP_id(ctx, field)
 			case "term":
-				return ec.fieldContext_Term_term(ctx, field)
+				return ec.fieldContext_TermATP_term(ctx, field)
 			case "def":
-				return ec.fieldContext_Term_def(ctx, field)
-			case "termImageUrl":
-				return ec.fieldContext_Term_termImageUrl(ctx, field)
-			case "defImageUrl":
-				return ec.fieldContext_Term_defImageUrl(ctx, field)
-			case "sortOrder":
-				return ec.fieldContext_Term_sortOrder(ctx, field)
-			case "progress":
-				return ec.fieldContext_Term_progress(ctx, field)
-			case "progressHistory":
-				return ec.fieldContext_Term_progressHistory(ctx, field)
-			case "topConfusionPairs":
-				return ec.fieldContext_Term_topConfusionPairs(ctx, field)
-			case "topReverseConfusionPairs":
-				return ec.fieldContext_Term_topReverseConfusionPairs(ctx, field)
-			case "fsrsCard":
-				return ec.fieldContext_Term_fsrsCard(ctx, field)
-			case "fsrsReviewLogs":
-				return ec.fieldContext_Term_fsrsReviewLogs(ctx, field)
-			case "practiceTests":
-				return ec.fieldContext_Term_practiceTests(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_Term_createdAt(ctx, field)
-			case "updatedAt":
-				return ec.fieldContext_Term_updatedAt(ctx, field)
+				return ec.fieldContext_TermATP_def(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type Term", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type TermATP", field.Name)
 		},
 	}
 	return fc, nil
@@ -3209,11 +3233,14 @@ func (ec *executionContext) _FRQ_answerWith(ctx context.Context, field graphql.C
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.AnswerWith)
+	res := resTmp.(model.AnswerWith)
 	fc.Result = res
-	return ec.marshalOAnswerWith2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐAnswerWith(ctx, field.Selections, res)
+	return ec.marshalNAnswerWith2quizfreelyᚋapiᚋgraphᚋmodelᚐAnswerWith(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_FRQ_answerWith(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -3250,11 +3277,14 @@ func (ec *executionContext) _FRQ_correct(ctx context.Context, field graphql.Coll
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*bool)
+	res := resTmp.(bool)
 	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_FRQ_correct(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -3332,11 +3362,14 @@ func (ec *executionContext) _FRQ_answeredString(ctx context.Context, field graph
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_FRQ_answeredString(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -4675,11 +4708,14 @@ func (ec *executionContext) _MCQ_term(ctx context.Context, field graphql.Collect
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Term)
+	res := resTmp.(*model.TermAtp)
 	fc.Result = res
-	return ec.marshalOTerm2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTerm(ctx, field.Selections, res)
+	return ec.marshalNTermATP2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermAtp(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_MCQ_term(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -4691,37 +4727,13 @@ func (ec *executionContext) fieldContext_MCQ_term(_ context.Context, field graph
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
-				return ec.fieldContext_Term_id(ctx, field)
+				return ec.fieldContext_TermATP_id(ctx, field)
 			case "term":
-				return ec.fieldContext_Term_term(ctx, field)
+				return ec.fieldContext_TermATP_term(ctx, field)
 			case "def":
-				return ec.fieldContext_Term_def(ctx, field)
-			case "termImageUrl":
-				return ec.fieldContext_Term_termImageUrl(ctx, field)
-			case "defImageUrl":
-				return ec.fieldContext_Term_defImageUrl(ctx, field)
-			case "sortOrder":
-				return ec.fieldContext_Term_sortOrder(ctx, field)
-			case "progress":
-				return ec.fieldContext_Term_progress(ctx, field)
-			case "progressHistory":
-				return ec.fieldContext_Term_progressHistory(ctx, field)
-			case "topConfusionPairs":
-				return ec.fieldContext_Term_topConfusionPairs(ctx, field)
-			case "topReverseConfusionPairs":
-				return ec.fieldContext_Term_topReverseConfusionPairs(ctx, field)
-			case "fsrsCard":
-				return ec.fieldContext_Term_fsrsCard(ctx, field)
-			case "fsrsReviewLogs":
-				return ec.fieldContext_Term_fsrsReviewLogs(ctx, field)
-			case "practiceTests":
-				return ec.fieldContext_Term_practiceTests(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_Term_createdAt(ctx, field)
-			case "updatedAt":
-				return ec.fieldContext_Term_updatedAt(ctx, field)
+				return ec.fieldContext_TermATP_def(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type Term", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type TermATP", field.Name)
 		},
 	}
 	return fc, nil
@@ -4748,11 +4760,14 @@ func (ec *executionContext) _MCQ_answerWith(ctx context.Context, field graphql.C
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.AnswerWith)
+	res := resTmp.(model.AnswerWith)
 	fc.Result = res
-	return ec.marshalOAnswerWith2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐAnswerWith(ctx, field.Selections, res)
+	return ec.marshalNAnswerWith2quizfreelyᚋapiᚋgraphᚋmodelᚐAnswerWith(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_MCQ_answerWith(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -4789,11 +4804,14 @@ func (ec *executionContext) _MCQ_correct(ctx context.Context, field graphql.Coll
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*bool)
+	res := resTmp.(bool)
 	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_MCQ_correct(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -4809,8 +4827,8 @@ func (ec *executionContext) fieldContext_MCQ_correct(_ context.Context, field gr
 	return fc, nil
 }
 
-func (ec *executionContext) _MCQ_answeredTerm(ctx context.Context, field graphql.CollectedField, obj *model.Mcq) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MCQ_answeredTerm(ctx, field)
+func (ec *executionContext) _MCQ_answeredIndex(ctx context.Context, field graphql.CollectedField, obj *model.Mcq) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MCQ_answeredIndex(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -4823,60 +4841,31 @@ func (ec *executionContext) _MCQ_answeredTerm(ctx context.Context, field graphql
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.AnsweredTerm, nil
+		return obj.AnsweredIndex, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Term)
+	res := resTmp.(int32)
 	fc.Result = res
-	return ec.marshalOTerm2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTerm(ctx, field.Selections, res)
+	return ec.marshalNInt2int32(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_MCQ_answeredTerm(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_MCQ_answeredIndex(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "MCQ",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Term_id(ctx, field)
-			case "term":
-				return ec.fieldContext_Term_term(ctx, field)
-			case "def":
-				return ec.fieldContext_Term_def(ctx, field)
-			case "termImageUrl":
-				return ec.fieldContext_Term_termImageUrl(ctx, field)
-			case "defImageUrl":
-				return ec.fieldContext_Term_defImageUrl(ctx, field)
-			case "sortOrder":
-				return ec.fieldContext_Term_sortOrder(ctx, field)
-			case "progress":
-				return ec.fieldContext_Term_progress(ctx, field)
-			case "progressHistory":
-				return ec.fieldContext_Term_progressHistory(ctx, field)
-			case "topConfusionPairs":
-				return ec.fieldContext_Term_topConfusionPairs(ctx, field)
-			case "topReverseConfusionPairs":
-				return ec.fieldContext_Term_topReverseConfusionPairs(ctx, field)
-			case "fsrsCard":
-				return ec.fieldContext_Term_fsrsCard(ctx, field)
-			case "fsrsReviewLogs":
-				return ec.fieldContext_Term_fsrsReviewLogs(ctx, field)
-			case "practiceTests":
-				return ec.fieldContext_Term_practiceTests(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_Term_createdAt(ctx, field)
-			case "updatedAt":
-				return ec.fieldContext_Term_updatedAt(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Term", field.Name)
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -4903,11 +4892,14 @@ func (ec *executionContext) _MCQ_distractors(ctx context.Context, field graphql.
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Term)
+	res := resTmp.([]*model.TermAtp)
 	fc.Result = res
-	return ec.marshalOTerm2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTerm(ctx, field.Selections, res)
+	return ec.marshalNTermATP2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermAtpᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_MCQ_distractors(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -4919,85 +4911,20 @@ func (ec *executionContext) fieldContext_MCQ_distractors(_ context.Context, fiel
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
-				return ec.fieldContext_Term_id(ctx, field)
+				return ec.fieldContext_TermATP_id(ctx, field)
 			case "term":
-				return ec.fieldContext_Term_term(ctx, field)
+				return ec.fieldContext_TermATP_term(ctx, field)
 			case "def":
-				return ec.fieldContext_Term_def(ctx, field)
-			case "termImageUrl":
-				return ec.fieldContext_Term_termImageUrl(ctx, field)
-			case "defImageUrl":
-				return ec.fieldContext_Term_defImageUrl(ctx, field)
-			case "sortOrder":
-				return ec.fieldContext_Term_sortOrder(ctx, field)
-			case "progress":
-				return ec.fieldContext_Term_progress(ctx, field)
-			case "progressHistory":
-				return ec.fieldContext_Term_progressHistory(ctx, field)
-			case "topConfusionPairs":
-				return ec.fieldContext_Term_topConfusionPairs(ctx, field)
-			case "topReverseConfusionPairs":
-				return ec.fieldContext_Term_topReverseConfusionPairs(ctx, field)
-			case "fsrsCard":
-				return ec.fieldContext_Term_fsrsCard(ctx, field)
-			case "fsrsReviewLogs":
-				return ec.fieldContext_Term_fsrsReviewLogs(ctx, field)
-			case "practiceTests":
-				return ec.fieldContext_Term_practiceTests(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_Term_createdAt(ctx, field)
-			case "updatedAt":
-				return ec.fieldContext_Term_updatedAt(ctx, field)
+				return ec.fieldContext_TermATP_def(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type Term", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type TermATP", field.Name)
 		},
 	}
 	return fc, nil
 }
 
-func (ec *executionContext) _MCQ_correctChoiceIndex(ctx context.Context, field graphql.CollectedField, obj *model.Mcq) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MCQ_correctChoiceIndex(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.CorrectChoiceIndex, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*int32)
-	fc.Result = res
-	return ec.marshalOInt2ᚖint32(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_MCQ_correctChoiceIndex(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MCQ",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _MatchSession_durationMs(ctx context.Context, field graphql.CollectedField, obj *model.MatchSession) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MatchSession_durationMs(ctx, field)
+func (ec *executionContext) _MatchActivity_durationMs(ctx context.Context, field graphql.CollectedField, obj *model.MatchActivity) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MatchActivity_durationMs(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -5027,14 +4954,146 @@ func (ec *executionContext) _MatchSession_durationMs(ctx context.Context, field 
 	return ec.marshalNInt2int32(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_MatchSession_durationMs(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_MatchActivity_durationMs(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "MatchSession",
+		Object:     "MatchActivity",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MatchActivity_endTimestamp(ctx context.Context, field graphql.CollectedField, obj *model.MatchActivity) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MatchActivity_endTimestamp(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EndTimestamp, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MatchActivity_endTimestamp(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MatchActivity",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MatchActivity_termsIds(ctx context.Context, field graphql.CollectedField, obj *model.MatchActivity) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MatchActivity_termsIds(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TermsIds, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNID2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MatchActivity_termsIds(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MatchActivity",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MatchActivity_incorrectPairIds(ctx context.Context, field graphql.CollectedField, obj *model.MatchActivity) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MatchActivity_incorrectPairIds(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IncorrectPairIds, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([][]string)
+	fc.Result = res
+	return ec.marshalNID2ᚕᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MatchActivity_incorrectPairIds(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MatchActivity",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
 		},
 	}
 	return fc, nil
@@ -5688,7 +5747,7 @@ func (ec *executionContext) _Mutation_recordPracticeTest(ctx context.Context, fi
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().RecordPracticeTest(rctx, fc.Args["input"].(*model.PracticeTestInput))
+		return ec.resolvers.Mutation().RecordPracticeTest(rctx, fc.Args["input"].(model.PracticeTestInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5714,8 +5773,8 @@ func (ec *executionContext) fieldContext_Mutation_recordPracticeTest(ctx context
 				return ec.fieldContext_PracticeTest_id(ctx, field)
 			case "timestamp":
 				return ec.fieldContext_PracticeTest_timestamp(ctx, field)
-			case "studysetId":
-				return ec.fieldContext_PracticeTest_studysetId(ctx, field)
+			case "studysetIds":
+				return ec.fieldContext_PracticeTest_studysetIds(ctx, field)
 			case "questionsCorrect":
 				return ec.fieldContext_PracticeTest_questionsCorrect(ctx, field)
 			case "questionsTotal":
@@ -5754,7 +5813,7 @@ func (ec *executionContext) _Mutation_updatePracticeTest(ctx context.Context, fi
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpdatePracticeTest(rctx, fc.Args["input"].(*model.PracticeTestInput))
+		return ec.resolvers.Mutation().UpdatePracticeTest(rctx, fc.Args["id"].(string), fc.Args["input"].(model.PracticeTestInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5780,8 +5839,8 @@ func (ec *executionContext) fieldContext_Mutation_updatePracticeTest(ctx context
 				return ec.fieldContext_PracticeTest_id(ctx, field)
 			case "timestamp":
 				return ec.fieldContext_PracticeTest_timestamp(ctx, field)
-			case "studysetId":
-				return ec.fieldContext_PracticeTest_studysetId(ctx, field)
+			case "studysetIds":
+				return ec.fieldContext_PracticeTest_studysetIds(ctx, field)
 			case "questionsCorrect":
 				return ec.fieldContext_PracticeTest_questionsCorrect(ctx, field)
 			case "questionsTotal":
@@ -6363,8 +6422,8 @@ func (ec *executionContext) fieldContext_Mutation_recordFsrsReviewLog(ctx contex
 	return fc, nil
 }
 
-func (ec *executionContext) _Mutation_recordMatchSession(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Mutation_recordMatchSession(ctx, field)
+func (ec *executionContext) _Mutation_recordMatchActivity(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_recordMatchActivity(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -6377,7 +6436,7 @@ func (ec *executionContext) _Mutation_recordMatchSession(ctx context.Context, fi
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().RecordMatchSession(rctx, fc.Args["match"].(model.MatchSessionInput))
+		return ec.resolvers.Mutation().RecordMatchActivity(rctx, fc.Args["input"].(model.MatchActivityInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6386,12 +6445,12 @@ func (ec *executionContext) _Mutation_recordMatchSession(ctx context.Context, fi
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.MatchSession)
+	res := resTmp.(*model.MatchActivity)
 	fc.Result = res
-	return ec.marshalOMatchSession2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐMatchSession(ctx, field.Selections, res)
+	return ec.marshalOMatchActivity2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐMatchActivity(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Mutation_recordMatchSession(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Mutation_recordMatchActivity(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Mutation",
 		Field:      field,
@@ -6400,9 +6459,15 @@ func (ec *executionContext) fieldContext_Mutation_recordMatchSession(ctx context
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "durationMs":
-				return ec.fieldContext_MatchSession_durationMs(ctx, field)
+				return ec.fieldContext_MatchActivity_durationMs(ctx, field)
+			case "endTimestamp":
+				return ec.fieldContext_MatchActivity_endTimestamp(ctx, field)
+			case "termsIds":
+				return ec.fieldContext_MatchActivity_termsIds(ctx, field)
+			case "incorrectPairIds":
+				return ec.fieldContext_MatchActivity_incorrectPairIds(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type MatchSession", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type MatchActivity", field.Name)
 		},
 	}
 	defer func() {
@@ -6412,7 +6477,7 @@ func (ec *executionContext) fieldContext_Mutation_recordMatchSession(ctx context
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_recordMatchSession_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Mutation_recordMatchActivity_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -6677,8 +6742,8 @@ func (ec *executionContext) fieldContext_PracticeTest_timestamp(_ context.Contex
 	return fc, nil
 }
 
-func (ec *executionContext) _PracticeTest_studysetId(ctx context.Context, field graphql.CollectedField, obj *model.PracticeTest) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_PracticeTest_studysetId(ctx, field)
+func (ec *executionContext) _PracticeTest_studysetIds(ctx context.Context, field graphql.CollectedField, obj *model.PracticeTest) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PracticeTest_studysetIds(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -6691,7 +6756,7 @@ func (ec *executionContext) _PracticeTest_studysetId(ctx context.Context, field 
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.StudysetID, nil
+		return ec.resolvers.PracticeTest().StudysetIds(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6703,17 +6768,17 @@ func (ec *executionContext) _PracticeTest_studysetId(ctx context.Context, field 
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.([]string)
 	fc.Result = res
-	return ec.marshalNID2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNID2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_PracticeTest_studysetId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_PracticeTest_studysetIds(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "PracticeTest",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type ID does not have child fields")
 		},
@@ -6824,11 +6889,14 @@ func (ec *executionContext) _PracticeTest_questions(ctx context.Context, field g
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.([]*model.Question)
 	fc.Result = res
-	return ec.marshalOQuestion2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐQuestionᚄ(ctx, field.Selections, res)
+	return ec.marshalNQuestion2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐQuestionᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_PracticeTest_questions(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -6839,8 +6907,6 @@ func (ec *executionContext) fieldContext_PracticeTest_questions(_ context.Contex
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "questionType":
-				return ec.fieldContext_Question_questionType(ctx, field)
 			case "mcq":
 				return ec.fieldContext_Question_mcq(ctx, field)
 			case "trueFalseQuestion":
@@ -7650,8 +7716,8 @@ func (ec *executionContext) fieldContext_Query_practiceTest(ctx context.Context,
 				return ec.fieldContext_PracticeTest_id(ctx, field)
 			case "timestamp":
 				return ec.fieldContext_PracticeTest_timestamp(ctx, field)
-			case "studysetId":
-				return ec.fieldContext_PracticeTest_studysetId(ctx, field)
+			case "studysetIds":
+				return ec.fieldContext_PracticeTest_studysetIds(ctx, field)
 			case "questionsCorrect":
 				return ec.fieldContext_PracticeTest_questionsCorrect(ctx, field)
 			case "questionsTotal":
@@ -8382,47 +8448,6 @@ func (ec *executionContext) fieldContext_Query___schema(_ context.Context, field
 	return fc, nil
 }
 
-func (ec *executionContext) _Question_questionType(ctx context.Context, field graphql.CollectedField, obj *model.Question) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Question_questionType(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.QuestionType, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model.QuestionType)
-	fc.Result = res
-	return ec.marshalOQuestionType2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐQuestionType(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Question_questionType(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Question",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type QuestionType does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Question_mcq(ctx context.Context, field graphql.CollectedField, obj *model.Question) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Question_mcq(ctx, field)
 	if err != nil {
@@ -8465,12 +8490,10 @@ func (ec *executionContext) fieldContext_Question_mcq(_ context.Context, field g
 				return ec.fieldContext_MCQ_answerWith(ctx, field)
 			case "correct":
 				return ec.fieldContext_MCQ_correct(ctx, field)
-			case "answeredTerm":
-				return ec.fieldContext_MCQ_answeredTerm(ctx, field)
+			case "answeredIndex":
+				return ec.fieldContext_MCQ_answeredIndex(ctx, field)
 			case "distractors":
 				return ec.fieldContext_MCQ_distractors(ctx, field)
-			case "correctChoiceIndex":
-				return ec.fieldContext_MCQ_correctChoiceIndex(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MCQ", field.Name)
 		},
@@ -8501,9 +8524,9 @@ func (ec *executionContext) _Question_trueFalseQuestion(ctx context.Context, fie
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.TrueFalseQuestion)
+	res := resTmp.(*model.Tfq)
 	fc.Result = res
-	return ec.marshalOTrueFalseQuestion2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTrueFalseQuestion(ctx, field.Selections, res)
+	return ec.marshalOTFQ2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTfq(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Question_trueFalseQuestion(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -8515,17 +8538,17 @@ func (ec *executionContext) fieldContext_Question_trueFalseQuestion(_ context.Co
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "term":
-				return ec.fieldContext_TrueFalseQuestion_term(ctx, field)
+				return ec.fieldContext_TFQ_term(ctx, field)
 			case "answerWith":
-				return ec.fieldContext_TrueFalseQuestion_answerWith(ctx, field)
+				return ec.fieldContext_TFQ_answerWith(ctx, field)
 			case "correct":
-				return ec.fieldContext_TrueFalseQuestion_correct(ctx, field)
+				return ec.fieldContext_TFQ_correct(ctx, field)
 			case "answeredBool":
-				return ec.fieldContext_TrueFalseQuestion_answeredBool(ctx, field)
+				return ec.fieldContext_TFQ_answeredBool(ctx, field)
 			case "distractor":
-				return ec.fieldContext_TrueFalseQuestion_distractor(ctx, field)
+				return ec.fieldContext_TFQ_distractor(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type TrueFalseQuestion", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type TFQ", field.Name)
 		},
 	}
 	return fc, nil
@@ -9102,8 +9125,8 @@ func (ec *executionContext) fieldContext_Studyset_practiceTests(_ context.Contex
 				return ec.fieldContext_PracticeTest_id(ctx, field)
 			case "timestamp":
 				return ec.fieldContext_PracticeTest_timestamp(ctx, field)
-			case "studysetId":
-				return ec.fieldContext_PracticeTest_studysetId(ctx, field)
+			case "studysetIds":
+				return ec.fieldContext_PracticeTest_studysetIds(ctx, field)
 			case "questionsCorrect":
 				return ec.fieldContext_PracticeTest_questionsCorrect(ctx, field)
 			case "questionsTotal":
@@ -9705,6 +9728,239 @@ func (ec *executionContext) fieldContext_Subject_studysetCount(_ context.Context
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TFQ_term(ctx context.Context, field graphql.CollectedField, obj *model.Tfq) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TFQ_term(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Term, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.TermAtp)
+	fc.Result = res
+	return ec.marshalNTermATP2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermAtp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TFQ_term(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TFQ",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_TermATP_id(ctx, field)
+			case "term":
+				return ec.fieldContext_TermATP_term(ctx, field)
+			case "def":
+				return ec.fieldContext_TermATP_def(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TermATP", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TFQ_answerWith(ctx context.Context, field graphql.CollectedField, obj *model.Tfq) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TFQ_answerWith(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AnswerWith, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.AnswerWith)
+	fc.Result = res
+	return ec.marshalNAnswerWith2quizfreelyᚋapiᚋgraphᚋmodelᚐAnswerWith(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TFQ_answerWith(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TFQ",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type AnswerWith does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TFQ_correct(ctx context.Context, field graphql.CollectedField, obj *model.Tfq) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TFQ_correct(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Correct, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TFQ_correct(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TFQ",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TFQ_answeredBool(ctx context.Context, field graphql.CollectedField, obj *model.Tfq) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TFQ_answeredBool(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AnsweredBool, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TFQ_answeredBool(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TFQ",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TFQ_distractor(ctx context.Context, field graphql.CollectedField, obj *model.Tfq) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TFQ_distractor(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Distractor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.TermAtp)
+	fc.Result = res
+	return ec.marshalOTermATP2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermAtp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TFQ_distractor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TFQ",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_TermATP_id(ctx, field)
+			case "term":
+				return ec.fieldContext_TermATP_term(ctx, field)
+			case "def":
+				return ec.fieldContext_TermATP_def(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TermATP", field.Name)
 		},
 	}
 	return fc, nil
@@ -10361,8 +10617,8 @@ func (ec *executionContext) fieldContext_Term_practiceTests(_ context.Context, f
 				return ec.fieldContext_PracticeTest_id(ctx, field)
 			case "timestamp":
 				return ec.fieldContext_PracticeTest_timestamp(ctx, field)
-			case "studysetId":
-				return ec.fieldContext_PracticeTest_studysetId(ctx, field)
+			case "studysetIds":
+				return ec.fieldContext_PracticeTest_studysetIds(ctx, field)
 			case "questionsCorrect":
 				return ec.fieldContext_PracticeTest_questionsCorrect(ctx, field)
 			case "questionsTotal":
@@ -10448,6 +10704,138 @@ func (ec *executionContext) _Term_updatedAt(ctx context.Context, field graphql.C
 func (ec *executionContext) fieldContext_Term_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Term",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TermATP_id(ctx context.Context, field graphql.CollectedField, obj *model.TermAtp) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TermATP_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TermATP_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TermATP",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TermATP_term(ctx context.Context, field graphql.CollectedField, obj *model.TermAtp) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TermATP_term(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Term, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TermATP_term(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TermATP",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TermATP_def(ctx context.Context, field graphql.CollectedField, obj *model.TermAtp) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TermATP_def(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Def, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TermATP_def(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TermATP",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -11578,275 +11966,6 @@ func (ec *executionContext) fieldContext_TermProgressHistory_defIncorrectCount(_
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TrueFalseQuestion_term(ctx context.Context, field graphql.CollectedField, obj *model.TrueFalseQuestion) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TrueFalseQuestion_term(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Term, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model.Term)
-	fc.Result = res
-	return ec.marshalOTerm2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTerm(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TrueFalseQuestion_term(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TrueFalseQuestion",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Term_id(ctx, field)
-			case "term":
-				return ec.fieldContext_Term_term(ctx, field)
-			case "def":
-				return ec.fieldContext_Term_def(ctx, field)
-			case "termImageUrl":
-				return ec.fieldContext_Term_termImageUrl(ctx, field)
-			case "defImageUrl":
-				return ec.fieldContext_Term_defImageUrl(ctx, field)
-			case "sortOrder":
-				return ec.fieldContext_Term_sortOrder(ctx, field)
-			case "progress":
-				return ec.fieldContext_Term_progress(ctx, field)
-			case "progressHistory":
-				return ec.fieldContext_Term_progressHistory(ctx, field)
-			case "topConfusionPairs":
-				return ec.fieldContext_Term_topConfusionPairs(ctx, field)
-			case "topReverseConfusionPairs":
-				return ec.fieldContext_Term_topReverseConfusionPairs(ctx, field)
-			case "fsrsCard":
-				return ec.fieldContext_Term_fsrsCard(ctx, field)
-			case "fsrsReviewLogs":
-				return ec.fieldContext_Term_fsrsReviewLogs(ctx, field)
-			case "practiceTests":
-				return ec.fieldContext_Term_practiceTests(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_Term_createdAt(ctx, field)
-			case "updatedAt":
-				return ec.fieldContext_Term_updatedAt(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Term", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TrueFalseQuestion_answerWith(ctx context.Context, field graphql.CollectedField, obj *model.TrueFalseQuestion) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TrueFalseQuestion_answerWith(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.AnswerWith, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model.AnswerWith)
-	fc.Result = res
-	return ec.marshalOAnswerWith2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐAnswerWith(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TrueFalseQuestion_answerWith(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TrueFalseQuestion",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type AnswerWith does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TrueFalseQuestion_correct(ctx context.Context, field graphql.CollectedField, obj *model.TrueFalseQuestion) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TrueFalseQuestion_correct(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Correct, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*bool)
-	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TrueFalseQuestion_correct(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TrueFalseQuestion",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TrueFalseQuestion_answeredBool(ctx context.Context, field graphql.CollectedField, obj *model.TrueFalseQuestion) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TrueFalseQuestion_answeredBool(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.AnsweredBool, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*bool)
-	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TrueFalseQuestion_answeredBool(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TrueFalseQuestion",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TrueFalseQuestion_distractor(ctx context.Context, field graphql.CollectedField, obj *model.TrueFalseQuestion) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TrueFalseQuestion_distractor(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Distractor, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model.Term)
-	fc.Result = res
-	return ec.marshalOTerm2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTerm(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TrueFalseQuestion_distractor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TrueFalseQuestion",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Term_id(ctx, field)
-			case "term":
-				return ec.fieldContext_Term_term(ctx, field)
-			case "def":
-				return ec.fieldContext_Term_def(ctx, field)
-			case "termImageUrl":
-				return ec.fieldContext_Term_termImageUrl(ctx, field)
-			case "defImageUrl":
-				return ec.fieldContext_Term_defImageUrl(ctx, field)
-			case "sortOrder":
-				return ec.fieldContext_Term_sortOrder(ctx, field)
-			case "progress":
-				return ec.fieldContext_Term_progress(ctx, field)
-			case "progressHistory":
-				return ec.fieldContext_Term_progressHistory(ctx, field)
-			case "topConfusionPairs":
-				return ec.fieldContext_Term_topConfusionPairs(ctx, field)
-			case "topReverseConfusionPairs":
-				return ec.fieldContext_Term_topReverseConfusionPairs(ctx, field)
-			case "fsrsCard":
-				return ec.fieldContext_Term_fsrsCard(ctx, field)
-			case "fsrsReviewLogs":
-				return ec.fieldContext_Term_fsrsReviewLogs(ctx, field)
-			case "practiceTests":
-				return ec.fieldContext_Term_practiceTests(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_Term_createdAt(ctx, field)
-			case "updatedAt":
-				return ec.fieldContext_Term_updatedAt(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Term", field.Name)
 		},
 	}
 	return fc, nil
@@ -14064,21 +14183,21 @@ func (ec *executionContext) unmarshalInputFRQInput(ctx context.Context, obj any)
 		switch k {
 		case "term":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("term"))
-			data, err := ec.unmarshalOTermInput2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermInput(ctx, v)
+			data, err := ec.unmarshalNTermATPInput2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermATPInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.Term = data
 		case "answerWith":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("answerWith"))
-			data, err := ec.unmarshalOAnswerWith2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐAnswerWith(ctx, v)
+			data, err := ec.unmarshalNAnswerWith2quizfreelyᚋapiᚋgraphᚋmodelᚐAnswerWith(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.AnswerWith = data
 		case "correct":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("correct"))
-			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			data, err := ec.unmarshalNBoolean2bool(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -14092,7 +14211,7 @@ func (ec *executionContext) unmarshalInputFRQInput(ctx context.Context, obj any)
 			it.UserMarkedCorrect = data
 		case "answeredString":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("answeredString"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -14276,7 +14395,7 @@ func (ec *executionContext) unmarshalInputMCQInput(ctx context.Context, obj any)
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"term", "answerWith", "correct", "answeredTerm", "distractors", "correctChoiceIndex"}
+	fieldsInOrder := [...]string{"term", "answerWith", "correct", "answeredIndex", "distractors"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -14285,60 +14404,53 @@ func (ec *executionContext) unmarshalInputMCQInput(ctx context.Context, obj any)
 		switch k {
 		case "term":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("term"))
-			data, err := ec.unmarshalOTermInput2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermInput(ctx, v)
+			data, err := ec.unmarshalNTermATPInput2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermATPInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.Term = data
 		case "answerWith":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("answerWith"))
-			data, err := ec.unmarshalOAnswerWith2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐAnswerWith(ctx, v)
+			data, err := ec.unmarshalNAnswerWith2quizfreelyᚋapiᚋgraphᚋmodelᚐAnswerWith(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.AnswerWith = data
 		case "correct":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("correct"))
-			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			data, err := ec.unmarshalNBoolean2bool(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.Correct = data
-		case "answeredTerm":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("answeredTerm"))
-			data, err := ec.unmarshalOTermInput2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermInput(ctx, v)
+		case "answeredIndex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("answeredIndex"))
+			data, err := ec.unmarshalNInt2int32(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.AnsweredTerm = data
+			it.AnsweredIndex = data
 		case "distractors":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("distractors"))
-			data, err := ec.unmarshalOTermInput2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermInput(ctx, v)
+			data, err := ec.unmarshalNTermATPInput2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermATPInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.Distractors = data
-		case "correctChoiceIndex":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("correctChoiceIndex"))
-			data, err := ec.unmarshalOInt2ᚖint32(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.CorrectChoiceIndex = data
 		}
 	}
 
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputMatchSessionInput(ctx context.Context, obj any) (model.MatchSessionInput, error) {
-	var it model.MatchSessionInput
+func (ec *executionContext) unmarshalInputMatchActivityInput(ctx context.Context, obj any) (model.MatchActivityInput, error) {
+	var it model.MatchActivityInput
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"durationMs"}
+	fieldsInOrder := [...]string{"durationMs", "termsIds", "incorrectPairIds"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -14352,6 +14464,20 @@ func (ec *executionContext) unmarshalInputMatchSessionInput(ctx context.Context,
 				return it, err
 			}
 			it.DurationMs = data
+		case "termsIds":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("termsIds"))
+			data, err := ec.unmarshalNID2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TermsIds = data
+		case "incorrectPairIds":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("incorrectPairIds"))
+			data, err := ec.unmarshalNID2ᚕᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IncorrectPairIds = data
 		}
 	}
 
@@ -14406,20 +14532,13 @@ func (ec *executionContext) unmarshalInputPracticeTestInput(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"id", "timestamp", "studysetId", "questionsCorrect", "questionsTotal", "questions"}
+	fieldsInOrder := [...]string{"timestamp", "questions"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
-		case "id":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.ID = data
 		case "timestamp":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("timestamp"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
@@ -14427,30 +14546,9 @@ func (ec *executionContext) unmarshalInputPracticeTestInput(ctx context.Context,
 				return it, err
 			}
 			it.Timestamp = data
-		case "studysetId":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("studysetId"))
-			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.StudysetID = data
-		case "questionsCorrect":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("questionsCorrect"))
-			data, err := ec.unmarshalOInt2ᚖint32(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.QuestionsCorrect = data
-		case "questionsTotal":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("questionsTotal"))
-			data, err := ec.unmarshalOInt2ᚖint32(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.QuestionsTotal = data
 		case "questions":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("questions"))
-			data, err := ec.unmarshalOQuestionInput2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐQuestionInputᚄ(ctx, v)
+			data, err := ec.unmarshalNQuestionInput2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐQuestionInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -14468,20 +14566,13 @@ func (ec *executionContext) unmarshalInputQuestionInput(ctx context.Context, obj
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"questionType", "mcq", "trueFalseQuestion", "frq"}
+	fieldsInOrder := [...]string{"mcq", "tfq", "frq"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
-		case "questionType":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("questionType"))
-			data, err := ec.unmarshalOQuestionType2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐQuestionType(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.QuestionType = data
 		case "mcq":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("mcq"))
 			data, err := ec.unmarshalOMCQInput2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐMCQInput(ctx, v)
@@ -14489,13 +14580,13 @@ func (ec *executionContext) unmarshalInputQuestionInput(ctx context.Context, obj
 				return it, err
 			}
 			it.Mcq = data
-		case "trueFalseQuestion":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("trueFalseQuestion"))
-			data, err := ec.unmarshalOTrueFalseQuestionInput2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTrueFalseQuestionInput(ctx, v)
+		case "tfq":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tfq"))
+			data, err := ec.unmarshalOTFQInput2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTFQInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.TrueFalseQuestion = data
+			it.Tfq = data
 		case "frq":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("frq"))
 			data, err := ec.unmarshalOFRQInput2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐFRQInput(ctx, v)
@@ -14544,6 +14635,102 @@ func (ec *executionContext) unmarshalInputStudysetInput(ctx context.Context, obj
 				return it, err
 			}
 			it.SubjectID = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputTFQInput(ctx context.Context, obj any) (model.TFQInput, error) {
+	var it model.TFQInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"term", "answerWith", "correct", "answeredBool", "distractor"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "term":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("term"))
+			data, err := ec.unmarshalNTermATPInput2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermATPInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Term = data
+		case "answerWith":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("answerWith"))
+			data, err := ec.unmarshalNAnswerWith2quizfreelyᚋapiᚋgraphᚋmodelᚐAnswerWith(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AnswerWith = data
+		case "correct":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("correct"))
+			data, err := ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Correct = data
+		case "answeredBool":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("answeredBool"))
+			data, err := ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AnsweredBool = data
+		case "distractor":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("distractor"))
+			data, err := ec.unmarshalOTermATPInput2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermATPInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Distractor = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputTermATPInput(ctx context.Context, obj any) (model.TermATPInput, error) {
+	var it model.TermATPInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"id", "term", "def"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "term":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("term"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Term = data
+		case "def":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("def"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Def = data
 		}
 	}
 
@@ -14736,61 +14923,6 @@ func (ec *executionContext) unmarshalInputTermProgressInput(ctx context.Context,
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputTrueFalseQuestionInput(ctx context.Context, obj any) (model.TrueFalseQuestionInput, error) {
-	var it model.TrueFalseQuestionInput
-	asMap := map[string]any{}
-	for k, v := range obj.(map[string]any) {
-		asMap[k] = v
-	}
-
-	fieldsInOrder := [...]string{"term", "answerWith", "correct", "answeredBool", "distractor"}
-	for _, k := range fieldsInOrder {
-		v, ok := asMap[k]
-		if !ok {
-			continue
-		}
-		switch k {
-		case "term":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("term"))
-			data, err := ec.unmarshalOTermInput2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Term = data
-		case "answerWith":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("answerWith"))
-			data, err := ec.unmarshalOAnswerWith2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐAnswerWith(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.AnswerWith = data
-		case "correct":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("correct"))
-			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Correct = data
-		case "answeredBool":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("answeredBool"))
-			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.AnsweredBool = data
-		case "distractor":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("distractor"))
-			data, err := ec.unmarshalOTermInput2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Distractor = data
-		}
-	}
-
-	return it, nil
-}
-
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
@@ -14870,14 +15002,26 @@ func (ec *executionContext) _FRQ(ctx context.Context, sel ast.SelectionSet, obj 
 			out.Values[i] = graphql.MarshalString("FRQ")
 		case "term":
 			out.Values[i] = ec._FRQ_term(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "answerWith":
 			out.Values[i] = ec._FRQ_answerWith(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "correct":
 			out.Values[i] = ec._FRQ_correct(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "userMarkedCorrect":
 			out.Values[i] = ec._FRQ_userMarkedCorrect(ctx, field, obj)
 		case "answeredString":
 			out.Values[i] = ec._FRQ_answeredString(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -15311,16 +15455,29 @@ func (ec *executionContext) _MCQ(ctx context.Context, sel ast.SelectionSet, obj 
 			out.Values[i] = graphql.MarshalString("MCQ")
 		case "term":
 			out.Values[i] = ec._MCQ_term(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "answerWith":
 			out.Values[i] = ec._MCQ_answerWith(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "correct":
 			out.Values[i] = ec._MCQ_correct(ctx, field, obj)
-		case "answeredTerm":
-			out.Values[i] = ec._MCQ_answeredTerm(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "answeredIndex":
+			out.Values[i] = ec._MCQ_answeredIndex(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "distractors":
 			out.Values[i] = ec._MCQ_distractors(ctx, field, obj)
-		case "correctChoiceIndex":
-			out.Values[i] = ec._MCQ_correctChoiceIndex(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -15344,19 +15501,34 @@ func (ec *executionContext) _MCQ(ctx context.Context, sel ast.SelectionSet, obj 
 	return out
 }
 
-var matchSessionImplementors = []string{"MatchSession"}
+var matchActivityImplementors = []string{"MatchActivity"}
 
-func (ec *executionContext) _MatchSession(ctx context.Context, sel ast.SelectionSet, obj *model.MatchSession) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, matchSessionImplementors)
+func (ec *executionContext) _MatchActivity(ctx context.Context, sel ast.SelectionSet, obj *model.MatchActivity) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, matchActivityImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	deferred := make(map[string]*graphql.FieldSet)
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("MatchSession")
+			out.Values[i] = graphql.MarshalString("MatchActivity")
 		case "durationMs":
-			out.Values[i] = ec._MatchSession_durationMs(ctx, field, obj)
+			out.Values[i] = ec._MatchActivity_durationMs(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "endTimestamp":
+			out.Values[i] = ec._MatchActivity_endTimestamp(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "termsIds":
+			out.Values[i] = ec._MatchActivity_termsIds(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "incorrectPairIds":
+			out.Values[i] = ec._MatchActivity_incorrectPairIds(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -15495,9 +15667,9 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "recordMatchSession":
+		case "recordMatchActivity":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_recordMatchSession(ctx, field)
+				return ec._Mutation_recordMatchActivity(ctx, field)
 			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -15584,24 +15756,58 @@ func (ec *executionContext) _PracticeTest(ctx context.Context, sel ast.Selection
 		case "id":
 			out.Values[i] = ec._PracticeTest_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "timestamp":
 			out.Values[i] = ec._PracticeTest_timestamp(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
-		case "studysetId":
-			out.Values[i] = ec._PracticeTest_studysetId(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
+		case "studysetIds":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PracticeTest_studysetIds(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
 			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "questionsCorrect":
 			out.Values[i] = ec._PracticeTest_questionsCorrect(ctx, field, obj)
 		case "questionsTotal":
 			out.Values[i] = ec._PracticeTest_questionsTotal(ctx, field, obj)
 		case "questions":
 			out.Values[i] = ec._PracticeTest_questions(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -16162,8 +16368,6 @@ func (ec *executionContext) _Question(ctx context.Context, sel ast.SelectionSet,
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Question")
-		case "questionType":
-			out.Values[i] = ec._Question_questionType(ctx, field, obj)
 		case "mcq":
 			out.Values[i] = ec._Question_mcq(ctx, field, obj)
 		case "trueFalseQuestion":
@@ -16690,6 +16894,62 @@ func (ec *executionContext) _Subject(ctx context.Context, sel ast.SelectionSet, 
 	return out
 }
 
+var tFQImplementors = []string{"TFQ"}
+
+func (ec *executionContext) _TFQ(ctx context.Context, sel ast.SelectionSet, obj *model.Tfq) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, tFQImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TFQ")
+		case "term":
+			out.Values[i] = ec._TFQ_term(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "answerWith":
+			out.Values[i] = ec._TFQ_answerWith(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "correct":
+			out.Values[i] = ec._TFQ_correct(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "answeredBool":
+			out.Values[i] = ec._TFQ_answeredBool(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "distractor":
+			out.Values[i] = ec._TFQ_distractor(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var termImplementors = []string{"Term"}
 
 func (ec *executionContext) _Term(ctx context.Context, sel ast.SelectionSet, obj *model.Term) graphql.Marshaler {
@@ -16980,6 +17240,55 @@ func (ec *executionContext) _Term(ctx context.Context, sel ast.SelectionSet, obj
 	return out
 }
 
+var termATPImplementors = []string{"TermATP"}
+
+func (ec *executionContext) _TermATP(ctx context.Context, sel ast.SelectionSet, obj *model.TermAtp) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, termATPImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TermATP")
+		case "id":
+			out.Values[i] = ec._TermATP_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "term":
+			out.Values[i] = ec._TermATP_term(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "def":
+			out.Values[i] = ec._TermATP_def(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var termConfusionPairImplementors = []string{"TermConfusionPair"}
 
 func (ec *executionContext) _TermConfusionPair(ctx context.Context, sel ast.SelectionSet, obj *model.TermConfusionPair) graphql.Marshaler {
@@ -17207,50 +17516,6 @@ func (ec *executionContext) _TermProgressHistory(ctx context.Context, sel ast.Se
 			out.Values[i] = ec._TermProgressHistory_defCorrectCount(ctx, field, obj)
 		case "defIncorrectCount":
 			out.Values[i] = ec._TermProgressHistory_defIncorrectCount(ctx, field, obj)
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
-var trueFalseQuestionImplementors = []string{"TrueFalseQuestion"}
-
-func (ec *executionContext) _TrueFalseQuestion(ctx context.Context, sel ast.SelectionSet, obj *model.TrueFalseQuestion) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, trueFalseQuestionImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("TrueFalseQuestion")
-		case "term":
-			out.Values[i] = ec._TrueFalseQuestion_term(ctx, field, obj)
-		case "answerWith":
-			out.Values[i] = ec._TrueFalseQuestion_answerWith(ctx, field, obj)
-		case "correct":
-			out.Values[i] = ec._TrueFalseQuestion_correct(ctx, field, obj)
-		case "answeredBool":
-			out.Values[i] = ec._TrueFalseQuestion_answeredBool(ctx, field, obj)
-		case "distractor":
-			out.Values[i] = ec._TrueFalseQuestion_distractor(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -17727,6 +17992,16 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 
 // region    ***************************** type.gotpl *****************************
 
+func (ec *executionContext) unmarshalNAnswerWith2quizfreelyᚋapiᚋgraphᚋmodelᚐAnswerWith(ctx context.Context, v any) (model.AnswerWith, error) {
+	var res model.AnswerWith
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNAnswerWith2quizfreelyᚋapiᚋgraphᚋmodelᚐAnswerWith(ctx context.Context, sel ast.SelectionSet, v model.AnswerWith) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) unmarshalNAnswerWith2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐAnswerWith(ctx context.Context, v any) (*model.AnswerWith, error) {
 	var res = new(model.AnswerWith)
 	err := res.UnmarshalGQL(v)
@@ -17977,6 +18252,36 @@ func (ec *executionContext) marshalNID2ᚕstringᚄ(ctx context.Context, sel ast
 	return ret
 }
 
+func (ec *executionContext) unmarshalNID2ᚕᚕstringᚄ(ctx context.Context, v any) ([][]string, error) {
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([][]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNID2ᚕstringᚄ(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNID2ᚕᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v [][]string) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNID2ᚕstringᚄ(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
 func (ec *executionContext) unmarshalNID2ᚖstring(ctx context.Context, v any) (*string, error) {
 	res, err := graphql.UnmarshalID(v)
 	return &res, graphql.ErrorOnPath(ctx, err)
@@ -18037,8 +18342,8 @@ func (ec *executionContext) marshalNInt2ᚖint32(ctx context.Context, sel ast.Se
 	return res
 }
 
-func (ec *executionContext) unmarshalNMatchSessionInput2quizfreelyᚋapiᚋgraphᚋmodelᚐMatchSessionInput(ctx context.Context, v any) (model.MatchSessionInput, error) {
-	res, err := ec.unmarshalInputMatchSessionInput(ctx, v)
+func (ec *executionContext) unmarshalNMatchActivityInput2quizfreelyᚋapiᚋgraphᚋmodelᚐMatchActivityInput(ctx context.Context, v any) (model.MatchActivityInput, error) {
+	res, err := ec.unmarshalInputMatchActivityInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -18126,6 +18431,55 @@ func (ec *executionContext) marshalNPracticeTest2ᚖquizfreelyᚋapiᚋgraphᚋm
 	return ec._PracticeTest(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNPracticeTestInput2quizfreelyᚋapiᚋgraphᚋmodelᚐPracticeTestInput(ctx context.Context, v any) (model.PracticeTestInput, error) {
+	res, err := ec.unmarshalInputPracticeTestInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNQuestion2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐQuestionᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Question) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNQuestion2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐQuestion(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
 func (ec *executionContext) marshalNQuestion2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐQuestion(ctx context.Context, sel ast.SelectionSet, v *model.Question) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -18134,6 +18488,21 @@ func (ec *executionContext) marshalNQuestion2ᚖquizfreelyᚋapiᚋgraphᚋmodel
 		return graphql.Null
 	}
 	return ec._Question(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNQuestionInput2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐQuestionInputᚄ(ctx context.Context, v any) ([]*model.QuestionInput, error) {
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.QuestionInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNQuestionInput2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐQuestionInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
 }
 
 func (ec *executionContext) unmarshalNQuestionInput2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐQuestionInput(ctx context.Context, v any) (*model.QuestionInput, error) {
@@ -18284,6 +18653,80 @@ func (ec *executionContext) marshalNTerm2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐT
 		return graphql.Null
 	}
 	return ec._Term(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNTermATP2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermAtpᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.TermAtp) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNTermATP2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermAtp(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNTermATP2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermAtp(ctx context.Context, sel ast.SelectionSet, v *model.TermAtp) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._TermATP(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNTermATPInput2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermATPInputᚄ(ctx context.Context, v any) ([]*model.TermATPInput, error) {
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.TermATPInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNTermATPInput2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermATPInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNTermATPInput2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermATPInput(ctx context.Context, v any) (*model.TermATPInput, error) {
+	res, err := ec.unmarshalInputTermATPInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalNTermInput2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermInputᚄ(ctx context.Context, v any) ([]*model.TermInput, error) {
@@ -18805,11 +19248,11 @@ func (ec *executionContext) unmarshalOMCQInput2ᚖquizfreelyᚋapiᚋgraphᚋmod
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOMatchSession2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐMatchSession(ctx context.Context, sel ast.SelectionSet, v *model.MatchSession) graphql.Marshaler {
+func (ec *executionContext) marshalOMatchActivity2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐMatchActivity(ctx context.Context, sel ast.SelectionSet, v *model.MatchActivity) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	return ec._MatchSession(ctx, sel, v)
+	return ec._MatchActivity(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOPracticeTest2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐPracticeTest(ctx context.Context, sel ast.SelectionSet, v []*model.PracticeTest) graphql.Marshaler {
@@ -18858,95 +19301,6 @@ func (ec *executionContext) marshalOPracticeTest2ᚖquizfreelyᚋapiᚋgraphᚋm
 		return graphql.Null
 	}
 	return ec._PracticeTest(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalOPracticeTestInput2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐPracticeTestInput(ctx context.Context, v any) (*model.PracticeTestInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputPracticeTestInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalOQuestion2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐQuestionᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Question) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNQuestion2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐQuestion(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
-}
-
-func (ec *executionContext) unmarshalOQuestionInput2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐQuestionInputᚄ(ctx context.Context, v any) ([]*model.QuestionInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	var vSlice []any
-	vSlice = graphql.CoerceList(v)
-	var err error
-	res := make([]*model.QuestionInput, len(vSlice))
-	for i := range vSlice {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNQuestionInput2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐQuestionInput(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
-func (ec *executionContext) unmarshalOQuestionType2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐQuestionType(ctx context.Context, v any) (*model.QuestionType, error) {
-	if v == nil {
-		return nil, nil
-	}
-	var res = new(model.QuestionType)
-	err := res.UnmarshalGQL(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalOQuestionType2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐQuestionType(ctx context.Context, sel ast.SelectionSet, v *model.QuestionType) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return v
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v any) (*string, error) {
@@ -19052,6 +19406,21 @@ func (ec *executionContext) marshalOSubjectCategory2ᚖquizfreelyᚋapiᚋgraph�
 	return v
 }
 
+func (ec *executionContext) marshalOTFQ2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTfq(ctx context.Context, sel ast.SelectionSet, v *model.Tfq) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._TFQ(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOTFQInput2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTFQInput(ctx context.Context, v any) (*model.TFQInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputTFQInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalOTerm2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTerm(ctx context.Context, sel ast.SelectionSet, v []*model.Term) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -19147,6 +19516,21 @@ func (ec *executionContext) marshalOTerm2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐT
 	return ec._Term(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalOTermATP2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermAtp(ctx context.Context, sel ast.SelectionSet, v *model.TermAtp) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._TermATP(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOTermATPInput2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermATPInput(ctx context.Context, v any) (*model.TermATPInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputTermATPInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalOTermConfusionPair2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermConfusionPair(ctx context.Context, sel ast.SelectionSet, v []*model.TermConfusionPair) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -19218,32 +19602,6 @@ func (ec *executionContext) unmarshalOTermConfusionPairInput2ᚖquizfreelyᚋapi
 		return nil, nil
 	}
 	res, err := ec.unmarshalInputTermConfusionPairInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) unmarshalOTermInput2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermInput(ctx context.Context, v any) ([]*model.TermInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	var vSlice []any
-	vSlice = graphql.CoerceList(v)
-	var err error
-	res := make([]*model.TermInput, len(vSlice))
-	for i := range vSlice {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalOTermInput2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermInput(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
-func (ec *executionContext) unmarshalOTermInput2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermInput(ctx context.Context, v any) (*model.TermInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputTermInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -19347,21 +19705,6 @@ func (ec *executionContext) marshalOTermProgressHistory2ᚖquizfreelyᚋapiᚋgr
 		return graphql.Null
 	}
 	return ec._TermProgressHistory(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalOTrueFalseQuestion2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTrueFalseQuestion(ctx context.Context, sel ast.SelectionSet, v *model.TrueFalseQuestion) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._TrueFalseQuestion(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalOTrueFalseQuestionInput2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTrueFalseQuestionInput(ctx context.Context, v any) (*model.TrueFalseQuestionInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputTrueFalseQuestionInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOUser2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model.User) graphql.Marshaler {

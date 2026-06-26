@@ -590,7 +590,7 @@ DO UPDATE SET confused_count = term_confusion_pairs.confused_count + EXCLUDED.co
 }
 
 // RecordPracticeTest is the resolver for the recordPracticeTest field.
-func (r *mutationResolver) RecordPracticeTest(ctx context.Context, input *model.PracticeTestInput) (*model.PracticeTest, error) {
+func (r *mutationResolver) RecordPracticeTest(ctx context.Context, input model.PracticeTestInput) (*model.PracticeTest, error) {
 	authedUser := auth.AuthedUserContext(ctx)
 	if authedUser == nil {
 		return nil, fmt.Errorf("not authenticated")
@@ -904,7 +904,7 @@ RETURNING
 }
 
 // UpdatePracticeTest is the resolver for the updatePracticeTest field.
-func (r *mutationResolver) UpdatePracticeTest(ctx context.Context, input *model.PracticeTestInput) (*model.PracticeTest, error) {
+func (r *mutationResolver) UpdatePracticeTest(ctx context.Context, id string, input model.PracticeTestInput) (*model.PracticeTest, error) {
 	authedUser := auth.AuthedUserContext(ctx)
 	if authedUser == nil {
 		return nil, fmt.Errorf("not authenticated")
@@ -1227,8 +1227,8 @@ func (r *mutationResolver) RecordFsrsReviewLog(ctx context.Context, termID strin
 	return tag.RowsAffected() == 1, nil
 }
 
-// RecordMatchSession is the resolver for the recordMatchSession field.
-func (r *mutationResolver) RecordMatchSession(ctx context.Context, match model.MatchSessionInput) (*model.MatchSession, error) {
+// RecordMatchActivity is the resolver for the recordMatchActivity field.
+func (r *mutationResolver) RecordMatchActivity(ctx context.Context, input model.MatchActivityInput) (*model.MatchActivity, error) {
 	panic(fmt.Errorf("not implemented: RecordMatchSession - recordMatchSession"))
 }
 
