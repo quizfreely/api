@@ -602,35 +602,8 @@ func (r *mutationResolver) RecordPracticeTest(ctx context.Context, input model.P
 	}
 	defer tx.Rollback(ctx)
 
-	var practiceTest model.PracticeTest
-	err = pgxscan.Get(
-		ctx,
-		tx,
-		&practiceTest,
-		`INSERT INTO practice_tests
-	(timestamp, user_id, studyset_id, questions_correct, questions_total, questions)
-SELECT now(), $1, s.id, $3, $4, $5
-FROM studysets s
-WHERE s.id = $2 AND s.draft = false AND (s.private = false OR s.user_id = $1)
-RETURNING
-	id,
-	studyset_id,
-	to_char(timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as timestamp,
-	questions_correct,
-	questions_total,
-	questions`,
-		authedUser.ID,
-		input.StudysetID,
-		input.QuestionsCorrect,
-		input.QuestionsTotal,
-		input.Questions,
-	)
-	if err != nil {
-		if pgxscan.NotFound(err) {
-			return nil, fmt.Errorf("studyset not found or not accessible")
-		}
-		return nil, fmt.Errorf("database error in RecordPracticeTest: %w", err)
-	}
+	var questionsCorrect int32 = 0
+	var questionsTotal int32 = int32(len(input.Questions))
 
 	nowStr := time.Now().Format(time.RFC3339)
 	termProgressMap := make(map[string]*model.TermProgressInput)
@@ -654,36 +627,28 @@ RETURNING
 					distractorTermIDs = append(distractorTermIDs, d.ID)
 				}
 			}
-			if q.Mcq.AnswerWith != nil {
-				answerWith = *q.Mcq.AnswerWith
-			}
-			if q.Mcq.Correct != nil {
-				correct = *q.Mcq.Correct
-			}
-		} else if q.TrueFalseQuestion != nil && q.TrueFalseQuestion.Term != nil {
-			termID = q.TrueFalseQuestion.Term.ID
+			answerWith = q.Mcq.AnswerWith
+			correct = q.Mcq.Correct
+		} else if q.Tfq != nil && q.Tfq.Term != nil {
+			termID = q.Tfq.Term.ID
 			questionTermIDs = append(questionTermIDs, termID)
-			if q.TrueFalseQuestion.Distractor != nil {
-				distractorTermIDs = append(distractorTermIDs, q.TrueFalseQuestion.Distractor.ID)
+			if q.Tfq.Distractor != nil {
+				distractorTermIDs = append(distractorTermIDs, q.Tfq.Distractor.ID)
 			}
-			if q.TrueFalseQuestion.AnswerWith != nil {
-				answerWith = *q.TrueFalseQuestion.AnswerWith
-			}
-			if q.TrueFalseQuestion.Correct != nil {
-				correct = *q.TrueFalseQuestion.Correct
-			}
+			answerWith = q.Tfq.AnswerWith
+			correct = q.Tfq.Correct
 		} else if q.Frq != nil && q.Frq.Term != nil {
 			termID = q.Frq.Term.ID
 			questionTermIDs = append(questionTermIDs, termID)
-			if q.Frq.AnswerWith != nil {
-				answerWith = *q.Frq.AnswerWith
-			}
-			if q.Frq.Correct != nil && *q.Frq.Correct {
-				correct = true
-			}
+			answerWith = q.Frq.AnswerWith
+			correct = q.Frq.Correct
 			if q.Frq.UserMarkedCorrect != nil && *q.Frq.UserMarkedCorrect {
 				correct = true
 			}
+		}
+
+		if correct {
+			questionsCorrect++
 		}
 
 		if termID == "" {
@@ -745,6 +710,29 @@ RETURNING
 		} else {
 			*tp.DefIncorrectIncrease += defIncorrectIncrease
 		}
+	}
+
+	var practiceTest model.PracticeTest
+	err = pgxscan.Get(
+		ctx,
+		tx,
+		&practiceTest,
+		`INSERT INTO practice_tests
+	(timestamp, user_id, questions_correct, questions_total, questions)
+VALUES (now(), $1, $2, $3, $4)
+RETURNING
+	id,
+	to_char(timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as timestamp,
+	questions_correct,
+	questions_total,
+	questions`,
+		authedUser.ID,
+		questionsCorrect,
+		questionsTotal,
+		input.Questions,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("database error in RecordPracticeTest: %w", err)
 	}
 
 	if len(questionTermIDs) > 0 {
@@ -910,8 +898,27 @@ func (r *mutationResolver) UpdatePracticeTest(ctx context.Context, id string, in
 		return nil, fmt.Errorf("not authenticated")
 	}
 
-	if input.ID == nil {
-		return nil, fmt.Errorf("practice test id cannot be null when updating")
+	var questionsCorrect int32 = 0
+	var questionsTotal int32 = int32(len(input.Questions))
+
+	for _, q := range input.Questions {
+		if q == nil {
+			continue
+		}
+		correct := false
+		if q.Mcq != nil {
+			correct = q.Mcq.Correct
+		} else if q.Tfq != nil {
+			correct = q.Tfq.Correct
+		} else if q.Frq != nil {
+			correct = q.Frq.Correct
+			if q.Frq.UserMarkedCorrect != nil && *q.Frq.UserMarkedCorrect {
+				correct = true
+			}
+		}
+		if correct {
+			questionsCorrect++
+		}
 	}
 
 	var practiceTest model.PracticeTest
@@ -923,15 +930,14 @@ func (r *mutationResolver) UpdatePracticeTest(ctx context.Context, id string, in
 WHERE user_id = $1 AND id = $2
 RETURNING
 	id,
-	studyset_id,
 	to_char(timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as timestamp,
 	questions_correct,
 	questions_total,
 	questions`,
 		authedUser.ID,
-		input.ID,
-		input.QuestionsCorrect,
-		input.QuestionsTotal,
+		id,
+		questionsCorrect,
+		questionsTotal,
 		input.Questions,
 	)
 	if err != nil {

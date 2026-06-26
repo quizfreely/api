@@ -522,10 +522,10 @@ func (dr *dataReader) getPracticeTestsByStudysetIDs(ctx context.Context, studyse
 	type dbPracticeTest struct {
 		ID               *string           `db:"id"`
 		Timestamp        *string           `db:"timestamp"`
-		StudysetID       *string           `db:"studyset_id"`
 		QuestionsCorrect *int32            `db:"questions_correct"`
 		QuestionsTotal   *int32            `db:"questions_total"`
 		Questions        []*model.Question `db:"questions"`
+		StudysetID       *string           `db:"studyset_id"`
 	}
 	var dbPracticeTests []*dbPracticeTest
 
@@ -533,17 +533,23 @@ func (dr *dataReader) getPracticeTestsByStudysetIDs(ctx context.Context, studyse
 		ctx,
 		dr.db,
 		&dbPracticeTests,
-		`SELECT pt.id,
+		`SELECT DISTINCT ON (input.og_order, pt.id)
+	pt.id,
 	to_char(pt.timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as timestamp,
-	pt.studyset_id,
     pt.questions_correct,
     pt.questions_total,
-    pt.questions
+    pt.questions,
+	input.studyset_id
 FROM unnest($1::uuid[]) WITH ORDINALITY AS input(studyset_id, og_order)
-LEFT JOIN practice_tests pt
-	ON pt.studyset_id = input.studyset_id
-	AND pt.user_id = $2
-ORDER BY input.og_order ASC, pt.timestamp DESC`,
+JOIN (
+    SELECT practice_test_id, term_id FROM practice_test_question_terms
+    UNION
+    SELECT practice_test_id, term_id FROM practice_test_distractor_terms
+) mapping ON TRUE
+JOIN terms t ON mapping.term_id = t.id AND t.studyset_id = input.studyset_id
+JOIN practice_tests pt ON pt.id = mapping.practice_test_id
+WHERE pt.user_id = $2
+ORDER BY input.og_order ASC, pt.id, pt.timestamp DESC`,
 		studysetIDs,
 		authedUser.ID,
 	)
@@ -556,7 +562,6 @@ ORDER BY input.og_order ASC, pt.timestamp DESC`,
 		if pt.ID != nil && pt.StudysetID != nil {
 			grouped[*pt.StudysetID] = append(grouped[*pt.StudysetID], &model.PracticeTest{
 				ID:               pt.ID,
-				StudysetID:       pt.StudysetID,
 				Timestamp:        pt.Timestamp,
 				QuestionsCorrect: pt.QuestionsCorrect,
 				QuestionsTotal:   pt.QuestionsTotal,
@@ -659,7 +664,6 @@ func (dr *dataReader) getPracticeTestsByTermIDs(ctx context.Context, termIDs []s
 	type dbPracticeTest struct {
 		ID               *string           `db:"id"`
 		Timestamp        *string           `db:"timestamp"`
-		StudysetID       *string           `db:"studyset_id"`
 		QuestionsCorrect *int32            `db:"questions_correct"`
 		QuestionsTotal   *int32            `db:"questions_total"`
 		Questions        []*model.Question `db:"questions"`
@@ -673,7 +677,6 @@ func (dr *dataReader) getPracticeTestsByTermIDs(ctx context.Context, termIDs []s
 		&dbPracticeTests,
 		`SELECT pt.id,
 	to_char(pt.timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as timestamp,
-	pt.studyset_id,
     pt.questions_correct,
     pt.questions_total,
     pt.questions,
@@ -708,7 +711,6 @@ ORDER BY input.og_order ASC, pt.timestamp DESC`,
 			if !exists {
 				grouped[*pt.TermID] = append(grouped[*pt.TermID], &model.PracticeTest{
 					ID:               pt.ID,
-					StudysetID:       pt.StudysetID,
 					Timestamp:        pt.Timestamp,
 					QuestionsCorrect: pt.QuestionsCorrect,
 					QuestionsTotal:   pt.QuestionsTotal,

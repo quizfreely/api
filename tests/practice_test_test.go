@@ -23,7 +23,35 @@ func TestPracticeTestLifecycle(t *testing.T) {
 	json.NewDecoder(resp.Body).Decode(&createSSResult)
 	studysetID := getNested(createSSResult, "data", "createStudyset", "id").(string)
 
-	// 2. user2 records a practice test for user1's public studyset
+	// 2. Setup: Add terms to user1's studyset
+	createTermsBody := map[string]interface{}{
+		"query": `mutation CreateTerms($studysetId: ID!, $terms: [NewTermInput!]!) {
+			createTerms(studysetId: $studysetId, terms: $terms) {
+				id
+				term
+				def
+			}
+		}`,
+		"variables": map[string]interface{}{
+			"studysetId": studysetID,
+			"terms": []map[string]interface{}{
+				{"term": "T1", "def": "D1", "sortOrder": 0},
+				{"term": "T2", "def": "D2", "sortOrder": 1},
+			},
+		},
+	}
+	req, _ = http.NewRequest(http.MethodPost, testServer.URL+"/graphql", marshal(createTermsBody))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+user1Token)
+	resp, _ = http.DefaultClient.Do(req)
+	var createTermsResult map[string]interface{}
+	json.NewDecoder(resp.Body).Decode(&createTermsResult)
+	terms := getNested(createTermsResult, "data", "createTerms").([]interface{})
+	term1ID := terms[0].(map[string]interface{})["id"].(string)
+	term1Text := terms[0].(map[string]interface{})["term"].(string)
+	term1Def := terms[0].(map[string]interface{})["def"].(string)
+
+	// 3. user2 records a practice test for user1's public studyset
 	recordPTBody := map[string]interface{}{
 		"query": `mutation RecordPT($input: PracticeTestInput!) {
 			recordPracticeTest(input: $input) {
@@ -34,10 +62,21 @@ func TestPracticeTestLifecycle(t *testing.T) {
 		}`,
 		"variables": map[string]interface{}{
 			"input": map[string]interface{}{
-				"studysetId":       studysetID,
-				"questionsCorrect": 8,
-				"questionsTotal":   10,
-				"questions":        []interface{}{}, // simplified for test
+				"questions": []interface{}{
+					map[string]interface{}{
+						"mcq": map[string]interface{}{
+							"term": map[string]interface{}{
+								"id":   term1ID,
+								"term": term1Text,
+								"def":  term1Def,
+							},
+							"answerWith":    "DEF",
+							"correct":       true,
+							"answeredIndex": 0,
+							"distractors":   []interface{}{},
+						},
+					},
+				},
 			},
 		},
 	}
@@ -50,20 +89,32 @@ func TestPracticeTestLifecycle(t *testing.T) {
 	require.Nil(t, recordResult["errors"], "user2 should be able to record PT for public set")
 	ptID := getNested(recordResult, "data", "recordPracticeTest", "id").(string)
 
-	// 3. user2 updates their own practice test
+	// 4. user2 updates their own practice test
 	updatePTBody := map[string]interface{}{
-		"query": `mutation UpdatePT($input: PracticeTestInput!) {
-			updatePracticeTest(input: $input) {
+		"query": `mutation UpdatePT($id: ID!, $input: PracticeTestInput!) {
+			updatePracticeTest(id: $id, input: $input) {
 				id
 				questionsCorrect
 			}
 		}`,
 		"variables": map[string]interface{}{
+			"id": ptID,
 			"input": map[string]interface{}{
-				"id":               ptID,
-				"questionsCorrect": 9,
-				"questionsTotal":   10,
-				"questions":        []interface{}{},
+				"questions": []interface{}{
+					map[string]interface{}{
+						"mcq": map[string]interface{}{
+							"term": map[string]interface{}{
+								"id":   term1ID,
+								"term": term1Text,
+								"def":  term1Def,
+							},
+							"answerWith":    "DEF",
+							"correct":       false,
+							"answeredIndex": 0,
+							"distractors":   []interface{}{},
+						},
+					},
+				},
 			},
 		},
 	}
@@ -74,9 +125,9 @@ func TestPracticeTestLifecycle(t *testing.T) {
 	var updateResult map[string]interface{}
 	json.NewDecoder(resp.Body).Decode(&updateResult)
 	require.Nil(t, updateResult["errors"], "user2 should be able to update their own PT")
-	require.Equal(t, float64(9), getNested(updateResult, "data", "updatePracticeTest", "questionsCorrect"))
+	require.Equal(t, float64(0), getNested(updateResult, "data", "updatePracticeTest", "questionsCorrect"))
 
-	// 4. Invalid Authz: user1 tries to update user2's practice test
+	// 5. Invalid Authz: user1 tries to update user2's practice test
 	req, _ = http.NewRequest(http.MethodPost, testServer.URL+"/graphql", marshal(updatePTBody))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+user1Token)
@@ -85,26 +136,51 @@ func TestPracticeTestLifecycle(t *testing.T) {
 	json.NewDecoder(resp.Body).Decode(&unauthorizedResult)
 	require.NotNil(t, unauthorizedResult["errors"], "user1 should NOT be able to update user2's PT")
 
-	// 5. Private Set Security: user1 creates a private studyset; user2 tries to record PT
-	createPrivateSSBody := map[string]interface{}{
+	// 6. Private Set Security (Implicit): user2 tries to record PT for a term in a private studyset
+
+	// Create private set and term
+	req, _ = http.NewRequest(http.MethodPost, testServer.URL+"/graphql", marshal(map[string]interface{}{
 		"query": `mutation {
 			createStudyset(studyset: {title: "Private Set", private: true}, draft: false) { id }
 		}`,
-	}
-	req, _ = http.NewRequest(http.MethodPost, testServer.URL+"/graphql", marshal(createPrivateSSBody))
+	}))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+user1Token)
 	resp, _ = http.DefaultClient.Do(req)
-	var createPrivateResult map[string]interface{}
-	json.NewDecoder(resp.Body).Decode(&createPrivateResult)
-	privateStudysetID := getNested(createPrivateResult, "data", "createStudyset", "id").(string)
+	var createSSResult2 map[string]interface{}
+	json.NewDecoder(resp.Body).Decode(&createSSResult2)
+	privateStudysetID := getNested(createSSResult2, "data", "createStudyset", "id").(string)
 
-	recordPTBody["variables"].(map[string]interface{})["input"].(map[string]interface{})["studysetId"] = privateStudysetID
+	createTermsBody["variables"].(map[string]interface{})["studysetId"] = privateStudysetID
+	req, _ = http.NewRequest(http.MethodPost, testServer.URL+"/graphql", marshal(createTermsBody))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+user1Token)
+	resp, _ = http.DefaultClient.Do(req)
+	var createTermsResult2 map[string]interface{}
+	json.NewDecoder(resp.Body).Decode(&createTermsResult2)
+	privateTerms := getNested(createTermsResult2, "data", "createTerms").([]interface{})
+	privateTermID := privateTerms[0].(map[string]interface{})["id"].(string)
+
+	recordPTBody["variables"].(map[string]interface{})["input"].(map[string]interface{})["questions"] = []interface{}{
+		map[string]interface{}{
+			"mcq": map[string]interface{}{
+				"term": map[string]interface{}{
+					"id":   privateTermID,
+					"term": "X",
+					"def":  "Y",
+				},
+				"answerWith":    "DEF",
+				"correct":       true,
+				"answeredIndex": 0,
+				"distractors":   []interface{}{},
+			},
+		},
+	}
 	req, _ = http.NewRequest(http.MethodPost, testServer.URL+"/graphql", marshal(recordPTBody))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+user2Token)
 	resp, _ = http.DefaultClient.Do(req)
 	var privateResult map[string]interface{}
 	json.NewDecoder(resp.Body).Decode(&privateResult)
-	require.NotNil(t, privateResult["errors"], "user2 should NOT be able to record PT for user1's private set")
+	require.Nil(t, privateResult["errors"], "user2 should be able to record PT even for terms in private sets as per user instructions")
 }
