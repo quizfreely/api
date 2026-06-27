@@ -139,9 +139,9 @@ type Query struct {
 }
 
 type Question struct {
-	Mcq               *Mcq `json:"mcq,omitempty"`
-	TrueFalseQuestion *Tfq `json:"trueFalseQuestion,omitempty"`
-	Frq               *Frq `json:"frq,omitempty"`
+	Mcq *Mcq `json:"mcq,omitempty"`
+	Tfq *Tfq `json:"tfq,omitempty"`
+	Frq *Frq `json:"frq,omitempty"`
 }
 
 type QuestionInput struct {

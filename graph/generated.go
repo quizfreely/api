@@ -198,9 +198,9 @@ type ComplexityRoot struct {
 	}
 
 	Question struct {
-		Frq               func(childComplexity int) int
-		Mcq               func(childComplexity int) int
-		TrueFalseQuestion func(childComplexity int) int
+		Frq func(childComplexity int) int
+		Mcq func(childComplexity int) int
+		Tfq func(childComplexity int) int
 	}
 
 	Studyset struct {
@@ -1378,12 +1378,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Question.Mcq(childComplexity), true
 
-	case "Question.trueFalseQuestion":
-		if e.complexity.Question.TrueFalseQuestion == nil {
+	case "Question.tfq":
+		if e.complexity.Question.Tfq == nil {
 			break
 		}
 
-		return e.complexity.Question.TrueFalseQuestion(childComplexity), true
+		return e.complexity.Question.Tfq(childComplexity), true
 
 	case "Studyset.createdAt":
 		if e.complexity.Studyset.CreatedAt == nil {
@@ -6961,8 +6961,8 @@ func (ec *executionContext) fieldContext_PracticeTest_questions(_ context.Contex
 			switch field.Name {
 			case "mcq":
 				return ec.fieldContext_Question_mcq(ctx, field)
-			case "trueFalseQuestion":
-				return ec.fieldContext_Question_trueFalseQuestion(ctx, field)
+			case "tfq":
+				return ec.fieldContext_Question_tfq(ctx, field)
 			case "frq":
 				return ec.fieldContext_Question_frq(ctx, field)
 			}
@@ -8555,8 +8555,8 @@ func (ec *executionContext) fieldContext_Question_mcq(_ context.Context, field g
 	return fc, nil
 }
 
-func (ec *executionContext) _Question_trueFalseQuestion(ctx context.Context, field graphql.CollectedField, obj *model.Question) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Question_trueFalseQuestion(ctx, field)
+func (ec *executionContext) _Question_tfq(ctx context.Context, field graphql.CollectedField, obj *model.Question) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Question_tfq(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -8569,7 +8569,7 @@ func (ec *executionContext) _Question_trueFalseQuestion(ctx context.Context, fie
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.TrueFalseQuestion, nil
+		return obj.Tfq, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8583,7 +8583,7 @@ func (ec *executionContext) _Question_trueFalseQuestion(ctx context.Context, fie
 	return ec.marshalOTFQ2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTfq(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Question_trueFalseQuestion(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Question_tfq(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Question",
 		Field:      field,
@@ -16436,8 +16436,8 @@ func (ec *executionContext) _Question(ctx context.Context, sel ast.SelectionSet,
 			out.Values[i] = graphql.MarshalString("Question")
 		case "mcq":
 			out.Values[i] = ec._Question_mcq(ctx, field, obj)
-		case "trueFalseQuestion":
-			out.Values[i] = ec._Question_trueFalseQuestion(ctx, field, obj)
+		case "tfq":
+			out.Values[i] = ec._Question_tfq(ctx, field, obj)
 		case "frq":
 			out.Values[i] = ec._Question_frq(ctx, field, obj)
 		default:

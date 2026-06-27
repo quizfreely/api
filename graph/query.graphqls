@@ -43,7 +43,7 @@ type PracticeTest {
 }
 type Question {
     mcq: MCQ
-    trueFalseQuestion: TFQ
+    tfq: TFQ
     frq: FRQ
 }
 type TermATP {
