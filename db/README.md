@@ -8,7 +8,7 @@ CREATE ROLE quizfreely_api LOGIN PASSWORD 'NEW_API_PASSWORD_GOES_HERE';
 -- CREATE ROLE quizfreely_api LOGIN;
 -- \password quizfreely_api
 
-CREATE DATABASE quizfreely_db OWNER quizfreely_api_admin;
+CREATE DATABASE quizfreely_db OWNER quizfreely_db_admin;
 
 GRANT CONNECT ON DATABASE quizfreely_db TO quizfreely_api;
 ```
