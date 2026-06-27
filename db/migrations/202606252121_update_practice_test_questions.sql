@@ -48,7 +48,7 @@ BEGIN
                     answered_index := 0;
                 END IF;
 
-                mcq_obj := mcq_obj - 'correctChoiceIndex' - 'answeredTerm';
+                mcq_obj := mcq_obj - 'answeredTerm';
                 mcq_obj := jsonb_set(mcq_obj, '{answeredIndex}', to_jsonb(answered_index));
 
                 IF mcq_obj ? 'term' AND jsonb_typeof(mcq_obj->'term') = 'object' THEN
@@ -101,6 +101,7 @@ DECLARE
     question_type text;
     mcq_obj jsonb;
     answered_idx int;
+    cci int;
 BEGIN
     FOR r IN SELECT id, questions FROM practice_tests WHERE questions IS NOT NULL AND jsonb_typeof(questions) = 'array' LOOP
         questions_arr := '[]'::jsonb;
@@ -117,7 +118,10 @@ BEGIN
             ELSE
                 question_type := 'MCQ';
             END IF;
-            new_q := jsonb_set(new_q, '{questionType}', to_jsonb(question_type));
+
+            IF NOT (new_q ? 'questionType') THEN
+                new_q := jsonb_set(new_q, '{questionType}', to_jsonb(question_type));
+            END IF;
 
             -- Rename tfq -> trueFalseQuestion
             IF new_q ? 'tfq' THEN
@@ -125,21 +129,29 @@ BEGIN
                 new_q := new_q - 'tfq';
             END IF;
 
-            -- Reverse MCQ: answeredIndex -> answeredTerm + correctChoiceIndex
-            IF new_q ? 'mcq' AND jsonb_typeof(new_q->'mcq') = 'object' THEN
+            -- Reverse MCQ: answeredIndex -> answeredTerm
+            IF new_q ? 'mcq' AND jsonb_typeof(new_q->'mcq') = 'object' AND new_q->'mcq' ? 'answeredIndex' THEN
                 mcq_obj := new_q->'mcq';
                 answered_idx := (mcq_obj->>'answeredIndex')::int;
+                cci := (mcq_obj->>'correctChoiceIndex')::int;
 
                 IF (mcq_obj->>'correct') = 'true' THEN
-                    mcq_obj := jsonb_set(mcq_obj, '{correctChoiceIndex}', to_jsonb(answered_idx));
                     mcq_obj := jsonb_set(mcq_obj, '{answeredTerm}', mcq_obj->'term');
                 ELSE
-                    mcq_obj := jsonb_set(mcq_obj, '{correctChoiceIndex}', to_jsonb(0));
-                    IF mcq_obj ? 'distractors' AND jsonb_typeof(mcq_obj->'distractors') = 'array'
-                       AND jsonb_array_length(mcq_obj->'distractors') > answered_idx THEN
-                        mcq_obj := jsonb_set(mcq_obj, '{answeredTerm}', mcq_obj->'distractors'->answered_idx);
+                    IF mcq_obj ? 'distractors' AND jsonb_typeof(mcq_obj->'distractors') = 'array' AND cci IS NOT NULL THEN
+                        IF answered_idx < cci THEN
+                            mcq_obj := jsonb_set(mcq_obj, '{answeredTerm}', COALESCE(mcq_obj->'distractors'->answered_idx, mcq_obj->'term'));
+                        ELSIF answered_idx > cci THEN
+                            mcq_obj := jsonb_set(mcq_obj, '{answeredTerm}', COALESCE(mcq_obj->'distractors'->(answered_idx - 1), mcq_obj->'term'));
+                        ELSE
+                            -- answered_idx == cci but correct is false? shouldn't happen but fallback to term
+                            mcq_obj := jsonb_set(mcq_obj, '{answeredTerm}', mcq_obj->'term');
+                        END IF;
                     ELSE
                         mcq_obj := jsonb_set(mcq_obj, '{answeredTerm}', mcq_obj->'term');
+                        IF cci IS NULL THEN
+                            mcq_obj := jsonb_set(mcq_obj, '{correctChoiceIndex}', to_jsonb(0));
+                        END IF;
                     END IF;
                 END IF;
 

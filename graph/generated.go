@@ -115,11 +115,12 @@ type ComplexityRoot struct {
 	}
 
 	MCQ struct {
-		AnswerWith    func(childComplexity int) int
-		AnsweredIndex func(childComplexity int) int
-		Correct       func(childComplexity int) int
-		Distractors   func(childComplexity int) int
-		Term          func(childComplexity int) int
+		AnswerWith         func(childComplexity int) int
+		AnsweredIndex      func(childComplexity int) int
+		Correct            func(childComplexity int) int
+		CorrectChoiceIndex func(childComplexity int) int
+		Distractors        func(childComplexity int) int
+		Term               func(childComplexity int) int
 	}
 
 	MatchActivity struct {
@@ -723,6 +724,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.MCQ.Correct(childComplexity), true
+
+	case "MCQ.correctChoiceIndex":
+		if e.complexity.MCQ.CorrectChoiceIndex == nil {
+			break
+		}
+
+		return e.complexity.MCQ.CorrectChoiceIndex(childComplexity), true
 
 	case "MCQ.distractors":
 		if e.complexity.MCQ.Distractors == nil {
@@ -4827,6 +4835,50 @@ func (ec *executionContext) fieldContext_MCQ_correct(_ context.Context, field gr
 	return fc, nil
 }
 
+func (ec *executionContext) _MCQ_correctChoiceIndex(ctx context.Context, field graphql.CollectedField, obj *model.Mcq) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MCQ_correctChoiceIndex(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CorrectChoiceIndex, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int32)
+	fc.Result = res
+	return ec.marshalNInt2int32(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MCQ_correctChoiceIndex(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MCQ",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _MCQ_answeredIndex(ctx context.Context, field graphql.CollectedField, obj *model.Mcq) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_MCQ_answeredIndex(ctx, field)
 	if err != nil {
@@ -8490,6 +8542,8 @@ func (ec *executionContext) fieldContext_Question_mcq(_ context.Context, field g
 				return ec.fieldContext_MCQ_answerWith(ctx, field)
 			case "correct":
 				return ec.fieldContext_MCQ_correct(ctx, field)
+			case "correctChoiceIndex":
+				return ec.fieldContext_MCQ_correctChoiceIndex(ctx, field)
 			case "answeredIndex":
 				return ec.fieldContext_MCQ_answeredIndex(ctx, field)
 			case "distractors":
@@ -14395,7 +14449,7 @@ func (ec *executionContext) unmarshalInputMCQInput(ctx context.Context, obj any)
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"term", "answerWith", "correct", "answeredIndex", "distractors"}
+	fieldsInOrder := [...]string{"term", "answerWith", "correct", "correctChoiceIndex", "answeredIndex", "distractors"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -14423,6 +14477,13 @@ func (ec *executionContext) unmarshalInputMCQInput(ctx context.Context, obj any)
 				return it, err
 			}
 			it.Correct = data
+		case "correctChoiceIndex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("correctChoiceIndex"))
+			data, err := ec.unmarshalNInt2int32(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CorrectChoiceIndex = data
 		case "answeredIndex":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("answeredIndex"))
 			data, err := ec.unmarshalNInt2int32(ctx, v)
@@ -15465,6 +15526,11 @@ func (ec *executionContext) _MCQ(ctx context.Context, sel ast.SelectionSet, obj 
 			}
 		case "correct":
 			out.Values[i] = ec._MCQ_correct(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "correctChoiceIndex":
+			out.Values[i] = ec._MCQ_correctChoiceIndex(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
