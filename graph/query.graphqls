@@ -55,6 +55,7 @@ type MCQ {
     term: TermATP!
     answerWith: AnswerWith!
     correct: Boolean!
+    correctChoiceIndex: Int!
     answeredIndex: Int!
     distractors: [TermATP!]!
 }

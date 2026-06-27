@@ -84,19 +84,21 @@ type FolderEdge struct {
 }
 
 type Mcq struct {
-	Term          *TermAtp   `json:"term"`
-	AnswerWith    AnswerWith `json:"answerWith"`
-	Correct       bool       `json:"correct"`
-	AnsweredIndex int32      `json:"answeredIndex"`
-	Distractors   []*TermAtp `json:"distractors"`
+	Term               *TermAtp   `json:"term"`
+	AnswerWith         AnswerWith `json:"answerWith"`
+	Correct            bool       `json:"correct"`
+	CorrectChoiceIndex int32      `json:"correctChoiceIndex"`
+	AnsweredIndex      int32      `json:"answeredIndex"`
+	Distractors        []*TermAtp `json:"distractors"`
 }
 
 type MCQInput struct {
-	Term          *TermATPInput   `json:"term"`
-	AnswerWith    AnswerWith      `json:"answerWith"`
-	Correct       bool            `json:"correct"`
-	AnsweredIndex int32           `json:"answeredIndex"`
-	Distractors   []*TermATPInput `json:"distractors"`
+	Term               *TermATPInput   `json:"term"`
+	AnswerWith         AnswerWith      `json:"answerWith"`
+	Correct            bool            `json:"correct"`
+	CorrectChoiceIndex int32           `json:"correctChoiceIndex"`
+	AnsweredIndex      int32           `json:"answeredIndex"`
+	Distractors        []*TermATPInput `json:"distractors"`
 }
 
 type MatchActivity struct {
