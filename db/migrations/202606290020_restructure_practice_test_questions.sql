@@ -5,7 +5,7 @@ CREATE TYPE public.question_type AS ENUM ('MCQ', 'TFQ', 'FRQ');
 CREATE TABLE public.practice_test_questions (
     id uuid DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
     practice_test_id uuid NOT NULL REFERENCES public.practice_tests(id) ON DELETE CASCADE,
-    term_id uuid NOT NULL REFERENCES public.terms(id) ON DELETE CASCADE,
+    term_id uuid REFERENCES public.terms(id) ON DELETE SET NULL,
     term_snapshot text NOT NULL,
     def_snapshot text NOT NULL,
     type public.question_type NOT NULL,
@@ -22,7 +22,7 @@ INSERT INTO public.practice_test_questions (
 )
 SELECT
     pt.id,
-    (q->COALESCE(sub.type_lower, 'mcq')->'term'->>'id')::uuid,
+    term_lookup.id,
     q->COALESCE(sub.type_lower, 'mcq')->'term'->>'term',
     q->COALESCE(sub.type_lower, 'mcq')->'term'->>'def',
     sub.type_upper,
@@ -83,7 +83,8 @@ CROSS JOIN LATERAL (
             WHEN q ? 'tfq' THEN 'TFQ'::public.question_type
             WHEN q ? 'frq' THEN 'FRQ'::public.question_type
         END as type_upper
-) sub;
+) sub
+LEFT JOIN public.terms term_lookup ON term_lookup.id = (q->COALESCE(sub.type_lower, 'mcq')->'term'->>'id')::uuid;
 
 ALTER TABLE public.practice_tests DROP COLUMN questions;
 DROP TABLE IF EXISTS public.practice_test_question_terms;

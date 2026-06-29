@@ -13,7 +13,7 @@ type PracticeTest struct {
 type QuestionRow struct {
 	ID             string     `db:"id"`
 	PracticeTestID string     `db:"practice_test_id"`
-	TermID         string     `db:"term_id"`
+	TermID         *string    `db:"term_id"`
 	TermSnapshot   string     `db:"term_snapshot"`
 	DefSnapshot    string     `db:"def_snapshot"`
 	Type           string     `db:"type"`

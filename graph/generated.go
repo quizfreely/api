@@ -10697,14 +10697,11 @@ func (ec *executionContext) _TermATP_id(ctx context.Context, field graphql.Colle
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalNID2string(ctx, field.Selections, res)
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_TermATP_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -16847,9 +16844,6 @@ func (ec *executionContext) _TermATP(ctx context.Context, sel ast.SelectionSet, 
 			out.Values[i] = graphql.MarshalString("TermATP")
 		case "id":
 			out.Values[i] = ec._TermATP_id(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "termSnapshot":
 			out.Values[i] = ec._TermATP_termSnapshot(ctx, field, obj)
 			if out.Values[i] == graphql.Null {

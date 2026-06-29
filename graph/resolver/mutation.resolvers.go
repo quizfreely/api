@@ -649,8 +649,12 @@ func (r *mutationResolver) RecordPracticeTest(ctx context.Context, input model.P
 			return nil, fmt.Errorf("failed to marshal question data: %w", err)
 		}
 
+		var tid *string
+		if termID != "" {
+			tid = &termID
+		}
 		questionRows = append(questionRows, model.QuestionRow{
-			TermID:       termID,
+			TermID:       tid,
 			TermSnapshot: termSnapshot,
 			DefSnapshot:  defSnapshot,
 			Type:         qType,
@@ -955,35 +959,36 @@ func (r *mutationResolver) UpdatePracticeTestQuestion(ctx context.Context, id st
 			return nil, fmt.Errorf("failed to update practice test correct count: %w", err)
 		}
 
-		// Update term progress
-		var correctInc, incorrectInc int32
-		if newCorrect {
-			correctInc = 1
-			incorrectInc = -1
-		} else {
-			correctInc = -1
-			incorrectInc = 1
-		}
+		if row.TermID != nil {
+			var correctInc, incorrectInc int32
+			if newCorrect {
+				correctInc = 1
+				incorrectInc = -1
+			} else {
+				correctInc = -1
+				incorrectInc = 1
+			}
 
-		var termCorrectInc, termIncorrectInc, defCorrectInc, defIncorrectInc int32
-		if row.AnswerWith == model.AnswerWithDef {
-			defCorrectInc = correctInc
-			defIncorrectInc = incorrectInc
-		} else {
-			termCorrectInc = correctInc
-			termIncorrectInc = incorrectInc
-		}
+			var termCorrectInc, termIncorrectInc, defCorrectInc, defIncorrectInc int32
+			if row.AnswerWith == model.AnswerWithDef {
+				defCorrectInc = correctInc
+				defIncorrectInc = incorrectInc
+			} else {
+				termCorrectInc = correctInc
+				termIncorrectInc = incorrectInc
+			}
 
-		_, err = tx.Exec(ctx, `
-			UPDATE term_progress
-			SET term_correct_count = term_correct_count + $3,
-			    term_incorrect_count = term_incorrect_count + $4,
-			    def_correct_count = def_correct_count + $5,
-			    def_incorrect_count = def_incorrect_count + $6
-			WHERE term_id = $1 AND user_id = $2
-		`, row.TermID, authedUser.ID, termCorrectInc, termIncorrectInc, defCorrectInc, defIncorrectInc)
-		if err != nil {
-			return nil, fmt.Errorf("failed to update term progress: %w", err)
+			_, err = tx.Exec(ctx, `
+				UPDATE term_progress
+				SET term_correct_count = term_correct_count + $3,
+				    term_incorrect_count = term_incorrect_count + $4,
+				    def_correct_count = def_correct_count + $5,
+				    def_incorrect_count = def_incorrect_count + $6
+				WHERE term_id = $1 AND user_id = $2
+			`, *row.TermID, authedUser.ID, termCorrectInc, termIncorrectInc, defCorrectInc, defIncorrectInc)
+			if err != nil {
+				return nil, fmt.Errorf("failed to update term progress: %w", err)
+			}
 		}
 	}
 

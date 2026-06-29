@@ -48,7 +48,7 @@ type Question {
     frq: FRQ
 }
 type TermATP {
-    id: ID!
+    id: ID
     termSnapshot: String!
     defSnapshot: String!
 }
