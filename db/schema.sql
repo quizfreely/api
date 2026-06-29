@@ -1,4 +1,4 @@
-\restrict oiZ2GubtTIcw6fYzkOsiNy5Pd6yZe9bpf9C3abAftUfEYjTNuWq1SLwjNbTPIXD
+\restrict d96ZbaEhNQlQbkdlbejXwDqNAq5JGPfwXOE8gT1MF1STzaR0XbAyBPnrTIYzybd
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -99,6 +99,17 @@ CREATE TYPE public.fsrs_state AS ENUM (
     'LEARNING',
     'REVIEW',
     'RELEARNING'
+);
+
+
+--
+-- Name: question_type; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.question_type AS ENUM (
+    'MCQ',
+    'TFQ',
+    'FRQ'
 );
 
 
@@ -220,24 +231,20 @@ CREATE TABLE public.images (
 
 
 --
--- Name: practice_test_distractor_terms; Type: TABLE; Schema: public; Owner: -
+-- Name: practice_test_questions; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.practice_test_distractor_terms (
+CREATE TABLE public.practice_test_questions (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     practice_test_id uuid NOT NULL,
-    term_id uuid NOT NULL
-);
-
-
---
--- Name: practice_test_question_terms; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.practice_test_question_terms (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    practice_test_id uuid NOT NULL,
-    term_id uuid NOT NULL
+    term_id uuid,
+    term_snapshot text NOT NULL,
+    def_snapshot text NOT NULL,
+    type public.question_type NOT NULL,
+    answer_with public.answer_with_enum NOT NULL,
+    correct boolean NOT NULL,
+    "position" integer NOT NULL,
+    data jsonb NOT NULL
 );
 
 
@@ -260,8 +267,7 @@ CREATE TABLE public.practice_tests (
     "timestamp" timestamp with time zone DEFAULT now() NOT NULL,
     user_id uuid NOT NULL,
     questions_correct smallint,
-    questions_total smallint,
-    questions jsonb
+    questions_total smallint
 );
 
 
@@ -356,28 +362,10 @@ CREATE TABLE public.term_progress (
     def_first_reviewed_at timestamp with time zone,
     def_last_reviewed_at timestamp with time zone,
     def_review_count integer,
-    term_leitner_system_box smallint,
-    def_leitner_system_box smallint,
     term_correct_count integer DEFAULT 0 NOT NULL,
     term_incorrect_count integer DEFAULT 0 NOT NULL,
     def_correct_count integer DEFAULT 0 NOT NULL,
     def_incorrect_count integer DEFAULT 0 NOT NULL
-);
-
-
---
--- Name: term_progress_history; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.term_progress_history (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    "timestamp" timestamp with time zone DEFAULT now() NOT NULL,
-    term_id uuid NOT NULL,
-    user_id uuid NOT NULL,
-    term_correct_count integer,
-    term_incorrect_count integer,
-    def_correct_count integer,
-    def_incorrect_count integer
 );
 
 
@@ -487,19 +475,19 @@ ALTER TABLE ONLY public.images
 
 
 --
--- Name: practice_test_distractor_terms practice_test_distractor_terms_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: practice_test_questions practice_test_questions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.practice_test_distractor_terms
-    ADD CONSTRAINT practice_test_distractor_terms_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.practice_test_questions
+    ADD CONSTRAINT practice_test_questions_pkey PRIMARY KEY (id);
 
 
 --
--- Name: practice_test_question_terms practice_test_question_terms_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: practice_test_questions practice_test_questions_practice_test_id_position_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.practice_test_question_terms
-    ADD CONSTRAINT practice_test_question_terms_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.practice_test_questions
+    ADD CONSTRAINT practice_test_questions_practice_test_id_position_key UNIQUE (practice_test_id, "position");
 
 
 --
@@ -575,14 +563,6 @@ ALTER TABLE ONLY public.term_confusion_pairs
 
 
 --
--- Name: term_progress_history term_progress_history_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.term_progress_history
-    ADD CONSTRAINT term_progress_history_pkey PRIMARY KEY (id);
-
-
---
 -- Name: term_progress term_progress_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -604,34 +584,6 @@ ALTER TABLE ONLY public.term_progress
 
 ALTER TABLE ONLY public.terms
     ADD CONSTRAINT terms_pkey PRIMARY KEY (id);
-
-
---
--- Name: idx_ptdt_practice_test_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_ptdt_practice_test_id ON public.practice_test_distractor_terms USING btree (practice_test_id);
-
-
---
--- Name: idx_ptdt_term_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_ptdt_term_id ON public.practice_test_distractor_terms USING btree (term_id);
-
-
---
--- Name: idx_ptqt_practice_test_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_ptqt_practice_test_id ON public.practice_test_question_terms USING btree (practice_test_id);
-
-
---
--- Name: idx_ptqt_term_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_ptqt_term_id ON public.practice_test_question_terms USING btree (term_id);
 
 
 --
@@ -741,35 +693,19 @@ ALTER TABLE ONLY public.fsrs_review_logs
 
 
 --
--- Name: practice_test_distractor_terms practice_test_distractor_terms_practice_test_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: practice_test_questions practice_test_questions_practice_test_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.practice_test_distractor_terms
-    ADD CONSTRAINT practice_test_distractor_terms_practice_test_id_fkey FOREIGN KEY (practice_test_id) REFERENCES public.practice_tests(id) ON DELETE CASCADE;
-
-
---
--- Name: practice_test_distractor_terms practice_test_distractor_terms_term_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.practice_test_distractor_terms
-    ADD CONSTRAINT practice_test_distractor_terms_term_id_fkey FOREIGN KEY (term_id) REFERENCES public.terms(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.practice_test_questions
+    ADD CONSTRAINT practice_test_questions_practice_test_id_fkey FOREIGN KEY (practice_test_id) REFERENCES public.practice_tests(id) ON DELETE CASCADE;
 
 
 --
--- Name: practice_test_question_terms practice_test_question_terms_practice_test_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: practice_test_questions practice_test_questions_term_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.practice_test_question_terms
-    ADD CONSTRAINT practice_test_question_terms_practice_test_id_fkey FOREIGN KEY (practice_test_id) REFERENCES public.practice_tests(id) ON DELETE CASCADE;
-
-
---
--- Name: practice_test_question_terms practice_test_question_terms_term_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.practice_test_question_terms
-    ADD CONSTRAINT practice_test_question_terms_term_id_fkey FOREIGN KEY (term_id) REFERENCES public.terms(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.practice_test_questions
+    ADD CONSTRAINT practice_test_questions_term_id_fkey FOREIGN KEY (term_id) REFERENCES public.terms(id) ON DELETE SET NULL;
 
 
 --
@@ -861,22 +797,6 @@ ALTER TABLE ONLY public.term_confusion_pairs
 
 
 --
--- Name: term_progress_history term_progress_history_term_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.term_progress_history
-    ADD CONSTRAINT term_progress_history_term_id_fkey FOREIGN KEY (term_id) REFERENCES public.terms(id) ON DELETE CASCADE;
-
-
---
--- Name: term_progress_history term_progress_history_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.term_progress_history
-    ADD CONSTRAINT term_progress_history_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
-
-
---
 -- Name: term_progress term_progress_term_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -920,7 +840,7 @@ ALTER TABLE ONLY public.terms
 -- PostgreSQL database dump complete
 --
 
-\unrestrict oiZ2GubtTIcw6fYzkOsiNy5Pd6yZe9bpf9C3abAftUfEYjTNuWq1SLwjNbTPIXD
+\unrestrict d96ZbaEhNQlQbkdlbejXwDqNAq5JGPfwXOE8gT1MF1STzaR0XbAyBPnrTIYzybd
 
 
 --
@@ -963,4 +883,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('202606180946'),
     ('202606251140'),
     ('202606252121'),
-    ('202606261000');
+    ('202606261000'),
+    ('202606290020');

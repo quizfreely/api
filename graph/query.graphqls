@@ -49,8 +49,8 @@ type Question {
 }
 type TermATP {
     id: ID
-    termSnapshot: String!
-    defSnapshot: String!
+    term: String!
+    def: String!
 }
 type MCQ {
     term: TermATP!

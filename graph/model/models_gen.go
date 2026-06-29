@@ -184,15 +184,15 @@ type TFQInput struct {
 }
 
 type TermAtp struct {
-	ID           *string `json:"id,omitempty"`
-	TermSnapshot string  `json:"termSnapshot"`
-	DefSnapshot  string  `json:"defSnapshot"`
+	ID   *string `json:"id,omitempty"`
+	Term string  `json:"term"`
+	Def  string  `json:"def"`
 }
 
 type TermATPInput struct {
-	ID           string `json:"id"`
-	TermSnapshot string `json:"termSnapshot"`
-	DefSnapshot  string `json:"defSnapshot"`
+	ID   string `json:"id"`
+	Term string `json:"term"`
+	Def  string `json:"def"`
 }
 
 type TermConfusionPairInput struct {

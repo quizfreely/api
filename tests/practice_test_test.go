@@ -69,9 +69,9 @@ func TestPracticeTestLifecycle(t *testing.T) {
 					map[string]interface{}{
 						"frq": map[string]interface{}{
 							"term": map[string]interface{}{
-								"id":           term1ID,
-								"termSnapshot": term1Text,
-								"defSnapshot":  term1Def,
+								"id":  term1ID,
+								"term": term1Text,
+								"def":  term1Def,
 							},
 							"answerWith":     "DEF",
 							"correct":        true,
@@ -152,9 +152,9 @@ func TestPracticeTestLifecycle(t *testing.T) {
 		map[string]interface{}{
 			"mcq": map[string]interface{}{
 				"term": map[string]interface{}{
-					"id":           privateTermID,
-					"termSnapshot": "X",
-					"defSnapshot":  "Y",
+					"id":    privateTermID,
+					"term":  "X",
+					"def":   "Y",
 				},
 				"answerWith":         "DEF",
 				"correct":            true,

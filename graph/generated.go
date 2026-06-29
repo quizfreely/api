@@ -265,9 +265,9 @@ type ComplexityRoot struct {
 	}
 
 	TermATP struct {
-		DefSnapshot  func(childComplexity int) int
-		ID           func(childComplexity int) int
-		TermSnapshot func(childComplexity int) int
+		Def  func(childComplexity int) int
+		ID   func(childComplexity int) int
+		Term func(childComplexity int) int
 	}
 
 	TermConfusionPair struct {
@@ -1679,12 +1679,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Term.UpdatedAt(childComplexity), true
 
-	case "TermATP.defSnapshot":
-		if e.complexity.TermATP.DefSnapshot == nil {
+	case "TermATP.def":
+		if e.complexity.TermATP.Def == nil {
 			break
 		}
 
-		return e.complexity.TermATP.DefSnapshot(childComplexity), true
+		return e.complexity.TermATP.Def(childComplexity), true
 
 	case "TermATP.id":
 		if e.complexity.TermATP.ID == nil {
@@ -1693,12 +1693,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.TermATP.ID(childComplexity), true
 
-	case "TermATP.termSnapshot":
-		if e.complexity.TermATP.TermSnapshot == nil {
+	case "TermATP.term":
+		if e.complexity.TermATP.Term == nil {
 			break
 		}
 
-		return e.complexity.TermATP.TermSnapshot(childComplexity), true
+		return e.complexity.TermATP.Term(childComplexity), true
 
 	case "TermConfusionPair.answeredWith":
 		if e.complexity.TermConfusionPair.AnsweredWith == nil {
@@ -3146,10 +3146,10 @@ func (ec *executionContext) fieldContext_FRQ_term(_ context.Context, field graph
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_TermATP_id(ctx, field)
-			case "termSnapshot":
-				return ec.fieldContext_TermATP_termSnapshot(ctx, field)
-			case "defSnapshot":
-				return ec.fieldContext_TermATP_defSnapshot(ctx, field)
+			case "term":
+				return ec.fieldContext_TermATP_term(ctx, field)
+			case "def":
+				return ec.fieldContext_TermATP_def(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TermATP", field.Name)
 		},
@@ -4673,10 +4673,10 @@ func (ec *executionContext) fieldContext_MCQ_term(_ context.Context, field graph
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_TermATP_id(ctx, field)
-			case "termSnapshot":
-				return ec.fieldContext_TermATP_termSnapshot(ctx, field)
-			case "defSnapshot":
-				return ec.fieldContext_TermATP_defSnapshot(ctx, field)
+			case "term":
+				return ec.fieldContext_TermATP_term(ctx, field)
+			case "def":
+				return ec.fieldContext_TermATP_def(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TermATP", field.Name)
 		},
@@ -4901,10 +4901,10 @@ func (ec *executionContext) fieldContext_MCQ_distractors(_ context.Context, fiel
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_TermATP_id(ctx, field)
-			case "termSnapshot":
-				return ec.fieldContext_TermATP_termSnapshot(ctx, field)
-			case "defSnapshot":
-				return ec.fieldContext_TermATP_defSnapshot(ctx, field)
+			case "term":
+				return ec.fieldContext_TermATP_term(ctx, field)
+			case "def":
+				return ec.fieldContext_TermATP_def(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TermATP", field.Name)
 		},
@@ -9795,10 +9795,10 @@ func (ec *executionContext) fieldContext_TFQ_term(_ context.Context, field graph
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_TermATP_id(ctx, field)
-			case "termSnapshot":
-				return ec.fieldContext_TermATP_termSnapshot(ctx, field)
-			case "defSnapshot":
-				return ec.fieldContext_TermATP_defSnapshot(ctx, field)
+			case "term":
+				return ec.fieldContext_TermATP_term(ctx, field)
+			case "def":
+				return ec.fieldContext_TermATP_def(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TermATP", field.Name)
 		},
@@ -9976,10 +9976,10 @@ func (ec *executionContext) fieldContext_TFQ_distractor(_ context.Context, field
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_TermATP_id(ctx, field)
-			case "termSnapshot":
-				return ec.fieldContext_TermATP_termSnapshot(ctx, field)
-			case "defSnapshot":
-				return ec.fieldContext_TermATP_defSnapshot(ctx, field)
+			case "term":
+				return ec.fieldContext_TermATP_term(ctx, field)
+			case "def":
+				return ec.fieldContext_TermATP_def(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TermATP", field.Name)
 		},
@@ -10717,8 +10717,8 @@ func (ec *executionContext) fieldContext_TermATP_id(_ context.Context, field gra
 	return fc, nil
 }
 
-func (ec *executionContext) _TermATP_termSnapshot(ctx context.Context, field graphql.CollectedField, obj *model.TermAtp) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TermATP_termSnapshot(ctx, field)
+func (ec *executionContext) _TermATP_term(ctx context.Context, field graphql.CollectedField, obj *model.TermAtp) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TermATP_term(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -10731,7 +10731,7 @@ func (ec *executionContext) _TermATP_termSnapshot(ctx context.Context, field gra
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.TermSnapshot, nil
+		return obj.Term, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -10748,7 +10748,7 @@ func (ec *executionContext) _TermATP_termSnapshot(ctx context.Context, field gra
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_TermATP_termSnapshot(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_TermATP_term(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "TermATP",
 		Field:      field,
@@ -10761,8 +10761,8 @@ func (ec *executionContext) fieldContext_TermATP_termSnapshot(_ context.Context,
 	return fc, nil
 }
 
-func (ec *executionContext) _TermATP_defSnapshot(ctx context.Context, field graphql.CollectedField, obj *model.TermAtp) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TermATP_defSnapshot(ctx, field)
+func (ec *executionContext) _TermATP_def(ctx context.Context, field graphql.CollectedField, obj *model.TermAtp) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TermATP_def(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -10775,7 +10775,7 @@ func (ec *executionContext) _TermATP_defSnapshot(ctx context.Context, field grap
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.DefSnapshot, nil
+		return obj.Def, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -10792,7 +10792,7 @@ func (ec *executionContext) _TermATP_defSnapshot(ctx context.Context, field grap
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_TermATP_defSnapshot(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_TermATP_def(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "TermATP",
 		Field:      field,
@@ -14331,7 +14331,7 @@ func (ec *executionContext) unmarshalInputTermATPInput(ctx context.Context, obj 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"id", "termSnapshot", "defSnapshot"}
+	fieldsInOrder := [...]string{"id", "term", "def"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -14345,20 +14345,20 @@ func (ec *executionContext) unmarshalInputTermATPInput(ctx context.Context, obj 
 				return it, err
 			}
 			it.ID = data
-		case "termSnapshot":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("termSnapshot"))
+		case "term":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("term"))
 			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.TermSnapshot = data
-		case "defSnapshot":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("defSnapshot"))
+			it.Term = data
+		case "def":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("def"))
 			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.DefSnapshot = data
+			it.Def = data
 		}
 	}
 
@@ -16844,13 +16844,13 @@ func (ec *executionContext) _TermATP(ctx context.Context, sel ast.SelectionSet, 
 			out.Values[i] = graphql.MarshalString("TermATP")
 		case "id":
 			out.Values[i] = ec._TermATP_id(ctx, field, obj)
-		case "termSnapshot":
-			out.Values[i] = ec._TermATP_termSnapshot(ctx, field, obj)
+		case "term":
+			out.Values[i] = ec._TermATP_term(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "defSnapshot":
-			out.Values[i] = ec._TermATP_defSnapshot(ctx, field, obj)
+		case "def":
+			out.Values[i] = ec._TermATP_def(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

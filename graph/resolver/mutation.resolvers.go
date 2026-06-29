@@ -582,7 +582,7 @@ func (r *mutationResolver) RecordPracticeTest(ctx context.Context, input model.P
 			continue
 		}
 		var termID string
-		var termSnapshot, defSnapshot string
+		var termStr, defStr string
 		var qType string
 		var answerWith model.AnswerWith
 		correct := false
@@ -590,8 +590,8 @@ func (r *mutationResolver) RecordPracticeTest(ctx context.Context, input model.P
 
 		if q.Mcq != nil && q.Mcq.Term != nil {
 			termID = q.Mcq.Term.ID
-			termSnapshot = q.Mcq.Term.TermSnapshot
-			defSnapshot = q.Mcq.Term.DefSnapshot
+			termStr = q.Mcq.Term.Term
+			defStr = q.Mcq.Term.Def
 			qType = "MCQ"
 			answerWith = q.Mcq.AnswerWith
 			correct = q.Mcq.Correct
@@ -608,8 +608,8 @@ func (r *mutationResolver) RecordPracticeTest(ctx context.Context, input model.P
 			}
 		} else if q.Tfq != nil && q.Tfq.Term != nil {
 			termID = q.Tfq.Term.ID
-			termSnapshot = q.Tfq.Term.TermSnapshot
-			defSnapshot = q.Tfq.Term.DefSnapshot
+			termStr = q.Tfq.Term.Term
+			defStr = q.Tfq.Term.Def
 			qType = "TFQ"
 			answerWith = q.Tfq.AnswerWith
 			correct = q.Tfq.Correct
@@ -623,8 +623,8 @@ func (r *mutationResolver) RecordPracticeTest(ctx context.Context, input model.P
 			}
 		} else if q.Frq != nil && q.Frq.Term != nil {
 			termID = q.Frq.Term.ID
-			termSnapshot = q.Frq.Term.TermSnapshot
-			defSnapshot = q.Frq.Term.DefSnapshot
+			termStr = q.Frq.Term.Term
+			defStr = q.Frq.Term.Def
 			qType = "FRQ"
 			answerWith = q.Frq.AnswerWith
 			correct = q.Frq.Correct
@@ -654,14 +654,14 @@ func (r *mutationResolver) RecordPracticeTest(ctx context.Context, input model.P
 			tid = &termID
 		}
 		questionRows = append(questionRows, model.QuestionRow{
-			TermID:       tid,
-			TermSnapshot: termSnapshot,
-			DefSnapshot:  defSnapshot,
-			Type:         qType,
-			AnswerWith:   answerWith,
-			Correct:      correct,
-			Position:     int32(i),
-			Data:         dataBytes,
+			TermID:     tid,
+			Term:       termStr,
+			Def:        defStr,
+			Type:       qType,
+			AnswerWith: answerWith,
+			Correct:    correct,
+			Position:   int32(i),
+			Data:       dataBytes,
 		})
 
 		if termID == "" {
@@ -774,7 +774,7 @@ RETURNING
 		for i, qr := range questionRows {
 			base := i*8 + 2
 			placeholders[i] = fmt.Sprintf("($1, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base, base+1, base+2, base+3, base+4, base+5, base+6, base+7)
-			args = append(args, qr.TermID, qr.TermSnapshot, qr.DefSnapshot, qr.Type, qr.AnswerWith, qr.Correct, qr.Position, qr.Data)
+			args = append(args, qr.TermID, qr.Term, qr.Def, qr.Type, qr.AnswerWith, qr.Correct, qr.Position, qr.Data)
 		}
 		sql := fmt.Sprintf("INSERT INTO practice_test_questions (practice_test_id, term_id, term_snapshot, def_snapshot, type, answer_with, correct, position, data) VALUES %s", strings.Join(placeholders, ","))
 		if _, err := tx.Exec(ctx, sql, args...); err != nil {
@@ -999,9 +999,9 @@ func (r *mutationResolver) UpdatePracticeTestQuestion(ctx context.Context, id st
 	// Reconstruct and return the question
 	q := &model.Question{}
 	termATP := &model.TermAtp{
-		ID:           row.TermID,
-		TermSnapshot: row.TermSnapshot,
-		DefSnapshot:  row.DefSnapshot,
+		ID:   row.TermID,
+		Term: row.Term,
+		Def:  row.Def,
 	}
 	umc := false
 	if userMarkedCorrect != nil {

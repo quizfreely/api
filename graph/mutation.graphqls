@@ -33,8 +33,8 @@ input QuestionInput @oneOf {
 }
 input TermATPInput {
     id: ID!
-    termSnapshot: String!
-    defSnapshot: String!
+    term: String!
+    def: String!
 }
 input MCQInput {
     term: TermATPInput!

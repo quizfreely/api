@@ -14,8 +14,8 @@ type QuestionRow struct {
 	ID             string     `db:"id"`
 	PracticeTestID string     `db:"practice_test_id"`
 	TermID         *string    `db:"term_id"`
-	TermSnapshot   string     `db:"term_snapshot"`
-	DefSnapshot    string     `db:"def_snapshot"`
+	Term           string     `db:"term_snapshot"`
+	Def            string     `db:"def_snapshot"`
 	Type           string     `db:"type"`
 	AnswerWith     AnswerWith `db:"answer_with"`
 	Correct        bool       `db:"correct"`
