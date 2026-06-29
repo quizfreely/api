@@ -7,5 +7,18 @@ type PracticeTest struct {
 	Timestamp        *string     `json:"timestamp,omitempty" db:"timestamp"`
 	QuestionsCorrect *int32      `json:"questionsCorrect,omitempty" db:"questions_correct"`
 	QuestionsTotal   *int32      `json:"questionsTotal,omitempty" db:"questions_total"`
-	Questions        []*Question `json:"questions,omitempty" db:"questions"`
+	Questions        []*Question `json:"questions,omitempty"`
+}
+
+type QuestionRow struct {
+	ID             string     `db:"id"`
+	PracticeTestID string     `db:"practice_test_id"`
+	TermID         string     `db:"term_id"`
+	TermSnapshot   string     `db:"term_snapshot"`
+	DefSnapshot    string     `db:"def_snapshot"`
+	Type           string     `db:"type"`
+	AnswerWith     AnswerWith `db:"answer_with"`
+	Correct        bool       `db:"correct"`
+	Position       int32      `db:"position"`
+	Data           []byte     `db:"data"`
 }

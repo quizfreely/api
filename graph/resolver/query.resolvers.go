@@ -6,6 +6,7 @@ package resolver
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"quizfreely/api/auth"
 	"quizfreely/api/graph"
@@ -968,8 +969,7 @@ func (r *queryResolver) PracticeTest(ctx context.Context, id string) (*model.Pra
 		`SELECT id,
 	to_char(timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as timestamp,
 	questions_correct,
-	questions_total,
-	questions
+	questions_total
 FROM practice_tests
 WHERE id = $1 AND user_id = $2`,
 		id,
@@ -1222,6 +1222,87 @@ func (r *queryResolver) MySavedStudysetCount(ctx context.Context) (int32, error)
 		return 0, fmt.Errorf("failed to count saved studysets: %w", err)
 	}
 	return count, nil
+}
+
+// Questions is the resolver for the questions field.
+func (r *practiceTestResolver) Questions(ctx context.Context, obj *model.PracticeTest) ([]*model.Question, error) {
+	if obj == nil || obj.ID == nil {
+		return nil, nil
+	}
+
+	var rows []*model.QuestionRow
+	sql := `SELECT id, practice_test_id, term_id, term_snapshot, def_snapshot, type, answer_with, correct, position, data
+	        FROM practice_test_questions WHERE practice_test_id = $1 ORDER BY position ASC`
+	err := pgxscan.Select(ctx, r.DB, &rows, sql, *obj.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch questions for practice test: %w", err)
+	}
+
+	questions := make([]*model.Question, len(rows))
+	for i, row := range rows {
+		q := &model.Question{}
+		termATP := &model.TermAtp{
+			ID:           row.TermID,
+			TermSnapshot: row.TermSnapshot,
+			DefSnapshot:  row.DefSnapshot,
+		}
+
+		switch row.Type {
+		case "MCQ":
+			var data struct {
+				Distractors        []*model.TermAtp `json:"distractors"`
+				CorrectChoiceIndex int32            `json:"correctChoiceIndex"`
+				AnsweredIndex      int32            `json:"answeredIndex"`
+			}
+			if err := json.Unmarshal(row.Data, &data); err != nil {
+				return nil, fmt.Errorf("failed to unmarshal MCQ data: %w", err)
+			}
+			q.ID = row.ID
+			q.Mcq = &model.Mcq{
+				Term:               termATP,
+				AnswerWith:         row.AnswerWith,
+				Correct:            row.Correct,
+				CorrectChoiceIndex: data.CorrectChoiceIndex,
+				AnsweredIndex:      data.AnsweredIndex,
+				Distractors:        data.Distractors,
+			}
+		case "TFQ":
+			var data struct {
+				AnsweredBool bool           `json:"answeredBool"`
+				Distractor   *model.TermAtp `json:"distractor"`
+			}
+			if err := json.Unmarshal(row.Data, &data); err != nil {
+				return nil, fmt.Errorf("failed to unmarshal TFQ data: %w", err)
+			}
+			q.ID = row.ID
+			q.Tfq = &model.Tfq{
+				Term:         termATP,
+				AnswerWith:   row.AnswerWith,
+				Correct:      row.Correct,
+				AnsweredBool: data.AnsweredBool,
+				Distractor:   data.Distractor,
+			}
+		case "FRQ":
+			var data struct {
+				AnsweredString    string `json:"answeredString"`
+				UserMarkedCorrect bool   `json:"userMarkedCorrect"`
+			}
+			if err := json.Unmarshal(row.Data, &data); err != nil {
+				return nil, fmt.Errorf("failed to unmarshal FRQ data: %w", err)
+			}
+			q.ID = row.ID
+			q.Frq = &model.Frq{
+				Term:              termATP,
+				AnswerWith:        row.AnswerWith,
+				Correct:           row.Correct,
+				UserMarkedCorrect: &data.UserMarkedCorrect,
+				AnsweredString:    data.AnsweredString,
+			}
+		}
+		questions[i] = q
+	}
+
+	return questions, nil
 }
 
 // PracticeTest returns graph.PracticeTestResolver implementation.

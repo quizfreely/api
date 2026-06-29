@@ -139,9 +139,10 @@ type Query struct {
 }
 
 type Question struct {
-	Mcq *Mcq `json:"mcq,omitempty"`
-	Tfq *Tfq `json:"tfq,omitempty"`
-	Frq *Frq `json:"frq,omitempty"`
+	ID  string `json:"id"`
+	Mcq *Mcq   `json:"mcq,omitempty"`
+	Tfq *Tfq   `json:"tfq,omitempty"`
+	Frq *Frq   `json:"frq,omitempty"`
 }
 
 type QuestionInput struct {
@@ -183,15 +184,15 @@ type TFQInput struct {
 }
 
 type TermAtp struct {
-	ID   string `json:"id"`
-	Term string `json:"term"`
-	Def  string `json:"def"`
+	ID           string `json:"id"`
+	TermSnapshot string `json:"termSnapshot"`
+	DefSnapshot  string `json:"defSnapshot"`
 }
 
 type TermATPInput struct {
-	ID   string `json:"id"`
-	Term string `json:"term"`
-	Def  string `json:"def"`
+	ID           string `json:"id"`
+	TermSnapshot string `json:"termSnapshot"`
+	DefSnapshot  string `json:"defSnapshot"`
 }
 
 type TermConfusionPairInput struct {
@@ -213,8 +214,6 @@ type TermProgressInput struct {
 	TermID                string  `json:"termId"`
 	TermReviewedAt        *string `json:"termReviewedAt,omitempty"`
 	DefReviewedAt         *string `json:"defReviewedAt,omitempty"`
-	TermLeitnerSystemBox  *int32  `json:"termLeitnerSystemBox,omitempty"`
-	DefLeitnerSystemBox   *int32  `json:"defLeitnerSystemBox,omitempty"`
 	TermCorrectIncrease   *int32  `json:"termCorrectIncrease,omitempty"`
 	TermIncorrectIncrease *int32  `json:"termIncorrectIncrease,omitempty"`
 	DefCorrectIncrease    *int32  `json:"defCorrectIncrease,omitempty"`

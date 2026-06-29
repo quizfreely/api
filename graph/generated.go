@@ -131,28 +131,28 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		CreateFolder             func(childComplexity int, name string) int
-		CreateStudyset           func(childComplexity int, studyset model.StudysetInput, draft bool, folderID *string) int
-		CreateTerms              func(childComplexity int, studysetID string, terms []*model.NewTermInput) int
-		DeleteFolder             func(childComplexity int, id string) int
-		DeleteStudyset           func(childComplexity int, id string) int
-		DeleteTerms              func(childComplexity int, studysetID string, ids []string) int
-		RecordConfusedTerms      func(childComplexity int, confusedTerms []*model.TermConfusionPairInput) int
-		RecordFsrsReviewLog      func(childComplexity int, termID string, reviewLog model.FSRSReviewLogInput) int
-		RecordMatchActivity      func(childComplexity int, input model.MatchActivityInput) int
-		RecordPracticeTest       func(childComplexity int, input model.PracticeTestInput) int
-		RemoveStudysetFromFolder func(childComplexity int, studysetID string) int
-		RenameFolder             func(childComplexity int, id string, name string) int
-		SaveStudyset             func(childComplexity int, studysetID string) int
-		SetStudysetFolder        func(childComplexity int, studysetID string, folderID string) int
-		SetStudysetSeoIndexing   func(childComplexity int, studysetID string, approved bool) int
-		UnsaveStudyset           func(childComplexity int, studysetID string) int
-		UpdateFsrsCard           func(childComplexity int, termID string, card model.FSRSCardInput) int
-		UpdatePracticeTest       func(childComplexity int, id string, input model.PracticeTestInput) int
-		UpdateStudyset           func(childComplexity int, id string, studyset *model.StudysetInput, draft bool) int
-		UpdateTermProgress       func(childComplexity int, termProgress []*model.TermProgressInput) int
-		UpdateTerms              func(childComplexity int, studysetID string, terms []*model.TermInput) int
-		UpdateUser               func(childComplexity int, displayName *string) int
+		CreateFolder               func(childComplexity int, name string) int
+		CreateStudyset             func(childComplexity int, studyset model.StudysetInput, draft bool, folderID *string) int
+		CreateTerms                func(childComplexity int, studysetID string, terms []*model.NewTermInput) int
+		DeleteFolder               func(childComplexity int, id string) int
+		DeleteStudyset             func(childComplexity int, id string) int
+		DeleteTerms                func(childComplexity int, studysetID string, ids []string) int
+		RecordConfusedTerms        func(childComplexity int, confusedTerms []*model.TermConfusionPairInput) int
+		RecordFsrsReviewLog        func(childComplexity int, termID string, reviewLog model.FSRSReviewLogInput) int
+		RecordMatchActivity        func(childComplexity int, input model.MatchActivityInput) int
+		RecordPracticeTest         func(childComplexity int, input model.PracticeTestInput) int
+		RemoveStudysetFromFolder   func(childComplexity int, studysetID string) int
+		RenameFolder               func(childComplexity int, id string, name string) int
+		SaveStudyset               func(childComplexity int, studysetID string) int
+		SetStudysetFolder          func(childComplexity int, studysetID string, folderID string) int
+		SetStudysetSeoIndexing     func(childComplexity int, studysetID string, approved bool) int
+		UnsaveStudyset             func(childComplexity int, studysetID string) int
+		UpdateFsrsCard             func(childComplexity int, termID string, card model.FSRSCardInput) int
+		UpdatePracticeTestQuestion func(childComplexity int, id string, correct bool, userMarkedCorrect *bool) int
+		UpdateStudyset             func(childComplexity int, id string, studyset *model.StudysetInput, draft bool) int
+		UpdateTermProgress         func(childComplexity int, termProgress []*model.TermProgressInput) int
+		UpdateTerms                func(childComplexity int, studysetID string, terms []*model.TermInput) int
+		UpdateUser                 func(childComplexity int, displayName *string) int
 	}
 
 	PageInfo struct {
@@ -199,6 +199,7 @@ type ComplexityRoot struct {
 
 	Question struct {
 		Frq func(childComplexity int) int
+		ID  func(childComplexity int) int
 		Mcq func(childComplexity int) int
 		Tfq func(childComplexity int) int
 	}
@@ -255,7 +256,6 @@ type ComplexityRoot struct {
 		ID                       func(childComplexity int) int
 		PracticeTests            func(childComplexity int) int
 		Progress                 func(childComplexity int) int
-		ProgressHistory          func(childComplexity int) int
 		SortOrder                func(childComplexity int) int
 		Term                     func(childComplexity int) int
 		TermImageURL             func(childComplexity int) int
@@ -265,9 +265,9 @@ type ComplexityRoot struct {
 	}
 
 	TermATP struct {
-		Def  func(childComplexity int) int
-		ID   func(childComplexity int) int
-		Term func(childComplexity int) int
+		DefSnapshot  func(childComplexity int) int
+		ID           func(childComplexity int) int
+		TermSnapshot func(childComplexity int) int
 	}
 
 	TermConfusionPair struct {
@@ -280,28 +280,17 @@ type ComplexityRoot struct {
 	}
 
 	TermProgress struct {
-		DefCorrectCount      func(childComplexity int) int
-		DefFirstReviewedAt   func(childComplexity int) int
-		DefIncorrectCount    func(childComplexity int) int
-		DefLastReviewedAt    func(childComplexity int) int
-		DefLeitnerSystemBox  func(childComplexity int) int
-		DefReviewCount       func(childComplexity int) int
-		ID                   func(childComplexity int) int
-		TermCorrectCount     func(childComplexity int) int
-		TermFirstReviewedAt  func(childComplexity int) int
-		TermIncorrectCount   func(childComplexity int) int
-		TermLastReviewedAt   func(childComplexity int) int
-		TermLeitnerSystemBox func(childComplexity int) int
-		TermReviewCount      func(childComplexity int) int
-	}
-
-	TermProgressHistory struct {
-		DefCorrectCount    func(childComplexity int) int
-		DefIncorrectCount  func(childComplexity int) int
-		ID                 func(childComplexity int) int
-		TermCorrectCount   func(childComplexity int) int
-		TermIncorrectCount func(childComplexity int) int
-		Timestamp          func(childComplexity int) int
+		DefCorrectCount     func(childComplexity int) int
+		DefFirstReviewedAt  func(childComplexity int) int
+		DefIncorrectCount   func(childComplexity int) int
+		DefLastReviewedAt   func(childComplexity int) int
+		DefReviewCount      func(childComplexity int) int
+		ID                  func(childComplexity int) int
+		TermCorrectCount    func(childComplexity int) int
+		TermFirstReviewedAt func(childComplexity int) int
+		TermIncorrectCount  func(childComplexity int) int
+		TermLastReviewedAt  func(childComplexity int) int
+		TermReviewCount     func(childComplexity int) int
 	}
 
 	User struct {
@@ -329,7 +318,7 @@ type MutationResolver interface {
 	UpdateTermProgress(ctx context.Context, termProgress []*model.TermProgressInput) ([]*model.TermProgress, error)
 	RecordConfusedTerms(ctx context.Context, confusedTerms []*model.TermConfusionPairInput) (*bool, error)
 	RecordPracticeTest(ctx context.Context, input model.PracticeTestInput) (*model.PracticeTest, error)
-	UpdatePracticeTest(ctx context.Context, id string, input model.PracticeTestInput) (*model.PracticeTest, error)
+	UpdatePracticeTestQuestion(ctx context.Context, id string, correct bool, userMarkedCorrect *bool) (*model.Question, error)
 	CreateFolder(ctx context.Context, name string) (*model.Folder, error)
 	RenameFolder(ctx context.Context, id string, name string) (*model.Folder, error)
 	DeleteFolder(ctx context.Context, id string) (*string, error)
@@ -386,7 +375,6 @@ type SubjectResolver interface {
 }
 type TermResolver interface {
 	Progress(ctx context.Context, obj *model.Term) (*model.TermProgress, error)
-	ProgressHistory(ctx context.Context, obj *model.Term) ([]*model.TermProgressHistory, error)
 	TopConfusionPairs(ctx context.Context, obj *model.Term) ([]*model.TermConfusionPair, error)
 	TopReverseConfusionPairs(ctx context.Context, obj *model.Term) ([]*model.TermConfusionPair, error)
 	FsrsCard(ctx context.Context, obj *model.Term) (*model.FSRSCard, error)
@@ -978,17 +966,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Mutation.UpdateFsrsCard(childComplexity, args["termId"].(string), args["card"].(model.FSRSCardInput)), true
 
-	case "Mutation.updatePracticeTest":
-		if e.complexity.Mutation.UpdatePracticeTest == nil {
+	case "Mutation.updatePracticeTestQuestion":
+		if e.complexity.Mutation.UpdatePracticeTestQuestion == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_updatePracticeTest_args(ctx, rawArgs)
+		args, err := ec.field_Mutation_updatePracticeTestQuestion_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdatePracticeTest(childComplexity, args["id"].(string), args["input"].(model.PracticeTestInput)), true
+		return e.complexity.Mutation.UpdatePracticeTestQuestion(childComplexity, args["id"].(string), args["correct"].(bool), args["userMarkedCorrect"].(*bool)), true
 
 	case "Mutation.updateStudyset":
 		if e.complexity.Mutation.UpdateStudyset == nil {
@@ -1371,6 +1359,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Question.Frq(childComplexity), true
 
+	case "Question.id":
+		if e.complexity.Question.ID == nil {
+			break
+		}
+
+		return e.complexity.Question.ID(childComplexity), true
+
 	case "Question.mcq":
 		if e.complexity.Question.Mcq == nil {
 			break
@@ -1642,13 +1637,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Term.Progress(childComplexity), true
 
-	case "Term.progressHistory":
-		if e.complexity.Term.ProgressHistory == nil {
-			break
-		}
-
-		return e.complexity.Term.ProgressHistory(childComplexity), true
-
 	case "Term.sortOrder":
 		if e.complexity.Term.SortOrder == nil {
 			break
@@ -1691,12 +1679,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Term.UpdatedAt(childComplexity), true
 
-	case "TermATP.def":
-		if e.complexity.TermATP.Def == nil {
+	case "TermATP.defSnapshot":
+		if e.complexity.TermATP.DefSnapshot == nil {
 			break
 		}
 
-		return e.complexity.TermATP.Def(childComplexity), true
+		return e.complexity.TermATP.DefSnapshot(childComplexity), true
 
 	case "TermATP.id":
 		if e.complexity.TermATP.ID == nil {
@@ -1705,12 +1693,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.TermATP.ID(childComplexity), true
 
-	case "TermATP.term":
-		if e.complexity.TermATP.Term == nil {
+	case "TermATP.termSnapshot":
+		if e.complexity.TermATP.TermSnapshot == nil {
 			break
 		}
 
-		return e.complexity.TermATP.Term(childComplexity), true
+		return e.complexity.TermATP.TermSnapshot(childComplexity), true
 
 	case "TermConfusionPair.answeredWith":
 		if e.complexity.TermConfusionPair.AnsweredWith == nil {
@@ -1782,13 +1770,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.TermProgress.DefLastReviewedAt(childComplexity), true
 
-	case "TermProgress.defLeitnerSystemBox":
-		if e.complexity.TermProgress.DefLeitnerSystemBox == nil {
-			break
-		}
-
-		return e.complexity.TermProgress.DefLeitnerSystemBox(childComplexity), true
-
 	case "TermProgress.defReviewCount":
 		if e.complexity.TermProgress.DefReviewCount == nil {
 			break
@@ -1831,61 +1812,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.TermProgress.TermLastReviewedAt(childComplexity), true
 
-	case "TermProgress.termLeitnerSystemBox":
-		if e.complexity.TermProgress.TermLeitnerSystemBox == nil {
-			break
-		}
-
-		return e.complexity.TermProgress.TermLeitnerSystemBox(childComplexity), true
-
 	case "TermProgress.termReviewCount":
 		if e.complexity.TermProgress.TermReviewCount == nil {
 			break
 		}
 
 		return e.complexity.TermProgress.TermReviewCount(childComplexity), true
-
-	case "TermProgressHistory.defCorrectCount":
-		if e.complexity.TermProgressHistory.DefCorrectCount == nil {
-			break
-		}
-
-		return e.complexity.TermProgressHistory.DefCorrectCount(childComplexity), true
-
-	case "TermProgressHistory.defIncorrectCount":
-		if e.complexity.TermProgressHistory.DefIncorrectCount == nil {
-			break
-		}
-
-		return e.complexity.TermProgressHistory.DefIncorrectCount(childComplexity), true
-
-	case "TermProgressHistory.id":
-		if e.complexity.TermProgressHistory.ID == nil {
-			break
-		}
-
-		return e.complexity.TermProgressHistory.ID(childComplexity), true
-
-	case "TermProgressHistory.termCorrectCount":
-		if e.complexity.TermProgressHistory.TermCorrectCount == nil {
-			break
-		}
-
-		return e.complexity.TermProgressHistory.TermCorrectCount(childComplexity), true
-
-	case "TermProgressHistory.termIncorrectCount":
-		if e.complexity.TermProgressHistory.TermIncorrectCount == nil {
-			break
-		}
-
-		return e.complexity.TermProgressHistory.TermIncorrectCount(childComplexity), true
-
-	case "TermProgressHistory.timestamp":
-		if e.complexity.TermProgressHistory.Timestamp == nil {
-			break
-		}
-
-		return e.complexity.TermProgressHistory.Timestamp(childComplexity), true
 
 	case "User.displayName":
 		if e.complexity.User.DisplayName == nil {
@@ -2360,7 +2292,7 @@ func (ec *executionContext) field_Mutation_updateFsrsCard_args(ctx context.Conte
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_updatePracticeTest_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+func (ec *executionContext) field_Mutation_updatePracticeTestQuestion_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
@@ -2368,11 +2300,16 @@ func (ec *executionContext) field_Mutation_updatePracticeTest_args(ctx context.C
 		return nil, err
 	}
 	args["id"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNPracticeTestInput2quizfreelyᚋapiᚋgraphᚋmodelᚐPracticeTestInput)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "correct", ec.unmarshalNBoolean2bool)
 	if err != nil {
 		return nil, err
 	}
-	args["input"] = arg1
+	args["correct"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "userMarkedCorrect", ec.unmarshalOBoolean2ᚖbool)
+	if err != nil {
+		return nil, err
+	}
+	args["userMarkedCorrect"] = arg2
 	return args, nil
 }
 
@@ -3209,10 +3146,10 @@ func (ec *executionContext) fieldContext_FRQ_term(_ context.Context, field graph
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_TermATP_id(ctx, field)
-			case "term":
-				return ec.fieldContext_TermATP_term(ctx, field)
-			case "def":
-				return ec.fieldContext_TermATP_def(ctx, field)
+			case "termSnapshot":
+				return ec.fieldContext_TermATP_termSnapshot(ctx, field)
+			case "defSnapshot":
+				return ec.fieldContext_TermATP_defSnapshot(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TermATP", field.Name)
 		},
@@ -4736,10 +4673,10 @@ func (ec *executionContext) fieldContext_MCQ_term(_ context.Context, field graph
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_TermATP_id(ctx, field)
-			case "term":
-				return ec.fieldContext_TermATP_term(ctx, field)
-			case "def":
-				return ec.fieldContext_TermATP_def(ctx, field)
+			case "termSnapshot":
+				return ec.fieldContext_TermATP_termSnapshot(ctx, field)
+			case "defSnapshot":
+				return ec.fieldContext_TermATP_defSnapshot(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TermATP", field.Name)
 		},
@@ -4964,10 +4901,10 @@ func (ec *executionContext) fieldContext_MCQ_distractors(_ context.Context, fiel
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_TermATP_id(ctx, field)
-			case "term":
-				return ec.fieldContext_TermATP_term(ctx, field)
-			case "def":
-				return ec.fieldContext_TermATP_def(ctx, field)
+			case "termSnapshot":
+				return ec.fieldContext_TermATP_termSnapshot(ctx, field)
+			case "defSnapshot":
+				return ec.fieldContext_TermATP_defSnapshot(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TermATP", field.Name)
 		},
@@ -5365,8 +5302,6 @@ func (ec *executionContext) fieldContext_Mutation_createTerms(ctx context.Contex
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
 				return ec.fieldContext_Term_progress(ctx, field)
-			case "progressHistory":
-				return ec.fieldContext_Term_progressHistory(ctx, field)
 			case "topConfusionPairs":
 				return ec.fieldContext_Term_topConfusionPairs(ctx, field)
 			case "topReverseConfusionPairs":
@@ -5449,8 +5384,6 @@ func (ec *executionContext) fieldContext_Mutation_updateTerms(ctx context.Contex
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
 				return ec.fieldContext_Term_progress(ctx, field)
-			case "progressHistory":
-				return ec.fieldContext_Term_progressHistory(ctx, field)
 			case "topConfusionPairs":
 				return ec.fieldContext_Term_topConfusionPairs(ctx, field)
 			case "topReverseConfusionPairs":
@@ -5711,10 +5644,6 @@ func (ec *executionContext) fieldContext_Mutation_updateTermProgress(ctx context
 				return ec.fieldContext_TermProgress_defCorrectCount(ctx, field)
 			case "defIncorrectCount":
 				return ec.fieldContext_TermProgress_defIncorrectCount(ctx, field)
-			case "termLeitnerSystemBox":
-				return ec.fieldContext_TermProgress_termLeitnerSystemBox(ctx, field)
-			case "defLeitnerSystemBox":
-				return ec.fieldContext_TermProgress_defLeitnerSystemBox(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TermProgress", field.Name)
 		},
@@ -5851,8 +5780,8 @@ func (ec *executionContext) fieldContext_Mutation_recordPracticeTest(ctx context
 	return fc, nil
 }
 
-func (ec *executionContext) _Mutation_updatePracticeTest(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Mutation_updatePracticeTest(ctx, field)
+func (ec *executionContext) _Mutation_updatePracticeTestQuestion(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_updatePracticeTestQuestion(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -5865,7 +5794,7 @@ func (ec *executionContext) _Mutation_updatePracticeTest(ctx context.Context, fi
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpdatePracticeTest(rctx, fc.Args["id"].(string), fc.Args["input"].(model.PracticeTestInput))
+		return ec.resolvers.Mutation().UpdatePracticeTestQuestion(rctx, fc.Args["id"].(string), fc.Args["correct"].(bool), fc.Args["userMarkedCorrect"].(*bool))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5874,12 +5803,12 @@ func (ec *executionContext) _Mutation_updatePracticeTest(ctx context.Context, fi
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.PracticeTest)
+	res := resTmp.(*model.Question)
 	fc.Result = res
-	return ec.marshalOPracticeTest2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐPracticeTest(ctx, field.Selections, res)
+	return ec.marshalOQuestion2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐQuestion(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Mutation_updatePracticeTest(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Mutation_updatePracticeTestQuestion(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Mutation",
 		Field:      field,
@@ -5888,19 +5817,15 @@ func (ec *executionContext) fieldContext_Mutation_updatePracticeTest(ctx context
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
-				return ec.fieldContext_PracticeTest_id(ctx, field)
-			case "timestamp":
-				return ec.fieldContext_PracticeTest_timestamp(ctx, field)
-			case "studysetIds":
-				return ec.fieldContext_PracticeTest_studysetIds(ctx, field)
-			case "questionsCorrect":
-				return ec.fieldContext_PracticeTest_questionsCorrect(ctx, field)
-			case "questionsTotal":
-				return ec.fieldContext_PracticeTest_questionsTotal(ctx, field)
-			case "questions":
-				return ec.fieldContext_PracticeTest_questions(ctx, field)
+				return ec.fieldContext_Question_id(ctx, field)
+			case "mcq":
+				return ec.fieldContext_Question_mcq(ctx, field)
+			case "tfq":
+				return ec.fieldContext_Question_tfq(ctx, field)
+			case "frq":
+				return ec.fieldContext_Question_frq(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type PracticeTest", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type Question", field.Name)
 		},
 	}
 	defer func() {
@@ -5910,7 +5835,7 @@ func (ec *executionContext) fieldContext_Mutation_updatePracticeTest(ctx context
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_updatePracticeTest_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Mutation_updatePracticeTestQuestion_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -6959,6 +6884,8 @@ func (ec *executionContext) fieldContext_PracticeTest_questions(_ context.Contex
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "id":
+				return ec.fieldContext_Question_id(ctx, field)
 			case "mcq":
 				return ec.fieldContext_Question_mcq(ctx, field)
 			case "tfq":
@@ -7267,8 +7194,6 @@ func (ec *executionContext) fieldContext_Query_term(ctx context.Context, field g
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
 				return ec.fieldContext_Term_progress(ctx, field)
-			case "progressHistory":
-				return ec.fieldContext_Term_progressHistory(ctx, field)
 			case "topConfusionPairs":
 				return ec.fieldContext_Term_topConfusionPairs(ctx, field)
 			case "topReverseConfusionPairs":
@@ -8500,6 +8425,50 @@ func (ec *executionContext) fieldContext_Query___schema(_ context.Context, field
 	return fc, nil
 }
 
+func (ec *executionContext) _Question_id(ctx context.Context, field graphql.CollectedField, obj *model.Question) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Question_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Question_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Question",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Question_mcq(ctx context.Context, field graphql.CollectedField, obj *model.Question) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Question_mcq(ctx, field)
 	if err != nil {
@@ -9075,8 +9044,6 @@ func (ec *executionContext) fieldContext_Studyset_terms(_ context.Context, field
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
 				return ec.fieldContext_Term_progress(ctx, field)
-			case "progressHistory":
-				return ec.fieldContext_Term_progressHistory(ctx, field)
 			case "topConfusionPairs":
 				return ec.fieldContext_Term_topConfusionPairs(ctx, field)
 			case "topReverseConfusionPairs":
@@ -9828,10 +9795,10 @@ func (ec *executionContext) fieldContext_TFQ_term(_ context.Context, field graph
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_TermATP_id(ctx, field)
-			case "term":
-				return ec.fieldContext_TermATP_term(ctx, field)
-			case "def":
-				return ec.fieldContext_TermATP_def(ctx, field)
+			case "termSnapshot":
+				return ec.fieldContext_TermATP_termSnapshot(ctx, field)
+			case "defSnapshot":
+				return ec.fieldContext_TermATP_defSnapshot(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TermATP", field.Name)
 		},
@@ -10009,10 +9976,10 @@ func (ec *executionContext) fieldContext_TFQ_distractor(_ context.Context, field
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_TermATP_id(ctx, field)
-			case "term":
-				return ec.fieldContext_TermATP_term(ctx, field)
-			case "def":
-				return ec.fieldContext_TermATP_def(ctx, field)
+			case "termSnapshot":
+				return ec.fieldContext_TermATP_termSnapshot(ctx, field)
+			case "defSnapshot":
+				return ec.fieldContext_TermATP_defSnapshot(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TermATP", field.Name)
 		},
@@ -10330,67 +10297,8 @@ func (ec *executionContext) fieldContext_Term_progress(_ context.Context, field 
 				return ec.fieldContext_TermProgress_defCorrectCount(ctx, field)
 			case "defIncorrectCount":
 				return ec.fieldContext_TermProgress_defIncorrectCount(ctx, field)
-			case "termLeitnerSystemBox":
-				return ec.fieldContext_TermProgress_termLeitnerSystemBox(ctx, field)
-			case "defLeitnerSystemBox":
-				return ec.fieldContext_TermProgress_defLeitnerSystemBox(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TermProgress", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Term_progressHistory(ctx context.Context, field graphql.CollectedField, obj *model.Term) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Term_progressHistory(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Term().ProgressHistory(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*model.TermProgressHistory)
-	fc.Result = res
-	return ec.marshalOTermProgressHistory2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermProgressHistory(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Term_progressHistory(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Term",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_TermProgressHistory_id(ctx, field)
-			case "timestamp":
-				return ec.fieldContext_TermProgressHistory_timestamp(ctx, field)
-			case "termCorrectCount":
-				return ec.fieldContext_TermProgressHistory_termCorrectCount(ctx, field)
-			case "termIncorrectCount":
-				return ec.fieldContext_TermProgressHistory_termIncorrectCount(ctx, field)
-			case "defCorrectCount":
-				return ec.fieldContext_TermProgressHistory_defCorrectCount(ctx, field)
-			case "defIncorrectCount":
-				return ec.fieldContext_TermProgressHistory_defIncorrectCount(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type TermProgressHistory", field.Name)
 		},
 	}
 	return fc, nil
@@ -10812,8 +10720,8 @@ func (ec *executionContext) fieldContext_TermATP_id(_ context.Context, field gra
 	return fc, nil
 }
 
-func (ec *executionContext) _TermATP_term(ctx context.Context, field graphql.CollectedField, obj *model.TermAtp) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TermATP_term(ctx, field)
+func (ec *executionContext) _TermATP_termSnapshot(ctx context.Context, field graphql.CollectedField, obj *model.TermAtp) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TermATP_termSnapshot(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -10826,7 +10734,7 @@ func (ec *executionContext) _TermATP_term(ctx context.Context, field graphql.Col
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Term, nil
+		return obj.TermSnapshot, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -10843,7 +10751,7 @@ func (ec *executionContext) _TermATP_term(ctx context.Context, field graphql.Col
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_TermATP_term(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_TermATP_termSnapshot(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "TermATP",
 		Field:      field,
@@ -10856,8 +10764,8 @@ func (ec *executionContext) fieldContext_TermATP_term(_ context.Context, field g
 	return fc, nil
 }
 
-func (ec *executionContext) _TermATP_def(ctx context.Context, field graphql.CollectedField, obj *model.TermAtp) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TermATP_def(ctx, field)
+func (ec *executionContext) _TermATP_defSnapshot(ctx context.Context, field graphql.CollectedField, obj *model.TermAtp) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TermATP_defSnapshot(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -10870,7 +10778,7 @@ func (ec *executionContext) _TermATP_def(ctx context.Context, field graphql.Coll
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Def, nil
+		return obj.DefSnapshot, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -10887,7 +10795,7 @@ func (ec *executionContext) _TermATP_def(ctx context.Context, field graphql.Coll
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_TermATP_def(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_TermATP_defSnapshot(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "TermATP",
 		Field:      field,
@@ -10997,8 +10905,6 @@ func (ec *executionContext) fieldContext_TermConfusionPair_term(_ context.Contex
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
 				return ec.fieldContext_Term_progress(ctx, field)
-			case "progressHistory":
-				return ec.fieldContext_Term_progressHistory(ctx, field)
 			case "topConfusionPairs":
 				return ec.fieldContext_Term_topConfusionPairs(ctx, field)
 			case "topReverseConfusionPairs":
@@ -11073,8 +10979,6 @@ func (ec *executionContext) fieldContext_TermConfusionPair_confusedTerm(_ contex
 				return ec.fieldContext_Term_sortOrder(ctx, field)
 			case "progress":
 				return ec.fieldContext_Term_progress(ctx, field)
-			case "progressHistory":
-				return ec.fieldContext_Term_progressHistory(ctx, field)
 			case "topConfusionPairs":
 				return ec.fieldContext_Term_topConfusionPairs(ctx, field)
 			case "topReverseConfusionPairs":
@@ -11681,340 +11585,6 @@ func (ec *executionContext) _TermProgress_defIncorrectCount(ctx context.Context,
 func (ec *executionContext) fieldContext_TermProgress_defIncorrectCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "TermProgress",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TermProgress_termLeitnerSystemBox(ctx context.Context, field graphql.CollectedField, obj *model.TermProgress) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TermProgress_termLeitnerSystemBox(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TermLeitnerSystemBox, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*int32)
-	fc.Result = res
-	return ec.marshalOInt2ᚖint32(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TermProgress_termLeitnerSystemBox(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TermProgress",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TermProgress_defLeitnerSystemBox(ctx context.Context, field graphql.CollectedField, obj *model.TermProgress) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TermProgress_defLeitnerSystemBox(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.DefLeitnerSystemBox, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*int32)
-	fc.Result = res
-	return ec.marshalOInt2ᚖint32(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TermProgress_defLeitnerSystemBox(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TermProgress",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TermProgressHistory_id(ctx context.Context, field graphql.CollectedField, obj *model.TermProgressHistory) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TermProgressHistory_id(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalNID2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TermProgressHistory_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TermProgressHistory",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TermProgressHistory_timestamp(ctx context.Context, field graphql.CollectedField, obj *model.TermProgressHistory) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TermProgressHistory_timestamp(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Timestamp, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalNString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TermProgressHistory_timestamp(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TermProgressHistory",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TermProgressHistory_termCorrectCount(ctx context.Context, field graphql.CollectedField, obj *model.TermProgressHistory) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TermProgressHistory_termCorrectCount(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TermCorrectCount, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*int32)
-	fc.Result = res
-	return ec.marshalOInt2ᚖint32(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TermProgressHistory_termCorrectCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TermProgressHistory",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TermProgressHistory_termIncorrectCount(ctx context.Context, field graphql.CollectedField, obj *model.TermProgressHistory) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TermProgressHistory_termIncorrectCount(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TermIncorrectCount, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*int32)
-	fc.Result = res
-	return ec.marshalOInt2ᚖint32(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TermProgressHistory_termIncorrectCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TermProgressHistory",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TermProgressHistory_defCorrectCount(ctx context.Context, field graphql.CollectedField, obj *model.TermProgressHistory) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TermProgressHistory_defCorrectCount(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.DefCorrectCount, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*int32)
-	fc.Result = res
-	return ec.marshalOInt2ᚖint32(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TermProgressHistory_defCorrectCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TermProgressHistory",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TermProgressHistory_defIncorrectCount(ctx context.Context, field graphql.CollectedField, obj *model.TermProgressHistory) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TermProgressHistory_defIncorrectCount(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.DefIncorrectCount, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*int32)
-	fc.Result = res
-	return ec.marshalOInt2ᚖint32(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TermProgressHistory_defIncorrectCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TermProgressHistory",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -14764,7 +14334,7 @@ func (ec *executionContext) unmarshalInputTermATPInput(ctx context.Context, obj 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"id", "term", "def"}
+	fieldsInOrder := [...]string{"id", "termSnapshot", "defSnapshot"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -14778,20 +14348,20 @@ func (ec *executionContext) unmarshalInputTermATPInput(ctx context.Context, obj 
 				return it, err
 			}
 			it.ID = data
-		case "term":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("term"))
+		case "termSnapshot":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("termSnapshot"))
 			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Term = data
-		case "def":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("def"))
+			it.TermSnapshot = data
+		case "defSnapshot":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("defSnapshot"))
 			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Def = data
+			it.DefSnapshot = data
 		}
 	}
 
@@ -14908,7 +14478,7 @@ func (ec *executionContext) unmarshalInputTermProgressInput(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"termId", "termReviewedAt", "defReviewedAt", "termLeitnerSystemBox", "defLeitnerSystemBox", "termCorrectIncrease", "termIncorrectIncrease", "defCorrectIncrease", "defIncorrectIncrease"}
+	fieldsInOrder := [...]string{"termId", "termReviewedAt", "defReviewedAt", "termCorrectIncrease", "termIncorrectIncrease", "defCorrectIncrease", "defIncorrectIncrease"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -14936,20 +14506,6 @@ func (ec *executionContext) unmarshalInputTermProgressInput(ctx context.Context,
 				return it, err
 			}
 			it.DefReviewedAt = data
-		case "termLeitnerSystemBox":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("termLeitnerSystemBox"))
-			data, err := ec.unmarshalOInt2ᚖint32(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.TermLeitnerSystemBox = data
-		case "defLeitnerSystemBox":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("defLeitnerSystemBox"))
-			data, err := ec.unmarshalOInt2ᚖint32(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.DefLeitnerSystemBox = data
 		case "termCorrectIncrease":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("termCorrectIncrease"))
 			data, err := ec.unmarshalOInt2ᚖint32(ctx, v)
@@ -15680,9 +15236,9 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_recordPracticeTest(ctx, field)
 			})
-		case "updatePracticeTest":
+		case "updatePracticeTestQuestion":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_updatePracticeTest(ctx, field)
+				return ec._Mutation_updatePracticeTestQuestion(ctx, field)
 			})
 		case "createFolder":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
@@ -16434,6 +15990,11 @@ func (ec *executionContext) _Question(ctx context.Context, sel ast.SelectionSet,
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Question")
+		case "id":
+			out.Values[i] = ec._Question_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "mcq":
 			out.Values[i] = ec._Question_mcq(ctx, field, obj)
 		case "tfq":
@@ -17078,39 +16639,6 @@ func (ec *executionContext) _Term(ctx context.Context, sel ast.SelectionSet, obj
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "progressHistory":
-			field := field
-
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Term_progressHistory(ctx, field, obj)
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "topConfusionPairs":
 			field := field
 
@@ -17322,13 +16850,13 @@ func (ec *executionContext) _TermATP(ctx context.Context, sel ast.SelectionSet, 
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "term":
-			out.Values[i] = ec._TermATP_term(ctx, field, obj)
+		case "termSnapshot":
+			out.Values[i] = ec._TermATP_termSnapshot(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "def":
-			out.Values[i] = ec._TermATP_def(ctx, field, obj)
+		case "defSnapshot":
+			out.Values[i] = ec._TermATP_defSnapshot(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -17526,62 +17054,6 @@ func (ec *executionContext) _TermProgress(ctx context.Context, sel ast.Selection
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "termLeitnerSystemBox":
-			out.Values[i] = ec._TermProgress_termLeitnerSystemBox(ctx, field, obj)
-		case "defLeitnerSystemBox":
-			out.Values[i] = ec._TermProgress_defLeitnerSystemBox(ctx, field, obj)
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
-var termProgressHistoryImplementors = []string{"TermProgressHistory"}
-
-func (ec *executionContext) _TermProgressHistory(ctx context.Context, sel ast.SelectionSet, obj *model.TermProgressHistory) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, termProgressHistoryImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("TermProgressHistory")
-		case "id":
-			out.Values[i] = ec._TermProgressHistory_id(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "timestamp":
-			out.Values[i] = ec._TermProgressHistory_timestamp(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "termCorrectCount":
-			out.Values[i] = ec._TermProgressHistory_termCorrectCount(ctx, field, obj)
-		case "termIncorrectCount":
-			out.Values[i] = ec._TermProgressHistory_termIncorrectCount(ctx, field, obj)
-		case "defCorrectCount":
-			out.Values[i] = ec._TermProgressHistory_defCorrectCount(ctx, field, obj)
-		case "defIncorrectCount":
-			out.Values[i] = ec._TermProgressHistory_defIncorrectCount(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -19369,6 +18841,13 @@ func (ec *executionContext) marshalOPracticeTest2ᚖquizfreelyᚋapiᚋgraphᚋm
 	return ec._PracticeTest(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalOQuestion2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐQuestion(ctx context.Context, sel ast.SelectionSet, v *model.Question) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Question(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v any) (*string, error) {
 	if v == nil {
 		return nil, nil
@@ -19723,54 +19202,6 @@ func (ec *executionContext) marshalOTermProgress2ᚖquizfreelyᚋapiᚋgraphᚋm
 		return graphql.Null
 	}
 	return ec._TermProgress(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalOTermProgressHistory2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermProgressHistory(ctx context.Context, sel ast.SelectionSet, v []*model.TermProgressHistory) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOTermProgressHistory2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermProgressHistory(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	return ret
-}
-
-func (ec *executionContext) marshalOTermProgressHistory2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTermProgressHistory(ctx context.Context, sel ast.SelectionSet, v *model.TermProgressHistory) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._TermProgressHistory(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOUser2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model.User) graphql.Marshaler {

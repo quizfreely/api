@@ -58,23 +58,24 @@ func TestPracticeTestLifecycle(t *testing.T) {
 				id
 				questionsCorrect
 				questionsTotal
+				questions {
+					id
+				}
 			}
 		}`,
 		"variables": map[string]interface{}{
 			"input": map[string]interface{}{
 				"questions": []interface{}{
 					map[string]interface{}{
-						"mcq": map[string]interface{}{
+						"frq": map[string]interface{}{
 							"term": map[string]interface{}{
-								"id":   term1ID,
-								"term": term1Text,
-								"def":  term1Def,
+								"id":           term1ID,
+								"termSnapshot": term1Text,
+								"defSnapshot":  term1Def,
 							},
-							"answerWith":         "DEF",
-							"correct":            true,
-							"correctChoiceIndex": 0,
-							"answeredIndex":      0,
-							"distractors":        []interface{}{},
+							"answerWith":     "DEF",
+							"correct":        true,
+							"answeredString": term1Def,
 						},
 					},
 				},
@@ -88,55 +89,39 @@ func TestPracticeTestLifecycle(t *testing.T) {
 	var recordResult map[string]interface{}
 	json.NewDecoder(resp.Body).Decode(&recordResult)
 	require.Nil(t, recordResult["errors"], "user2 should be able to record PT for public set")
-	ptID := getNested(recordResult, "data", "recordPracticeTest", "id").(string)
+	q1ID := getNested(recordResult, "data", "recordPracticeTest", "questions", 0, "id").(string)
 
-	// 4. user2 updates their own practice test
-	updatePTBody := map[string]interface{}{
-		"query": `mutation UpdatePT($id: ID!, $input: PracticeTestInput!) {
-			updatePracticeTest(id: $id, input: $input) {
-				id
-				questionsCorrect
+	// 4. user2 updates their own practice test question
+	updatePTQBody := map[string]interface{}{
+		"query": `mutation UpdatePTQ($id: ID!, $correct: Boolean!) {
+			updatePracticeTestQuestion(id: $id, correct: $correct) {
+				frq {
+					correct
+				}
 			}
 		}`,
 		"variables": map[string]interface{}{
-			"id": ptID,
-			"input": map[string]interface{}{
-				"questions": []interface{}{
-					map[string]interface{}{
-						"mcq": map[string]interface{}{
-							"term": map[string]interface{}{
-								"id":   term1ID,
-								"term": term1Text,
-								"def":  term1Def,
-							},
-							"answerWith":         "DEF",
-							"correct":            false,
-							"correctChoiceIndex": 0,
-							"answeredIndex":      0,
-							"distractors":        []interface{}{},
-						},
-					},
-				},
-			},
+			"id":      q1ID,
+			"correct": false,
 		},
 	}
-	req, _ = http.NewRequest(http.MethodPost, testServer.URL+"/graphql", marshal(updatePTBody))
+	req, _ = http.NewRequest(http.MethodPost, testServer.URL+"/graphql", marshal(updatePTQBody))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+user2Token)
 	resp, _ = http.DefaultClient.Do(req)
 	var updateResult map[string]interface{}
 	json.NewDecoder(resp.Body).Decode(&updateResult)
-	require.Nil(t, updateResult["errors"], "user2 should be able to update their own PT")
-	require.Equal(t, float64(0), getNested(updateResult, "data", "updatePracticeTest", "questionsCorrect"))
+	require.Nil(t, updateResult["errors"], "user2 should be able to update their own PTQ")
+	require.False(t, getNested(updateResult, "data", "updatePracticeTestQuestion", "frq", "correct").(bool))
 
-	// 5. Invalid Authz: user1 tries to update user2's practice test
-	req, _ = http.NewRequest(http.MethodPost, testServer.URL+"/graphql", marshal(updatePTBody))
+	// 5. Invalid Authz: user1 tries to update user2's practice test question
+	req, _ = http.NewRequest(http.MethodPost, testServer.URL+"/graphql", marshal(updatePTQBody))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+user1Token)
 	resp, _ = http.DefaultClient.Do(req)
 	var unauthorizedResult map[string]interface{}
 	json.NewDecoder(resp.Body).Decode(&unauthorizedResult)
-	require.NotNil(t, unauthorizedResult["errors"], "user1 should NOT be able to update user2's PT")
+	require.NotNil(t, unauthorizedResult["errors"], "user1 should NOT be able to update user2's PTQ")
 
 	// 6. Private Set Security (Implicit): user2 tries to record PT for a term in a private studyset
 
@@ -167,9 +152,9 @@ func TestPracticeTestLifecycle(t *testing.T) {
 		map[string]interface{}{
 			"mcq": map[string]interface{}{
 				"term": map[string]interface{}{
-					"id":   privateTermID,
-					"term": "X",
-					"def":  "Y",
+					"id":           privateTermID,
+					"termSnapshot": "X",
+					"defSnapshot":  "Y",
 				},
 				"answerWith":         "DEF",
 				"correct":            true,

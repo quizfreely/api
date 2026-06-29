@@ -47,16 +47,14 @@ func TestTermProgressLifecycle(t *testing.T) {
 	updateProgressBody := map[string]interface{}{
 		"query": `mutation UpdateProgress($input: [TermProgressInput!]!) {
 			updateTermProgress(termProgress: $input) {
-				termLeitnerSystemBox
 				termCorrectCount
 			}
 		}`,
 		"variables": map[string]interface{}{
 			"input": []map[string]interface{}{
 				{
-					"termId":               termID,
-					"termCorrectIncrease":  1,
-					"termLeitnerSystemBox": 1,
+					"termId":              termID,
+					"termCorrectIncrease": 1,
 				},
 			},
 		},
