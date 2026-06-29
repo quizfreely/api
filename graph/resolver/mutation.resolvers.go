@@ -718,9 +718,9 @@ RETURNING
 		reviewEventArgs = append(reviewEventArgs, authedUser.ID)
 
 		for i, iq := range insertedQuestions {
-			base := i*9 + 2
+			base := i*8 + 2
 			reviewEventPlaceholders[i] = fmt.Sprintf("($1, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)",
-				base, base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8)
+				base, base+1, base+2, base+3, base+4, base+5, base+6, base+7)
 
 			var answeredTermID *string
 			var answeredString *string
