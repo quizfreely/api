@@ -1,4 +1,4 @@
-\restrict d96ZbaEhNQlQbkdlbejXwDqNAq5JGPfwXOE8gT1MF1STzaR0XbAyBPnrTIYzybd
+\restrict 4b60k6ZoQqpiHvvtdmsMAauXfkBI6hzuZG1DtvcivLzKrNRs96E4gZAjxv5qSKW
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -110,6 +110,16 @@ CREATE TYPE public.question_type AS ENUM (
     'MCQ',
     'TFQ',
     'FRQ'
+);
+
+
+--
+-- Name: review_activity_type_enum; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.review_activity_type_enum AS ENUM (
+    'PRACTICE_TEST',
+    'MATCH'
 );
 
 
@@ -272,6 +282,25 @@ CREATE TABLE public.practice_tests (
 
 
 --
+-- Name: review_events; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.review_events (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    term_id uuid NOT NULL,
+    practice_test_question_id uuid,
+    correct boolean NOT NULL,
+    answer_with public.answer_with_enum NOT NULL,
+    "timestamp" timestamp with time zone DEFAULT now() NOT NULL,
+    answered_term_id uuid,
+    practice_test_question_type public.question_type,
+    review_activity_type public.review_activity_type_enum NOT NULL,
+    answered_string text
+);
+
+
+--
 -- Name: saved_studysets; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -330,21 +359,6 @@ CREATE TABLE public.subjects (
     id text NOT NULL,
     name text,
     category public.subject_category
-);
-
-
---
--- Name: term_confusion_pairs; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.term_confusion_pairs (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    user_id uuid NOT NULL,
-    term_id uuid NOT NULL,
-    confused_term_id uuid NOT NULL,
-    answered_with public.answer_with_enum NOT NULL,
-    confused_count integer,
-    last_confused_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -416,14 +430,6 @@ ALTER TABLE ONLY auth.users
 
 ALTER TABLE ONLY auth.users
     ADD CONSTRAINT users_username_key UNIQUE (username);
-
-
---
--- Name: term_confusion_pairs confusion_pairs_unique; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.term_confusion_pairs
-    ADD CONSTRAINT confusion_pairs_unique UNIQUE (user_id, term_id, confused_term_id, answered_with);
 
 
 --
@@ -507,6 +513,14 @@ ALTER TABLE ONLY public.practice_tests
 
 
 --
+-- Name: review_events review_events_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.review_events
+    ADD CONSTRAINT review_events_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: saved_studysets saved_studysets_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -555,14 +569,6 @@ ALTER TABLE ONLY public.subjects
 
 
 --
--- Name: term_confusion_pairs term_confusion_pairs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.term_confusion_pairs
-    ADD CONSTRAINT term_confusion_pairs_pkey PRIMARY KEY (id);
-
-
---
 -- Name: term_progress term_progress_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -591,6 +597,27 @@ ALTER TABLE ONLY public.terms
 --
 
 CREATE INDEX idx_pts_studyset_id ON public.practice_test_studysets USING btree (studyset_id);
+
+
+--
+-- Name: idx_review_events_practice_test_question_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_review_events_practice_test_question_id ON public.review_events USING btree (practice_test_question_id);
+
+
+--
+-- Name: idx_review_events_term_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_review_events_term_id ON public.review_events USING btree (term_id);
+
+
+--
+-- Name: idx_review_events_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_review_events_user_id ON public.review_events USING btree (user_id);
 
 
 --
@@ -733,6 +760,38 @@ ALTER TABLE ONLY public.practice_tests
 
 
 --
+-- Name: review_events review_events_answered_term_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.review_events
+    ADD CONSTRAINT review_events_answered_term_id_fkey FOREIGN KEY (answered_term_id) REFERENCES public.terms(id) ON DELETE CASCADE;
+
+
+--
+-- Name: review_events review_events_practice_test_question_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.review_events
+    ADD CONSTRAINT review_events_practice_test_question_id_fkey FOREIGN KEY (practice_test_question_id) REFERENCES public.practice_test_questions(id) ON DELETE CASCADE;
+
+
+--
+-- Name: review_events review_events_term_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.review_events
+    ADD CONSTRAINT review_events_term_id_fkey FOREIGN KEY (term_id) REFERENCES public.terms(id) ON DELETE CASCADE;
+
+
+--
+-- Name: review_events review_events_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.review_events
+    ADD CONSTRAINT review_events_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: saved_studysets saved_studysets_studyset_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -770,30 +829,6 @@ ALTER TABLE ONLY public.studysets
 
 ALTER TABLE ONLY public.subject_keywords
     ADD CONSTRAINT subject_keywords_subject_id_fkey FOREIGN KEY (subject_id) REFERENCES public.subjects(id) ON DELETE CASCADE;
-
-
---
--- Name: term_confusion_pairs term_confusion_pairs_confused_term_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.term_confusion_pairs
-    ADD CONSTRAINT term_confusion_pairs_confused_term_id_fkey FOREIGN KEY (confused_term_id) REFERENCES public.terms(id) ON DELETE CASCADE;
-
-
---
--- Name: term_confusion_pairs term_confusion_pairs_term_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.term_confusion_pairs
-    ADD CONSTRAINT term_confusion_pairs_term_id_fkey FOREIGN KEY (term_id) REFERENCES public.terms(id) ON DELETE CASCADE;
-
-
---
--- Name: term_confusion_pairs term_confusion_pairs_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.term_confusion_pairs
-    ADD CONSTRAINT term_confusion_pairs_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
 
 
 --
@@ -840,7 +875,7 @@ ALTER TABLE ONLY public.terms
 -- PostgreSQL database dump complete
 --
 
-\unrestrict d96ZbaEhNQlQbkdlbejXwDqNAq5JGPfwXOE8gT1MF1STzaR0XbAyBPnrTIYzybd
+\unrestrict 4b60k6ZoQqpiHvvtdmsMAauXfkBI6hzuZG1DtvcivLzKrNRs96E4gZAjxv5qSKW
 
 
 --
@@ -884,4 +919,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('202606251140'),
     ('202606252121'),
     ('202606261000'),
-    ('202606290020');
+    ('202606290020'),
+    ('202607010000');
