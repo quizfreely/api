@@ -202,17 +202,34 @@ func marshal(v any) *bytes.Reader {
 	return bytes.NewReader(b)
 }
 
-func getNested(m map[string]interface{}, keys ...string) interface{} {
-	current := m
+func getNested(m map[string]interface{}, keys ...interface{}) interface{} {
+	var current interface{} = m
 	for i, key := range keys {
-		if i == len(keys)-1 {
-			return current[key]
-		}
-		next, ok := current[key].(map[string]interface{})
-		if !ok {
+		switch k := key.(type) {
+		case string:
+			curMap, ok := current.(map[string]interface{})
+			if !ok {
+				return nil
+			}
+			if i == len(keys)-1 {
+				return curMap[k]
+			}
+			current = curMap[k]
+		case int:
+			curSlice, ok := current.([]interface{})
+			if !ok {
+				return nil
+			}
+			if k < 0 || k >= len(curSlice) {
+				return nil
+			}
+			if i == len(keys)-1 {
+				return curSlice[k]
+			}
+			current = curSlice[k]
+		default:
 			return nil
 		}
-		current = next
 	}
 	return nil
 }
