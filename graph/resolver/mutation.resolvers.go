@@ -779,6 +779,11 @@ RETURNING
 		if _, err := tx.Exec(ctx, reSql, reviewEventArgs...); err != nil {
 			return nil, fmt.Errorf("failed to insert review events: %w", err)
 		}
+
+		practiceTest.Questions = make([]*model.Question, len(insertedQuestions))
+		for i, iq := range insertedQuestions {
+			practiceTest.Questions[i] = &model.Question{ID: iq.ID}
+		}
 	}
 
 	if len(studysetIDs) > 0 {
