@@ -12,6 +12,4 @@ type TermProgress struct {
 	TermIncorrectCount   int32   `json:"termIncorrectCount" db:"term_incorrect_count"`
 	DefCorrectCount      int32   `json:"defCorrectCount" db:"def_correct_count"`
 	DefIncorrectCount    int32   `json:"defIncorrectCount" db:"def_incorrect_count"`
-	TermLeitnerSystemBox *int32  `json:"termLeitnerSystemBox,omitempty" db:"term_leitner_system_box"`
-	DefLeitnerSystemBox  *int32  `json:"defLeitnerSystemBox,omitempty" db:"def_leitner_system_box"`
 }

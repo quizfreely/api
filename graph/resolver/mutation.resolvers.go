@@ -6,6 +6,7 @@ package resolver
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"quizfreely/api/auth"
@@ -385,16 +386,16 @@ func (r *mutationResolver) UpdateTermProgress(ctx context.Context, termProgress 
 
 	// ---- Build bulk insert ----
 	valueStrings := make([]string, 0, len(termProgress))
-	valueArgs := make([]interface{}, 0, len(termProgress)*10)
+	valueArgs := make([]interface{}, 0, len(termProgress)*8)
 	termIDs := make([]string, len(termProgress))
 
 	for i, p := range termProgress {
 		termIDs[i] = p.TermID
-		// Each row has 10 parameters (adjust if needed)
-		base := i*10 + 1
+		// Each row has 8 parameters
+		base := i*8 + 1
 		valueStrings = append(valueStrings, fmt.Sprintf(
-			"($%d::uuid,$%d::uuid,$%d::timestamptz,$%d::timestamptz,CASE WHEN $%d IS NOT NULL THEN 1 ELSE 0 END,$%d::timestamptz,$%d::timestamptz,CASE WHEN $%d IS NOT NULL THEN 1 ELSE 0 END,$%d::int,$%d::int,COALESCE($%d::int,0),COALESCE($%d::int,0),COALESCE($%d::int,0),COALESCE($%d::int,0))",
-			base, base+1, base+2, base+2, base+2, base+3, base+3, base+3, base+4, base+5, base+6, base+7, base+8, base+9,
+			"($%d::uuid,$%d::uuid,$%d::timestamptz,$%d::timestamptz,CASE WHEN $%d IS NOT NULL THEN 1 ELSE 0 END,$%d::timestamptz,$%d::timestamptz,CASE WHEN $%d IS NOT NULL THEN 1 ELSE 0 END,COALESCE($%d::int,0),COALESCE($%d::int,0),COALESCE($%d::int,0),COALESCE($%d::int,0))",
+			base, base+1, base+2, base+2, base+2, base+3, base+3, base+3, base+4, base+5, base+6, base+7,
 		))
 
 		valueArgs = append(valueArgs,
@@ -402,8 +403,6 @@ func (r *mutationResolver) UpdateTermProgress(ctx context.Context, termProgress 
 			authedUser.ID,
 			p.TermReviewedAt,
 			p.DefReviewedAt,
-			p.TermLeitnerSystemBox,
-			p.DefLeitnerSystemBox,
 			p.TermCorrectIncrease,
 			p.TermIncorrectIncrease,
 			p.DefCorrectIncrease,
@@ -418,7 +417,6 @@ func (r *mutationResolver) UpdateTermProgress(ctx context.Context, termProgress 
 			term_review_count,
 			def_first_reviewed_at, def_last_reviewed_at,
 			def_review_count,
-			term_leitner_system_box, def_leitner_system_box,
 			term_correct_count, term_incorrect_count,
 			def_correct_count, def_incorrect_count
 		)
@@ -427,7 +425,6 @@ func (r *mutationResolver) UpdateTermProgress(ctx context.Context, termProgress 
 			v.term_review_count::int,
 			v.def_first_reviewed_at::timestamptz, v.def_last_reviewed_at::timestamptz,
 			v.def_review_count::int,
-			v.term_leitner_system_box::int, v.def_leitner_system_box::int,
 			v.term_correct_count::int, v.term_incorrect_count::int,
 			v.def_correct_count::int, v.def_incorrect_count::int
 		FROM (VALUES %s) AS v(
@@ -436,7 +433,6 @@ func (r *mutationResolver) UpdateTermProgress(ctx context.Context, termProgress 
 			term_review_count,
 			def_first_reviewed_at, def_last_reviewed_at,
 			def_review_count,
-			term_leitner_system_box, def_leitner_system_box,
 			term_correct_count, term_incorrect_count,
 			def_correct_count, def_incorrect_count
 		)
@@ -446,8 +442,6 @@ func (r *mutationResolver) UpdateTermProgress(ctx context.Context, termProgress 
 		ON CONFLICT (term_id, user_id) DO UPDATE SET
 			term_last_reviewed_at = COALESCE(EXCLUDED.term_last_reviewed_at, term_progress.term_last_reviewed_at),
 			def_last_reviewed_at = COALESCE(EXCLUDED.def_last_reviewed_at, term_progress.def_last_reviewed_at),
-			term_leitner_system_box = EXCLUDED.term_leitner_system_box,
-			def_leitner_system_box = EXCLUDED.def_leitner_system_box,
 			term_review_count = term_progress.term_review_count +
 				(CASE WHEN EXCLUDED.term_last_reviewed_at IS NOT NULL THEN 1 ELSE 0 END),
 			def_review_count = term_progress.def_review_count +
@@ -463,8 +457,7 @@ func (r *mutationResolver) UpdateTermProgress(ctx context.Context, termProgress 
 			to_char(term_progress.def_first_reviewed_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as def_first_reviewed_at,
 			to_char(term_progress.def_last_reviewed_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as def_last_reviewed_at,
 			term_progress.def_review_count,
-			term_progress.term_leitner_system_box, term_progress.def_leitner_system_box,
-			term_progress.term_correct_count, term_progress.term_incorrect_count,
+			term_progress.term_correct_count, term_incorrect_count,
 			term_progress.def_correct_count, term_progress.def_incorrect_count
 	`, strings.Join(valueStrings, ","))
 
@@ -475,33 +468,6 @@ func (r *mutationResolver) UpdateTermProgress(ctx context.Context, termProgress 
 
 	if len(results) != len(termProgress) {
 		return nil, fmt.Errorf("some terms not found or not accessible")
-	}
-
-	// ---- Bulk insert into history ----
-	if len(results) > 0 {
-		histVals := make([]string, 0, len(results))
-		histArgs := make([]interface{}, 0, len(results)*6)
-		for i, tp := range results {
-			base := i*6 + 1
-			histVals = append(histVals, fmt.Sprintf("($%d,$%d,$%d,$%d,$%d,$%d)", base, base+1, base+2, base+3, base+4, base+5))
-			histArgs = append(histArgs,
-				authedUser.ID,
-				termIDs[i],
-				tp.TermCorrectCount,
-				tp.TermIncorrectCount,
-				tp.DefCorrectCount,
-				tp.DefIncorrectCount,
-			)
-		}
-		histQuery := fmt.Sprintf(`
-			INSERT INTO term_progress_history (
-				user_id, term_id, term_correct_count, term_incorrect_count,
-				def_correct_count, def_incorrect_count
-			) VALUES %s`, strings.Join(histVals, ","))
-
-		if _, err := tx.Exec(ctx, histQuery, histArgs...); err != nil {
-			return nil, fmt.Errorf("failed to insert into term_progress_history: %w", err)
-		}
 	}
 
 	if err := tx.Commit(ctx); err != nil {
@@ -608,48 +574,91 @@ func (r *mutationResolver) RecordPracticeTest(ctx context.Context, input model.P
 	nowStr := time.Now().Format(time.RFC3339)
 	termProgressMap := make(map[string]*model.TermProgressInput)
 
-	var questionTermIDs []string
-	var distractorTermIDs []string
+	var questionRows []model.QuestionRow
+	var allTermIDs []string
 
-	for _, q := range input.Questions {
+	for i, q := range input.Questions {
 		if q == nil {
 			continue
 		}
 		var termID string
+		var termSnapshot, defSnapshot string
+		var qType string
 		var answerWith model.AnswerWith
 		correct := false
+		var data interface{}
 
 		if q.Mcq != nil && q.Mcq.Term != nil {
 			termID = q.Mcq.Term.ID
-			questionTermIDs = append(questionTermIDs, termID)
-			for _, d := range q.Mcq.Distractors {
-				if d != nil {
-					distractorTermIDs = append(distractorTermIDs, d.ID)
-				}
-			}
+			termSnapshot = q.Mcq.Term.TermSnapshot
+			defSnapshot = q.Mcq.Term.DefSnapshot
+			qType = "MCQ"
 			answerWith = q.Mcq.AnswerWith
 			correct = q.Mcq.Correct
+			data = map[string]interface{}{
+				"distractors":        q.Mcq.Distractors,
+				"correctChoiceIndex": q.Mcq.CorrectChoiceIndex,
+				"answeredIndex":      q.Mcq.AnsweredIndex,
+			}
+			allTermIDs = append(allTermIDs, termID)
+			for _, d := range q.Mcq.Distractors {
+				if d != nil {
+					allTermIDs = append(allTermIDs, d.ID)
+				}
+			}
 		} else if q.Tfq != nil && q.Tfq.Term != nil {
 			termID = q.Tfq.Term.ID
-			questionTermIDs = append(questionTermIDs, termID)
-			if q.Tfq.Distractor != nil {
-				distractorTermIDs = append(distractorTermIDs, q.Tfq.Distractor.ID)
-			}
+			termSnapshot = q.Tfq.Term.TermSnapshot
+			defSnapshot = q.Tfq.Term.DefSnapshot
+			qType = "TFQ"
 			answerWith = q.Tfq.AnswerWith
 			correct = q.Tfq.Correct
+			data = map[string]interface{}{
+				"answeredBool": q.Tfq.AnsweredBool,
+				"distractor":   q.Tfq.Distractor,
+			}
+			allTermIDs = append(allTermIDs, termID)
+			if q.Tfq.Distractor != nil {
+				allTermIDs = append(allTermIDs, q.Tfq.Distractor.ID)
+			}
 		} else if q.Frq != nil && q.Frq.Term != nil {
 			termID = q.Frq.Term.ID
-			questionTermIDs = append(questionTermIDs, termID)
+			termSnapshot = q.Frq.Term.TermSnapshot
+			defSnapshot = q.Frq.Term.DefSnapshot
+			qType = "FRQ"
 			answerWith = q.Frq.AnswerWith
 			correct = q.Frq.Correct
+			userMarkedCorrect := false
 			if q.Frq.UserMarkedCorrect != nil && *q.Frq.UserMarkedCorrect {
 				correct = true
+				userMarkedCorrect = true
 			}
+			data = map[string]interface{}{
+				"answeredString":    q.Frq.AnsweredString,
+				"userMarkedCorrect": userMarkedCorrect,
+			}
+			allTermIDs = append(allTermIDs, termID)
 		}
 
 		if correct {
 			questionsCorrect++
 		}
+
+		dataBytes, err := json.Marshal(data)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal question data: %w", err)
+		}
+
+		questionRows = append(questionRows, model.QuestionRow{
+			TermID:       termID,
+			TermSnapshot: termSnapshot,
+			DefSnapshot:  defSnapshot,
+			Type:         qType,
+			AnswerWith:   answerWith,
+			Correct:      correct,
+			Position:     int32(i),
+			Data:         dataBytes,
+		})
 
 		if termID == "" {
 			continue
@@ -680,13 +689,9 @@ func (r *mutationResolver) RecordPracticeTest(ctx context.Context, input model.P
 			if answerWith == model.AnswerWithDef {
 				defIncorrectIncrease = 1
 				tp.DefReviewedAt = &nowStr
-				box := int32(1)
-				tp.DefLeitnerSystemBox = &box
 			} else {
 				termIncorrectIncrease = 1
 				tp.TermReviewedAt = &nowStr
-				box := int32(1)
-				tp.TermLeitnerSystemBox = &box
 			}
 		}
 
@@ -712,7 +717,6 @@ func (r *mutationResolver) RecordPracticeTest(ctx context.Context, input model.P
 		}
 	}
 
-	allTermIDs := append(questionTermIDs, distractorTermIDs...)
 	var studysetIDs []string
 	if len(allTermIDs) > 0 {
 		var studysets []struct {
@@ -744,48 +748,33 @@ func (r *mutationResolver) RecordPracticeTest(ctx context.Context, input model.P
 		tx,
 		&practiceTest,
 		`INSERT INTO practice_tests
-	(timestamp, user_id, questions_correct, questions_total, questions)
-VALUES (now(), $1, $2, $3, $4)
+	(timestamp, user_id, questions_correct, questions_total)
+VALUES (now(), $1, $2, $3)
 RETURNING
 	id,
 	to_char(timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as timestamp,
 	questions_correct,
-	questions_total,
-	questions`,
+	questions_total`,
 		authedUser.ID,
 		questionsCorrect,
 		questionsTotal,
-		input.Questions,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("database error in RecordPracticeTest: %w", err)
 	}
 
-	if len(questionTermIDs) > 0 {
-		placeholders := make([]string, len(questionTermIDs))
-		args := make([]interface{}, len(questionTermIDs)+1)
-		args[0] = practiceTest.ID
-		for i, termID := range questionTermIDs {
-			placeholders[i] = fmt.Sprintf("($1, $%d)", i+2)
-			args[i+1] = termID
+	if len(questionRows) > 0 {
+		placeholders := make([]string, len(questionRows))
+		args := make([]interface{}, 0, len(questionRows)*9+1)
+		args = append(args, practiceTest.ID)
+		for i, qr := range questionRows {
+			base := i*8 + 2
+			placeholders[i] = fmt.Sprintf("($1, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base, base+1, base+2, base+3, base+4, base+5, base+6, base+7)
+			args = append(args, qr.TermID, qr.TermSnapshot, qr.DefSnapshot, qr.Type, qr.AnswerWith, qr.Correct, qr.Position, qr.Data)
 		}
-		sql := fmt.Sprintf("INSERT INTO practice_test_question_terms (practice_test_id, term_id) VALUES %s", strings.Join(placeholders, ","))
+		sql := fmt.Sprintf("INSERT INTO practice_test_questions (practice_test_id, term_id, term_snapshot, def_snapshot, type, answer_with, correct, position, data) VALUES %s", strings.Join(placeholders, ","))
 		if _, err := tx.Exec(ctx, sql, args...); err != nil {
-			return nil, fmt.Errorf("failed to insert question terms: %w", err)
-		}
-	}
-
-	if len(distractorTermIDs) > 0 {
-		placeholders := make([]string, len(distractorTermIDs))
-		args := make([]interface{}, len(distractorTermIDs)+1)
-		args[0] = practiceTest.ID
-		for i, termID := range distractorTermIDs {
-			placeholders[i] = fmt.Sprintf("($1, $%d)", i+2)
-			args[i+1] = termID
-		}
-		sql := fmt.Sprintf("INSERT INTO practice_test_distractor_terms (practice_test_id, term_id) VALUES %s", strings.Join(placeholders, ","))
-		if _, err := tx.Exec(ctx, sql, args...); err != nil {
-			return nil, fmt.Errorf("failed to insert distractor terms: %w", err)
+			return nil, fmt.Errorf("failed to insert practice test questions: %w", err)
 		}
 	}
 
@@ -810,15 +799,16 @@ RETURNING
 		}
 
 		valueStrings := make([]string, 0, len(termProgress))
-		valueArgs := make([]interface{}, 0, len(termProgress)*10)
+		valueArgs := make([]interface{}, 0, len(termProgress)*8)
 		termIDs := make([]string, len(termProgress))
 
 		for i, p := range termProgress {
 			termIDs[i] = p.TermID
-			base := i*10 + 1
+			// Each row has 8 parameters
+			base := i*8 + 1
 			valueStrings = append(valueStrings, fmt.Sprintf(
-				"($%d::uuid,$%d::uuid,$%d::timestamptz,$%d::timestamptz,CASE WHEN $%d IS NOT NULL THEN 1 ELSE 0 END,$%d::timestamptz,$%d::timestamptz,CASE WHEN $%d IS NOT NULL THEN 1 ELSE 0 END,$%d::int,$%d::int,COALESCE($%d::int,0),COALESCE($%d::int,0),COALESCE($%d::int,0),COALESCE($%d::int,0))",
-				base, base+1, base+2, base+2, base+2, base+3, base+3, base+3, base+4, base+5, base+6, base+7, base+8, base+9,
+				"($%d::uuid,$%d::uuid,$%d::timestamptz,$%d::timestamptz,CASE WHEN $%d IS NOT NULL THEN 1 ELSE 0 END,$%d::timestamptz,$%d::timestamptz,CASE WHEN $%d IS NOT NULL THEN 1 ELSE 0 END,COALESCE($%d::int,0),COALESCE($%d::int,0),COALESCE($%d::int,0),COALESCE($%d::int,0))",
+				base, base+1, base+2, base+2, base+2, base+3, base+3, base+3, base+4, base+5, base+6, base+7,
 			))
 
 			valueArgs = append(valueArgs,
@@ -826,8 +816,6 @@ RETURNING
 				authedUser.ID,
 				p.TermReviewedAt,
 				p.DefReviewedAt,
-				p.TermLeitnerSystemBox,
-				p.DefLeitnerSystemBox,
 				p.TermCorrectIncrease,
 				p.TermIncorrectIncrease,
 				p.DefCorrectIncrease,
@@ -842,7 +830,6 @@ RETURNING
 				term_review_count,
 				def_first_reviewed_at, def_last_reviewed_at,
 				def_review_count,
-				term_leitner_system_box, def_leitner_system_box,
 				term_correct_count, term_incorrect_count,
 				def_correct_count, def_incorrect_count
 			)
@@ -851,7 +838,6 @@ RETURNING
 				v.term_review_count::int,
 				v.def_first_reviewed_at::timestamptz, v.def_last_reviewed_at::timestamptz,
 				v.def_review_count::int,
-				v.term_leitner_system_box::int, v.def_leitner_system_box::int,
 				v.term_correct_count::int, v.term_incorrect_count::int,
 				v.def_correct_count::int, v.def_incorrect_count::int
 			FROM (VALUES %s) AS v(
@@ -860,7 +846,6 @@ RETURNING
 				term_review_count,
 				def_first_reviewed_at, def_last_reviewed_at,
 				def_review_count,
-				term_leitner_system_box, def_leitner_system_box,
 				term_correct_count, term_incorrect_count,
 				def_correct_count, def_incorrect_count
 			)
@@ -870,8 +855,6 @@ RETURNING
 			ON CONFLICT (term_id, user_id) DO UPDATE SET
 				term_last_reviewed_at = COALESCE(EXCLUDED.term_last_reviewed_at, term_progress.term_last_reviewed_at),
 				def_last_reviewed_at = COALESCE(EXCLUDED.def_last_reviewed_at, term_progress.def_last_reviewed_at),
-				term_leitner_system_box = EXCLUDED.term_leitner_system_box,
-				def_leitner_system_box = EXCLUDED.def_leitner_system_box,
 				term_review_count = term_progress.term_review_count +
 					(CASE WHEN EXCLUDED.term_last_reviewed_at IS NOT NULL THEN 1 ELSE 0 END),
 				def_review_count = term_progress.def_review_count +
@@ -887,7 +870,6 @@ RETURNING
 				to_char(term_progress.def_first_reviewed_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as def_first_reviewed_at,
 				to_char(term_progress.def_last_reviewed_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as def_last_reviewed_at,
 				term_progress.def_review_count,
-				term_progress.term_leitner_system_box, term_progress.def_leitner_system_box,
 				term_progress.term_correct_count, term_progress.term_incorrect_count,
 				term_progress.def_correct_count, term_progress.def_incorrect_count
 		`, strings.Join(valueStrings, ","))
@@ -895,32 +877,6 @@ RETURNING
 		var results []*model.TermProgress
 		if err := pgxscan.Select(ctx, tx, &results, query, valueArgs...); err != nil {
 			return nil, fmt.Errorf("bulk upsert of term progress failed: %w", err)
-		}
-
-		if len(results) > 0 {
-			histVals := make([]string, 0, len(results))
-			histArgs := make([]interface{}, 0, len(results)*6)
-			for i, tp := range results {
-				base := i*6 + 1
-				histVals = append(histVals, fmt.Sprintf("($%d,$%d,$%d,$%d,$%d,$%d)", base, base+1, base+2, base+3, base+4, base+5))
-				histArgs = append(histArgs,
-					authedUser.ID,
-					termIDs[i],
-					tp.TermCorrectCount,
-					tp.TermIncorrectCount,
-					tp.DefCorrectCount,
-					tp.DefIncorrectCount,
-				)
-			}
-			histQuery := fmt.Sprintf(`
-				INSERT INTO term_progress_history (
-					user_id, term_id, term_correct_count, term_incorrect_count,
-					def_correct_count, def_incorrect_count
-				) VALUES %s`, strings.Join(histVals, ","))
-
-			if _, err := tx.Exec(ctx, histQuery, histArgs...); err != nil {
-				return nil, fmt.Errorf("failed to insert into term_progress_history: %w", err)
-			}
 		}
 	}
 
@@ -931,8 +887,8 @@ RETURNING
 	return &practiceTest, nil
 }
 
-// UpdatePracticeTest is the resolver for the updatePracticeTest field.
-func (r *mutationResolver) UpdatePracticeTest(ctx context.Context, id string, input model.PracticeTestInput) (*model.PracticeTest, error) {
+// UpdatePracticeTestQuestion is the resolver for the updatePracticeTestQuestion field.
+func (r *mutationResolver) UpdatePracticeTestQuestion(ctx context.Context, id string, correct bool, userMarkedCorrect *bool) (*model.Question, error) {
 	authedUser := auth.AuthedUserContext(ctx)
 	if authedUser == nil {
 		return nil, fmt.Errorf("not authenticated")
@@ -944,153 +900,90 @@ func (r *mutationResolver) UpdatePracticeTest(ctx context.Context, id string, in
 	}
 	defer tx.Rollback(ctx)
 
-	var questionsCorrect int32 = 0
-	var questionsTotal int32 = int32(len(input.Questions))
-	var questionTermIDs []string
-	var distractorTermIDs []string
-
-	for _, q := range input.Questions {
-		if q == nil {
-			continue
-		}
-		correct := false
-		if q.Mcq != nil {
-			correct = q.Mcq.Correct
-			if q.Mcq.Term != nil {
-				questionTermIDs = append(questionTermIDs, q.Mcq.Term.ID)
-			}
-			for _, d := range q.Mcq.Distractors {
-				if d != nil {
-					distractorTermIDs = append(distractorTermIDs, d.ID)
-				}
-			}
-		} else if q.Tfq != nil {
-			correct = q.Tfq.Correct
-			if q.Tfq.Term != nil {
-				questionTermIDs = append(questionTermIDs, q.Tfq.Term.ID)
-			}
-			if q.Tfq.Distractor != nil {
-				distractorTermIDs = append(distractorTermIDs, q.Tfq.Distractor.ID)
-			}
-		} else if q.Frq != nil {
-			correct = q.Frq.Correct
-			if q.Frq.UserMarkedCorrect != nil && *q.Frq.UserMarkedCorrect {
-				correct = true
-			}
-			if q.Frq.Term != nil {
-				questionTermIDs = append(questionTermIDs, q.Frq.Term.ID)
-			}
-		}
-		if correct {
-			questionsCorrect++
-		}
+	var row model.QuestionRow
+	err = pgxscan.Get(ctx, tx, &row, `
+		SELECT q.id, q.practice_test_id, q.term_id, q.term_snapshot, q.def_snapshot, q.type, q.answer_with, q.correct, q.position, q.data
+		FROM practice_test_questions q
+		JOIN practice_tests pt ON q.practice_test_id = pt.id
+		WHERE q.id = $1 AND pt.user_id = $2
+	`, id, authedUser.ID)
+	if err != nil {
+		return nil, fmt.Errorf("question not found or not owned by user: %w", err)
 	}
 
-	allTermIDs := append(questionTermIDs, distractorTermIDs...)
-	var studysetIDs []string
-	if len(allTermIDs) > 0 {
-		var studysets []struct {
-			ID      string `db:"id"`
-			Private bool   `db:"private"`
-			UserID  string `db:"user_id"`
-			Draft   bool   `db:"draft"`
+	oldCorrect := row.Correct
+	newCorrect := correct
+
+	if row.Type != "FRQ" {
+		return nil, fmt.Errorf("only FRQ questions can be updated via this mutation")
+	}
+
+	var data map[string]interface{}
+	if err := json.Unmarshal(row.Data, &data); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal question data: %w", err)
+	}
+
+	if userMarkedCorrect != nil {
+		data["userMarkedCorrect"] = *userMarkedCorrect
+	}
+
+	newDataBytes, err := json.Marshal(data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal new question data: %w", err)
+	}
+
+	_, err = tx.Exec(ctx, `
+		UPDATE practice_test_questions
+		SET correct = $2, data = $3
+		WHERE id = $1
+	`, id, newCorrect, newDataBytes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update question: %w", err)
+	}
+
+	if oldCorrect != newCorrect {
+		diff := int32(1)
+		if oldCorrect {
+			diff = -1
 		}
-		err = pgxscan.Select(ctx, tx, &studysets, `
-			SELECT id, private, user_id, draft
-			FROM studysets
-			WHERE id IN (SELECT DISTINCT studyset_id FROM terms WHERE id = ANY($1))
-		`, allTermIDs)
+		_, err = tx.Exec(ctx, `
+			UPDATE practice_tests
+			SET questions_correct = questions_correct + $1
+			WHERE id = $2
+		`, diff, row.PracticeTestID)
 		if err != nil {
-			return nil, fmt.Errorf("database error checking studysets: %w", err)
+			return nil, fmt.Errorf("failed to update practice test correct count: %w", err)
 		}
 
-		for _, s := range studysets {
-			if s.Draft || (s.Private && (authedUser.ID == nil || s.UserID != *authedUser.ID)) {
-				return nil, fmt.Errorf("studyset not found or not accessible")
-			}
-			studysetIDs = append(studysetIDs, s.ID)
+		// Update term progress
+		var correctInc, incorrectInc int32
+		if newCorrect {
+			correctInc = 1
+			incorrectInc = -1
+		} else {
+			correctInc = -1
+			incorrectInc = 1
 		}
-	}
 
-	var practiceTest model.PracticeTest
-	err = pgxscan.Get(
-		ctx,
-		tx,
-		&practiceTest,
-		`UPDATE practice_tests SET questions_correct = $3, questions_total = $4, questions = $5
-WHERE user_id = $1 AND id = $2
-RETURNING
-	id,
-	to_char(timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as timestamp,
-	questions_correct,
-	questions_total,
-	questions`,
-		authedUser.ID,
-		id,
-		questionsCorrect,
-		questionsTotal,
-		input.Questions,
-	)
-	if err != nil {
-		if pgxscan.NotFound(err) {
-			return nil, fmt.Errorf("practice test not found")
+		var termCorrectInc, termIncorrectInc, defCorrectInc, defIncorrectInc int32
+		if row.AnswerWith == model.AnswerWithDef {
+			defCorrectInc = correctInc
+			defIncorrectInc = incorrectInc
+		} else {
+			termCorrectInc = correctInc
+			termIncorrectInc = incorrectInc
 		}
-		return nil, fmt.Errorf("database error in updatePracticeTest: %w", err)
-	}
 
-	// Update mappings
-	_, err = tx.Exec(ctx, "DELETE FROM practice_test_question_terms WHERE practice_test_id = $1", id)
-	if err != nil {
-		return nil, fmt.Errorf("failed to delete old question terms: %w", err)
-	}
-	_, err = tx.Exec(ctx, "DELETE FROM practice_test_distractor_terms WHERE practice_test_id = $1", id)
-	if err != nil {
-		return nil, fmt.Errorf("failed to delete old distractor terms: %w", err)
-	}
-	_, err = tx.Exec(ctx, "DELETE FROM practice_test_studysets WHERE practice_test_id = $1", id)
-	if err != nil {
-		return nil, fmt.Errorf("failed to delete old practice test studysets: %w", err)
-	}
-
-	if len(questionTermIDs) > 0 {
-		placeholders := make([]string, len(questionTermIDs))
-		args := make([]interface{}, len(questionTermIDs)+1)
-		args[0] = id
-		for i, termID := range questionTermIDs {
-			placeholders[i] = fmt.Sprintf("($1, $%d)", i+2)
-			args[i+1] = termID
-		}
-		sql := fmt.Sprintf("INSERT INTO practice_test_question_terms (practice_test_id, term_id) VALUES %s", strings.Join(placeholders, ","))
-		if _, err := tx.Exec(ctx, sql, args...); err != nil {
-			return nil, fmt.Errorf("failed to insert question terms: %w", err)
-		}
-	}
-
-	if len(distractorTermIDs) > 0 {
-		placeholders := make([]string, len(distractorTermIDs))
-		args := make([]interface{}, len(distractorTermIDs)+1)
-		args[0] = id
-		for i, termID := range distractorTermIDs {
-			placeholders[i] = fmt.Sprintf("($1, $%d)", i+2)
-			args[i+1] = termID
-		}
-		sql := fmt.Sprintf("INSERT INTO practice_test_distractor_terms (practice_test_id, term_id) VALUES %s", strings.Join(placeholders, ","))
-		if _, err := tx.Exec(ctx, sql, args...); err != nil {
-			return nil, fmt.Errorf("failed to insert distractor terms: %w", err)
-		}
-	}
-
-	if len(studysetIDs) > 0 {
-		placeholders := make([]string, len(studysetIDs))
-		args := make([]interface{}, len(studysetIDs)+1)
-		args[0] = id
-		for i, studysetID := range studysetIDs {
-			placeholders[i] = fmt.Sprintf("($1, $%d)", i+2)
-			args[i+1] = studysetID
-		}
-		sql := fmt.Sprintf("INSERT INTO practice_test_studysets (practice_test_id, studyset_id) VALUES %s", strings.Join(placeholders, ","))
-		if _, err := tx.Exec(ctx, sql, args...); err != nil {
-			return nil, fmt.Errorf("failed to insert practice test studysets: %w", err)
+		_, err = tx.Exec(ctx, `
+			UPDATE term_progress
+			SET term_correct_count = term_correct_count + $3,
+			    term_incorrect_count = term_incorrect_count + $4,
+			    def_correct_count = def_correct_count + $5,
+			    def_incorrect_count = def_incorrect_count + $6
+			WHERE term_id = $1 AND user_id = $2
+		`, row.TermID, authedUser.ID, termCorrectInc, termIncorrectInc, defCorrectInc, defIncorrectInc)
+		if err != nil {
+			return nil, fmt.Errorf("failed to update term progress: %w", err)
 		}
 	}
 
@@ -1098,7 +991,30 @@ RETURNING
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
-	return &practiceTest, nil
+	// Reconstruct and return the question
+	q := &model.Question{}
+	termATP := &model.TermAtp{
+		ID:           row.TermID,
+		TermSnapshot: row.TermSnapshot,
+		DefSnapshot:  row.DefSnapshot,
+	}
+	umc := false
+	if userMarkedCorrect != nil {
+		umc = *userMarkedCorrect
+	} else if val, ok := data["userMarkedCorrect"].(bool); ok {
+		umc = val
+	}
+
+	q.ID = row.ID
+	q.Frq = &model.Frq{
+		Term:              termATP,
+		AnswerWith:        row.AnswerWith,
+		Correct:           newCorrect,
+		UserMarkedCorrect: &umc,
+		AnsweredString:    data["answeredString"].(string),
+	}
+
+	return q, nil
 }
 
 // CreateFolder is the resolver for the createFolder field.

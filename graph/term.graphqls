@@ -6,7 +6,6 @@ type Term {
     defImageUrl: String
     sortOrder: Int!
     progress: TermProgress
-    progressHistory: [TermProgressHistory]
     topConfusionPairs: [TermConfusionPair]
     topReverseConfusionPairs: [TermConfusionPair]
     fsrsCard: FSRSCard
@@ -38,23 +37,11 @@ type TermProgress {
     termIncorrectCount: Int!
     defCorrectCount: Int!
     defIncorrectCount: Int!
-    termLeitnerSystemBox: Int
-    defLeitnerSystemBox: Int
-}
-type TermProgressHistory {
-    id: ID!
-    timestamp: String!
-    termCorrectCount: Int
-    termIncorrectCount: Int
-    defCorrectCount: Int
-    defIncorrectCount: Int
 }
 input TermProgressInput {
     termId: ID!
     termReviewedAt: String
     defReviewedAt: String
-    termLeitnerSystemBox: Int
-    defLeitnerSystemBox: Int
     termCorrectIncrease: Int
     termIncorrectIncrease: Int
     defCorrectIncrease: Int

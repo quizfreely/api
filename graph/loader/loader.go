@@ -239,7 +239,6 @@ func (dr *dataReader) getTermsProgress(ctx context.Context, termIDs []string) ([
 	to_char(tp.def_first_reviewed_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as def_first_reviewed_at,
 	to_char(tp.def_last_reviewed_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as def_last_reviewed_at,
 	tp.def_review_count,
-	tp.term_leitner_system_box, tp.def_leitner_system_box,
 	tp.term_correct_count, tp.term_incorrect_count,
 	tp.def_correct_count, tp.def_incorrect_count
 FROM unnest($1::uuid[]) WITH ORDINALITY AS input(term_id, og_order)
@@ -264,8 +263,6 @@ ORDER BY input.og_order`,
 		DefFirstReviewedAt   *string `db:"def_first_reviewed_at"`
 		DefLastReviewedAt    *string `db:"def_last_reviewed_at"`
 		DefReviewCount       *int32  `db:"def_review_count"`
-		TermLeitnerSystemBox *int32  `db:"term_leitner_system_box"`
-		DefLeitnerSystemBox  *int32  `db:"def_leitner_system_box"`
 		TermCorrectCount     *int32  `db:"term_correct_count"`
 		TermIncorrectCount   *int32  `db:"term_incorrect_count"`
 		DefCorrectCount      *int32  `db:"def_correct_count"`
@@ -291,8 +288,6 @@ ORDER BY input.og_order`,
 				DefFirstReviewedAt:   tp.DefFirstReviewedAt,
 				DefLastReviewedAt:    tp.DefLastReviewedAt,
 				DefReviewCount:       tp.DefReviewCount,
-				TermLeitnerSystemBox: tp.TermLeitnerSystemBox,
-				DefLeitnerSystemBox:  tp.DefLeitnerSystemBox,
 			}
 			if tp.TermCorrectCount != nil {
 				modelTp.TermCorrectCount = *tp.TermCorrectCount
@@ -313,67 +308,6 @@ ORDER BY input.og_order`,
 	return termsProgress, nil
 }
 
-func (dr *dataReader) getTermsProgressHistory(ctx context.Context, termIDs []string) ([][]*model.TermProgressHistory, []error) {
-	authedUser := auth.AuthedUserContext(ctx)
-	if authedUser == nil || authedUser.ID == nil {
-		return nil, nil
-	}
-
-	type dbTermProgressHistory struct {
-		ID                 *string `db:"id"`
-		TermID             *string `db:"term_id"`
-		Timestamp          *string `db:"timestamp"`
-		TermCorrectCount   *int32  `db:"term_correct_count"`
-		TermIncorrectCount *int32  `db:"term_incorrect_count"`
-		DefCorrectCount    *int32  `db:"def_correct_count"`
-		DefIncorrectCount  *int32  `db:"def_incorrect_count"`
-	}
-
-	var dbHistory []*dbTermProgressHistory
-	err := pgxscan.Select(
-		ctx,
-		dr.db,
-		&dbHistory,
-		`SELECT tph.id,
-    tph.term_id,
-    to_char(tph.timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as timestamp,
-    tph.term_correct_count,
-    tph.term_incorrect_count,
-    tph.def_correct_count,
-    tph.def_incorrect_count
-FROM unnest($1::uuid[]) WITH ORDINALITY AS input(term_id, og_order)
-LEFT JOIN term_progress_history tph
-	ON tph.term_id = input.term_id
-	AND tph.user_id = $2
-ORDER BY input.og_order ASC, tph.timestamp DESC`,
-		termIDs,
-		authedUser.ID,
-	)
-	if err != nil {
-		return nil, []error{err}
-	}
-
-	grouped := make(map[string][]*model.TermProgressHistory)
-	for _, dbTph := range dbHistory {
-		if dbTph.ID != nil && dbTph.TermID != nil {
-			grouped[*dbTph.TermID] = append(grouped[*dbTph.TermID], &model.TermProgressHistory{
-				ID:                 dbTph.ID,
-				Timestamp:          dbTph.Timestamp,
-				TermCorrectCount:   dbTph.TermCorrectCount,
-				TermIncorrectCount: dbTph.TermIncorrectCount,
-				DefCorrectCount:    dbTph.DefCorrectCount,
-				DefIncorrectCount:  dbTph.DefIncorrectCount,
-			})
-		}
-	}
-
-	orderedProgressHistory := make([][]*model.TermProgressHistory, len(termIDs))
-	for i, id := range termIDs {
-		orderedProgressHistory[i] = grouped[id]
-	}
-
-	return orderedProgressHistory, nil
-}
 
 func (dr *dataReader) getTermsTopConfusionPairs(ctx context.Context, termIDs []string) ([][]*model.TermConfusionPair, []error) {
 	authedUser := auth.AuthedUserContext(ctx)
@@ -520,12 +454,11 @@ func (dr *dataReader) getPracticeTestsByStudysetIDs(ctx context.Context, studyse
 	}
 
 	type dbPracticeTest struct {
-		ID               *string           `db:"id"`
-		Timestamp        *string           `db:"timestamp"`
-		QuestionsCorrect *int32            `db:"questions_correct"`
-		QuestionsTotal   *int32            `db:"questions_total"`
-		Questions        []*model.Question `db:"questions"`
-		StudysetID       *string           `db:"studyset_id"`
+		ID               *string `db:"id"`
+		Timestamp        *string `db:"timestamp"`
+		QuestionsCorrect *int32  `db:"questions_correct"`
+		QuestionsTotal   *int32  `db:"questions_total"`
+		StudysetID       *string `db:"studyset_id"`
 	}
 	var dbPracticeTests []*dbPracticeTest
 
@@ -538,7 +471,6 @@ func (dr *dataReader) getPracticeTestsByStudysetIDs(ctx context.Context, studyse
 	to_char(pt.timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as timestamp,
     pt.questions_correct,
     pt.questions_total,
-    pt.questions,
 	input.studyset_id
 FROM unnest($1::uuid[]) WITH ORDINALITY AS input(studyset_id, og_order)
 JOIN practice_test_studysets pts ON pts.studyset_id = input.studyset_id
@@ -560,7 +492,6 @@ ORDER BY input.og_order ASC, pt.timestamp DESC`,
 				Timestamp:        pt.Timestamp,
 				QuestionsCorrect: pt.QuestionsCorrect,
 				QuestionsTotal:   pt.QuestionsTotal,
-				Questions:        pt.Questions,
 			})
 		}
 	}
@@ -657,12 +588,11 @@ func (dr *dataReader) getPracticeTestsByTermIDs(ctx context.Context, termIDs []s
 	}
 
 	type dbPracticeTest struct {
-		ID               *string           `db:"id"`
-		Timestamp        *string           `db:"timestamp"`
-		QuestionsCorrect *int32            `db:"questions_correct"`
-		QuestionsTotal   *int32            `db:"questions_total"`
-		Questions        []*model.Question `db:"questions"`
-		TermID           *string           `db:"term_id"`
+		ID               *string `db:"id"`
+		Timestamp        *string `db:"timestamp"`
+		QuestionsCorrect *int32  `db:"questions_correct"`
+		QuestionsTotal   *int32  `db:"questions_total"`
+		TermID           *string `db:"term_id"`
 	}
 	var dbPracticeTests []*dbPracticeTest
 
@@ -674,15 +604,10 @@ func (dr *dataReader) getPracticeTestsByTermIDs(ctx context.Context, termIDs []s
 	to_char(pt.timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as timestamp,
     pt.questions_correct,
     pt.questions_total,
-    pt.questions,
     input.term_id
 FROM unnest($1::uuid[]) WITH ORDINALITY AS input(term_id, og_order)
-JOIN (
-    SELECT practice_test_id, term_id FROM practice_test_question_terms
-    UNION
-    SELECT practice_test_id, term_id FROM practice_test_distractor_terms
-) mapping ON mapping.term_id = input.term_id
-JOIN practice_tests pt ON pt.id = mapping.practice_test_id
+JOIN practice_test_questions ptq ON ptq.term_id = input.term_id
+JOIN practice_tests pt ON pt.id = ptq.practice_test_id
 WHERE pt.user_id = $2
 GROUP BY input.term_id, input.og_order, pt.id
 ORDER BY input.og_order ASC, pt.timestamp DESC`,
@@ -701,7 +626,6 @@ ORDER BY input.og_order ASC, pt.timestamp DESC`,
 				Timestamp:        pt.Timestamp,
 				QuestionsCorrect: pt.QuestionsCorrect,
 				QuestionsTotal:   pt.QuestionsTotal,
-				Questions:        pt.Questions,
 			})
 		}
 	}
@@ -796,7 +720,6 @@ type Loaders struct {
 	TermByStudysetIDLoader             *dataloadgen.Loader[string, []*model.Term]
 	TermsCountByStudysetIDLoader       *dataloadgen.Loader[string, *int32]
 	TermProgressLoader                 *dataloadgen.Loader[string, *model.TermProgress]
-	TermProgressHistoryLoader          *dataloadgen.Loader[string, []*model.TermProgressHistory]
 	TermTopConfusionPairsLoader        *dataloadgen.Loader[string, []*model.TermConfusionPair]
 	TermTopReverseConfusionPairsLoader *dataloadgen.Loader[string, []*model.TermConfusionPair]
 	PracticeTestByStudysetIDLoader     *dataloadgen.Loader[string, []*model.PracticeTest]
@@ -818,7 +741,6 @@ func NewLoaders(db *pgxpool.Pool, usercontentBaseURL *string) *Loaders {
 		TermByStudysetIDLoader:             dataloadgen.NewLoader(dr.getTermsByStudysetIDs, dataloadgen.WithWait(time.Millisecond)),
 		TermsCountByStudysetIDLoader:       dataloadgen.NewLoader(dr.getTermsCountByStudysetIDs, dataloadgen.WithWait(time.Millisecond)),
 		TermProgressLoader:                 dataloadgen.NewLoader(dr.getTermsProgress, dataloadgen.WithWait(time.Millisecond)),
-		TermProgressHistoryLoader:          dataloadgen.NewLoader(dr.getTermsProgressHistory, dataloadgen.WithWait(time.Millisecond)),
 		TermTopConfusionPairsLoader:        dataloadgen.NewLoader(dr.getTermsTopConfusionPairs, dataloadgen.WithWait(time.Millisecond)),
 		TermTopReverseConfusionPairsLoader: dataloadgen.NewLoader(dr.getTermsTopReverseConfusionPairs, dataloadgen.WithWait(time.Millisecond)),
 		PracticeTestByStudysetIDLoader:     dataloadgen.NewLoader(dr.getPracticeTestsByStudysetIDs, dataloadgen.WithWait(time.Millisecond)),
@@ -901,17 +823,6 @@ func GetTermsProgress(ctx context.Context, termIDs []string) ([]*model.TermProgr
 	return loaders.TermProgressLoader.LoadAll(ctx, termIDs)
 }
 
-// GetTermProgressHistory returns a single term's progress history
-func GetTermProgressHistory(ctx context.Context, termID string) ([]*model.TermProgressHistory, error) {
-	loaders := For(ctx)
-	return loaders.TermProgressHistoryLoader.Load(ctx, termID)
-}
-
-// GetTermsProgressHistory returns many terms' progress histories
-func GetTermsProgressHistory(ctx context.Context, termIDs []string) ([][]*model.TermProgressHistory, error) {
-	loaders := For(ctx)
-	return loaders.TermProgressHistoryLoader.LoadAll(ctx, termIDs)
-}
 
 // GetTermTopReverseConfusionPairs returns a single term's confusion pairs
 func GetTermTopReverseConfusionPairs(ctx context.Context, termID string) ([]*model.TermConfusionPair, error) {

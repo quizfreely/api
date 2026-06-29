@@ -42,14 +42,15 @@ type PracticeTest {
     questions: [Question!]!
 }
 type Question {
+    id: ID!
     mcq: MCQ
     tfq: TFQ
     frq: FRQ
 }
 type TermATP {
     id: ID!
-    term: String!
-    def: String!
+    termSnapshot: String!
+    defSnapshot: String!
 }
 type MCQ {
     term: TermATP!
