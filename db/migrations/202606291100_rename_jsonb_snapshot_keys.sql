@@ -17,7 +17,7 @@ SET data = jsonb_set(
         FROM jsonb_array_elements(data->'distractors') d
     )
 )
-WHERE data ? 'distractors';
+WHERE jsonb_typeof(data->'distractors') = 'array';
 
 -- for TFQ distractor object
 UPDATE public.practice_test_questions
@@ -30,7 +30,7 @@ SET data = jsonb_set(
         'def', data->'distractor'->>'defSnapshot'
     )
 )
-WHERE data ? 'distractor';
+WHERE jsonb_typeof(data->'distractor') = 'object';
 
 -- migrate:down
 
@@ -51,7 +51,7 @@ SET data = jsonb_set(
         FROM jsonb_array_elements(data->'distractors') d
     )
 )
-WHERE data ? 'distractors';
+WHERE jsonb_typeof(data->'distractors') = 'array';
 
 -- for TFQ distractor object
 UPDATE public.practice_test_questions
@@ -64,4 +64,4 @@ SET data = jsonb_set(
         'defSnapshot', data->'distractor'->>'def'
     )
 )
-WHERE data ? 'distractor';
+WHERE jsonb_typeof(data->'distractor') = 'object';
