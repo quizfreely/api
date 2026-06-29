@@ -1,4 +1,4 @@
-\restrict qHnEERpd3qUKA6LgfAnR0lxOMnDpa2QejUgvmcvPb3TrowTuXXbHxScxPgLabSc
+\restrict Xb0RqdNedVXEcz4JbK9e4FBZqcrL7wkbUyJgjMhlI7K98WglSRrAcLfEZfx8g4n
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -875,7 +875,7 @@ ALTER TABLE ONLY public.terms
 -- PostgreSQL database dump complete
 --
 
-\unrestrict qHnEERpd3qUKA6LgfAnR0lxOMnDpa2QejUgvmcvPb3TrowTuXXbHxScxPgLabSc
+\unrestrict Xb0RqdNedVXEcz4JbK9e4FBZqcrL7wkbUyJgjMhlI7K98WglSRrAcLfEZfx8g4n
 
 
 --
@@ -920,4 +920,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('202606252121'),
     ('202606261000'),
     ('202606290020'),
-    ('202606291000');
+    ('202606291000'),
+    ('202606291100');
