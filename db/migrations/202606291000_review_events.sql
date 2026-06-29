@@ -19,6 +19,7 @@ CREATE TABLE public.review_events (
     review_activity_type public.review_activity_type_enum NOT NULL,
     answered_string text
 );
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.review_events TO quizfreely_api;
 
 CREATE INDEX idx_review_events_user_id ON public.review_events(user_id);
 CREATE INDEX idx_review_events_term_id ON public.review_events(term_id);
