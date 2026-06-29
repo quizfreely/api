@@ -39,6 +39,10 @@ func (r *practiceTestResolver) Questions(ctx context.Context, obj *model.Practic
 		return nil, nil
 	}
 
+	if obj.Questions != nil {
+        return obj.Questions, nil
+    }
+
 	var rows []*model.QuestionRow
 	sql := `SELECT id, practice_test_id, term_id, term_snapshot, def_snapshot, type, answer_with, correct, position, data
 	        FROM practice_test_questions WHERE practice_test_id = $1 ORDER BY position ASC`
