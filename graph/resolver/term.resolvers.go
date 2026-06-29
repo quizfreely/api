@@ -22,26 +22,6 @@ func (r *termResolver) Progress(ctx context.Context, obj *model.Term) (*model.Te
 	return loader.GetTermProgress(ctx, *obj.ID)
 }
 
-// TopConfusionPairs is the resolver for the top_confusion_pairs field.
-func (r *termResolver) TopConfusionPairs(ctx context.Context, obj *model.Term) ([]*model.TermConfusionPair, error) {
-	authedUser := auth.AuthedUserContext(ctx)
-	if authedUser == nil || authedUser.ID == nil || obj.ID == nil {
-		return nil, nil
-	}
-
-	return loader.GetTermTopConfusionPairs(ctx, *obj.ID)
-}
-
-// TopReverseConfusionPairs is the resolver for the top_reverse_confusion_pairs field.
-func (r *termResolver) TopReverseConfusionPairs(ctx context.Context, obj *model.Term) ([]*model.TermConfusionPair, error) {
-	authedUser := auth.AuthedUserContext(ctx)
-	if authedUser == nil || authedUser.ID == nil || obj.ID == nil {
-		return nil, nil
-	}
-
-	return loader.GetTermTopReverseConfusionPairs(ctx, *obj.ID)
-}
-
 // FsrsCard is the resolver for the fsrsCard field.
 func (r *termResolver) FsrsCard(ctx context.Context, obj *model.Term) (*model.FSRSCard, error) {
 	authedUser := auth.AuthedUserContext(ctx)
@@ -71,31 +51,7 @@ func (r *termResolver) PracticeTests(ctx context.Context, obj *model.Term) ([]*m
 	return loader.GetPracticeTestsByTermID(ctx, *obj.ID)
 }
 
-// Term is the resolver for the term field.
-func (r *termConfusionPairResolver) Term(ctx context.Context, obj *model.TermConfusionPair) (*model.Term, error) {
-	if obj.TermID == nil {
-		return nil, nil
-	}
-
-	return loader.GetTermByID(ctx, *obj.TermID)
-}
-
-// ConfusedTerm is the resolver for the confusedTerm field.
-func (r *termConfusionPairResolver) ConfusedTerm(ctx context.Context, obj *model.TermConfusionPair) (*model.Term, error) {
-	if obj.ConfusedTermID == nil {
-		return nil, nil
-	}
-
-	return loader.GetTermByID(ctx, *obj.ConfusedTermID)
-}
-
 // Term returns graph.TermResolver implementation.
 func (r *Resolver) Term() graph.TermResolver { return &termResolver{r} }
 
-// TermConfusionPair returns graph.TermConfusionPairResolver implementation.
-func (r *Resolver) TermConfusionPair() graph.TermConfusionPairResolver {
-	return &termConfusionPairResolver{r}
-}
-
 type termResolver struct{ *Resolver }
-type termConfusionPairResolver struct{ *Resolver }

@@ -195,14 +195,6 @@ type TermATPInput struct {
 	Def  string `json:"def"`
 }
 
-type TermConfusionPairInput struct {
-	TermID                *string     `json:"termId,omitempty"`
-	ConfusedTermID        *string     `json:"confusedTermId,omitempty"`
-	AnsweredWith          *AnswerWith `json:"answeredWith,omitempty"`
-	ConfusedCountIncrease *int32      `json:"confusedCountIncrease,omitempty"`
-	ConfusedAt            *string     `json:"confusedAt,omitempty"`
-}
-
 type TermInput struct {
 	ID        string  `json:"id"`
 	Term      *string `json:"term,omitempty"`

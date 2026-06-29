@@ -477,84 +477,6 @@ func (r *mutationResolver) UpdateTermProgress(ctx context.Context, termProgress 
 	return results, nil
 }
 
-// RecordConfusedTerms is the resolver for the recordConfusedTerms field.
-func (r *mutationResolver) RecordConfusedTerms(ctx context.Context, confusedTerms []*model.TermConfusionPairInput) (*bool, error) {
-	var success bool
-	if len(confusedTerms) > MaxBatchMutationSize {
-		success = false
-		return &success, fmt.Errorf("too many items in a single request (max %d)", MaxBatchMutationSize)
-	}
-
-	authedUser := auth.AuthedUserContext(ctx)
-	if authedUser == nil {
-		success = false
-		return &success, fmt.Errorf("not authenticated")
-	}
-
-	if len(confusedTerms) == 0 {
-		success = false
-		return &success, nil
-	}
-
-	values := make([]interface{}, 0, len(confusedTerms)*5)
-	values = append(
-		values,
-		*authedUser.ID,
-	)
-	placeholders := make([]string, 0, len(confusedTerms))
-
-	sameTermAndConfusedTerm := false
-	for i, ct := range confusedTerms {
-		if *ct.TermID == *ct.ConfusedTermID {
-			sameTermAndConfusedTerm = true
-			continue
-		}
-		placeholders = append(
-			placeholders,
-			fmt.Sprintf(
-				"($1,$%d,$%d,$%d,$%d,$%d)",
-				i*5+2, i*5+3, i*5+4, i*5+5, i*5+6,
-			),
-		)
-		values = append(
-			values,
-			ct.TermID,
-			ct.ConfusedTermID,
-			ct.AnsweredWith,
-			ct.ConfusedCountIncrease,
-			ct.ConfusedAt,
-		)
-	}
-
-	sql := fmt.Sprintf(`INSERT INTO term_confusion_pairs (
-	user_id, term_id, confused_term_id, answered_with, confused_count, last_confused_at
-)
-SELECT v.user_id, v.term_id, v.confused_term_id, v.answered_with, v.confused_count, v.last_confused_at
-FROM (VALUES %s) AS v(user_id, term_id, confused_term_id, answered_with, confused_count, last_confused_at)
-JOIN terms t1 ON t1.id = v.term_id::uuid
-JOIN studysets s1 ON s1.id = t1.studyset_id
-JOIN terms t2 ON t2.id = v.confused_term_id::uuid
-JOIN studysets s2 ON s2.id = t2.studyset_id
-WHERE (s1.draft = false AND (s1.private = false OR s1.user_id = v.user_id::uuid))
-  AND (s2.draft = false AND (s2.private = false OR s2.user_id = v.user_id::uuid))
-ON CONFLICT (user_id, term_id, confused_term_id, answered_with)
-DO UPDATE SET confused_count = term_confusion_pairs.confused_count + EXCLUDED.confused_count,
-	last_confused_at = EXCLUDED.last_confused_at`,
-		strings.Join(placeholders, ","),
-	)
-	_, err := r.DB.Exec(ctx, sql, values...)
-	if err != nil {
-		success = false
-		return &success, fmt.Errorf("failed to insert/update confusion pairs: %w", err)
-	}
-
-	success = true
-	if sameTermAndConfusedTerm {
-		return &success, errors.New("Confusion pairs with same term and confused term were not inserted")
-	}
-	return &success, nil
-}
-
 // RecordPracticeTest is the resolver for the recordPracticeTest field.
 func (r *mutationResolver) RecordPracticeTest(ctx context.Context, input model.PracticeTestInput) (*model.PracticeTest, error) {
 	authedUser := auth.AuthedUserContext(ctx)
@@ -769,16 +691,93 @@ RETURNING
 
 	if len(questionRows) > 0 {
 		placeholders := make([]string, len(questionRows))
-		args := make([]interface{}, 0, len(questionRows)*9+1)
+		args := make([]interface{}, 0, len(questionRows)*8+1)
 		args = append(args, practiceTest.ID)
 		for i, qr := range questionRows {
 			base := i*8 + 2
 			placeholders[i] = fmt.Sprintf("($1, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base, base+1, base+2, base+3, base+4, base+5, base+6, base+7)
 			args = append(args, qr.TermID, qr.Term, qr.Def, qr.Type, qr.AnswerWith, qr.Correct, qr.Position, qr.Data)
 		}
-		sql := fmt.Sprintf("INSERT INTO practice_test_questions (practice_test_id, term_id, term_snapshot, def_snapshot, type, answer_with, correct, position, data) VALUES %s", strings.Join(placeholders, ","))
-		if _, err := tx.Exec(ctx, sql, args...); err != nil {
+		sql := fmt.Sprintf("INSERT INTO practice_test_questions (practice_test_id, term_id, term_snapshot, def_snapshot, type, answer_with, correct, position, data) VALUES %s RETURNING id, term_id, type, answer_with, correct", strings.Join(placeholders, ","))
+
+		var insertedQuestions []struct {
+			ID         string           `db:"id"`
+			TermID     *string          `db:"term_id"`
+			Type       string           `db:"type"`
+			AnswerWith model.AnswerWith `db:"answer_with"`
+			Correct    bool             `db:"correct"`
+		}
+
+		err = pgxscan.Select(ctx, tx, &insertedQuestions, sql, args...)
+		if err != nil {
 			return nil, fmt.Errorf("failed to insert practice test questions: %w", err)
+		}
+
+		reviewEventPlaceholders := make([]string, len(insertedQuestions))
+		reviewEventArgs := make([]interface{}, 0, len(insertedQuestions)*9+1)
+		reviewEventArgs = append(reviewEventArgs, authedUser.ID)
+
+		for i, iq := range insertedQuestions {
+			base := i*9 + 2
+			reviewEventPlaceholders[i] = fmt.Sprintf("($1, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)",
+				base, base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8)
+
+			var answeredTermID *string
+			var answeredString *string
+			qInput := input.Questions[i]
+
+			if qInput.Mcq != nil {
+				mcq := qInput.Mcq
+				choicesCount := len(mcq.Distractors) + 1
+				choices := make([]*model.TermATPInput, choicesCount)
+				correctIdx := mcq.CorrectChoiceIndex
+				for j := 0; j < choicesCount; j++ {
+					if int32(j) == correctIdx {
+						choices[j] = mcq.Term
+					} else if int32(j) < correctIdx {
+						choices[j] = mcq.Distractors[j]
+					} else {
+						choices[j] = mcq.Distractors[j-1]
+					}
+				}
+				if mcq.AnsweredIndex >= 0 && mcq.AnsweredIndex < int32(len(choices)) {
+					answeredTermID = &choices[mcq.AnsweredIndex].ID
+				}
+			} else if qInput.Tfq != nil {
+				tfq := qInput.Tfq
+				if tfq.Correct {
+					answeredTermID = &tfq.Term.ID
+				} else {
+					if tfq.AnsweredBool {
+						if tfq.Distractor != nil {
+							answeredTermID = &tfq.Distractor.ID
+						}
+					}
+				}
+			} else if qInput.Frq != nil {
+				answeredString = &qInput.Frq.AnsweredString
+			}
+
+			reviewEventArgs = append(reviewEventArgs,
+				iq.TermID,
+				iq.ID,
+				iq.Correct,
+				iq.AnswerWith,
+				answeredTermID,
+				iq.Type,
+				model.ReviewActivityTypePracticeTest,
+				answeredString,
+			)
+		}
+
+		reSql := fmt.Sprintf(`INSERT INTO review_events (
+			user_id, term_id, practice_test_question_id, correct, answer_with,
+			answered_term_id, practice_test_question_type, review_activity_type,
+			answered_string
+		) VALUES %s`, strings.Join(reviewEventPlaceholders, ","))
+
+		if _, err := tx.Exec(ctx, reSql, reviewEventArgs...); err != nil {
+			return nil, fmt.Errorf("failed to insert review events: %w", err)
 		}
 	}
 
@@ -943,6 +942,15 @@ func (r *mutationResolver) UpdatePracticeTestQuestion(ctx context.Context, id st
 	`, id, newCorrect, newDataBytes)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update question: %w", err)
+	}
+
+	_, err = tx.Exec(ctx, `
+		UPDATE review_events
+		SET correct = $1
+		WHERE practice_test_question_id = $2
+	`, newCorrect, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update review events: %w", err)
 	}
 
 	if oldCorrect != newCorrect {
