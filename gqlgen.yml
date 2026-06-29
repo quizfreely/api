@@ -179,17 +179,7 @@ models:
         resolver: true
       progressHistory:
         resolver: true
-      topConfusionPairs:
-        resolver: true
-      topReverseConfusionPairs:
-        resolver: true
       practiceTests:
-        resolver: true
-  TermConfusionPair:
-    fields:
-      term:
-        resolver: true
-      confusedTerm:
         resolver: true
   Folder:
     fields:

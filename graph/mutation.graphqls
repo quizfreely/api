@@ -7,7 +7,6 @@ type Mutation {
     deleteStudyset(id: ID!): ID
     updateUser(displayName: String): AuthedUser
     updateTermProgress(termProgress: [TermProgressInput!]!): [TermProgress!]
-    recordConfusedTerms(confusedTerms: [TermConfusionPairInput]): Boolean
     recordPracticeTest(input: PracticeTestInput!): PracticeTest
     updatePracticeTestQuestion(id: ID!, correct: Boolean!, userMarkedCorrect: Boolean): Question
     createFolder(name: String!): Folder

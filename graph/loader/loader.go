@@ -309,143 +309,6 @@ ORDER BY input.og_order`,
 }
 
 
-func (dr *dataReader) getTermsTopConfusionPairs(ctx context.Context, termIDs []string) ([][]*model.TermConfusionPair, []error) {
-	authedUser := auth.AuthedUserContext(ctx)
-	if authedUser == nil || authedUser.ID == nil {
-		return nil, nil
-	}
-
-	type dbTermConfusionPair struct {
-		ID             *string `db:"id"`
-		TermID         *string `db:"term_id"`
-		ConfusedTermID *string `db:"confused_term_id"`
-		AnsweredWith   *string `db:"answered_with"`
-		ConfusedCount  *int32  `db:"confused_count"`
-		LastConfusedAt *string `db:"last_confused_at"`
-	}
-
-	var dbPairs []*dbTermConfusionPair
-	err := pgxscan.Select(
-		ctx,
-		dr.db,
-		&dbPairs,
-		`SELECT id,
-    term_id,
-    confused_term_id,
-    answered_with,
-    confused_count,
-    to_char(last_confused_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as last_confused_at
-FROM (
-    SELECT tcp.*,
-        ROW_NUMBER() OVER (
-            PARTITION BY tcp.term_id
-            ORDER BY tcp.confused_count DESC
-        ) AS rn
-    FROM unnest($1::uuid[]) WITH ORDINALITY AS input(term_id, og_order)
-    LEFT JOIN term_confusion_pairs tcp
-        ON tcp.term_id = input.term_id
-       AND tcp.user_id = $2
-) ranked
-WHERE rn <= 3
-ORDER BY term_id, confused_count DESC`,
-		termIDs,
-		authedUser.ID,
-	)
-	if err != nil {
-		return nil, []error{err}
-	}
-
-	grouped := make(map[string][]*model.TermConfusionPair)
-	for _, dbTcp := range dbPairs {
-		if dbTcp.ID != nil && dbTcp.TermID != nil {
-			answeredWith := model.AnswerWith(*dbTcp.AnsweredWith)
-			grouped[*dbTcp.TermID] = append(grouped[*dbTcp.TermID], &model.TermConfusionPair{
-				ID:             dbTcp.ID,
-				TermID:         dbTcp.TermID,
-				ConfusedTermID: dbTcp.ConfusedTermID,
-				AnsweredWith:   &answeredWith,
-				ConfusedCount:  dbTcp.ConfusedCount,
-				LastConfusedAt: dbTcp.LastConfusedAt,
-			})
-		}
-	}
-
-	orderedConfusionPairs := make([][]*model.TermConfusionPair, len(termIDs))
-	for i, id := range termIDs {
-		orderedConfusionPairs[i] = grouped[id]
-	}
-
-	return orderedConfusionPairs, nil
-}
-
-func (dr *dataReader) getTermsTopReverseConfusionPairs(ctx context.Context, termIDs []string) ([][]*model.TermConfusionPair, []error) {
-	authedUser := auth.AuthedUserContext(ctx)
-	if authedUser == nil || authedUser.ID == nil {
-		return nil, nil
-	}
-
-	type dbTermConfusionPair struct {
-		ID             *string `db:"id"`
-		TermID         *string `db:"term_id"`
-		ConfusedTermID *string `db:"confused_term_id"`
-		AnsweredWith   *string `db:"answered_with"`
-		ConfusedCount  *int32  `db:"confused_count"`
-		LastConfusedAt *string `db:"last_confused_at"`
-	}
-
-	var dbPairs []*dbTermConfusionPair
-	err := pgxscan.Select(
-		ctx,
-		dr.db,
-		&dbPairs,
-		`SELECT id,
-    term_id,
-    confused_term_id,
-    answered_with,
-    confused_count,
-    to_char(last_confused_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as last_confused_at
-FROM (
-    SELECT tcp.*,
-        ROW_NUMBER() OVER (
-            PARTITION BY tcp.confused_term_id
-            ORDER BY tcp.confused_count DESC
-        ) AS rn
-    FROM unnest($1::uuid[]) WITH ORDINALITY AS input(term_id, og_order)
-    LEFT JOIN term_confusion_pairs tcp
-        ON tcp.confused_term_id = input.term_id
-       AND tcp.user_id = $2
-) ranked
-WHERE rn <= 3
-ORDER BY confused_term_id, confused_count DESC`,
-		termIDs,
-		authedUser.ID,
-	)
-	if err != nil {
-		return nil, []error{err}
-	}
-
-	grouped := make(map[string][]*model.TermConfusionPair)
-	for _, dbTcp := range dbPairs {
-		if dbTcp.ID != nil && dbTcp.ConfusedTermID != nil {
-			answeredWith := model.AnswerWith(*dbTcp.AnsweredWith)
-			grouped[*dbTcp.ConfusedTermID] = append(grouped[*dbTcp.ConfusedTermID], &model.TermConfusionPair{
-				ID:             dbTcp.ID,
-				TermID:         dbTcp.TermID,
-				ConfusedTermID: dbTcp.ConfusedTermID,
-				AnsweredWith:   &answeredWith,
-				ConfusedCount:  dbTcp.ConfusedCount,
-				LastConfusedAt: dbTcp.LastConfusedAt,
-			})
-		}
-	}
-
-	orderedConfusionPairs := make([][]*model.TermConfusionPair, len(termIDs))
-	for i, id := range termIDs {
-		orderedConfusionPairs[i] = grouped[id]
-	}
-
-	return orderedConfusionPairs, nil
-}
 
 func (dr *dataReader) getPracticeTestsByStudysetIDs(ctx context.Context, studysetIDs []string) ([][]*model.PracticeTest, []error) {
 	authedUser := auth.AuthedUserContext(ctx)
@@ -715,17 +578,15 @@ ORDER BY input.og_order ASC, rl.review DESC`,
 
 // Loaders wrap your data loaders to inject via middleware
 type Loaders struct {
-	UserLoader                         *dataloadgen.Loader[string, *model.User]
-	TermByIDLoader                     *dataloadgen.Loader[string, *model.Term]
-	TermByStudysetIDLoader             *dataloadgen.Loader[string, []*model.Term]
-	TermsCountByStudysetIDLoader       *dataloadgen.Loader[string, *int32]
-	TermProgressLoader                 *dataloadgen.Loader[string, *model.TermProgress]
-	TermTopConfusionPairsLoader        *dataloadgen.Loader[string, []*model.TermConfusionPair]
-	TermTopReverseConfusionPairsLoader *dataloadgen.Loader[string, []*model.TermConfusionPair]
-	PracticeTestByStudysetIDLoader     *dataloadgen.Loader[string, []*model.PracticeTest]
-	FSRSCardByTermIDLoader             *dataloadgen.Loader[string, *model.FSRSCard]
-	FSRSReviewLogsByTermIDLoader       *dataloadgen.Loader[string, []*model.FSRSReviewLog]
-	PracticeTestByTermIDLoader         *dataloadgen.Loader[string, []*model.PracticeTest]
+	UserLoader                     *dataloadgen.Loader[string, *model.User]
+	TermByIDLoader                 *dataloadgen.Loader[string, *model.Term]
+	TermByStudysetIDLoader         *dataloadgen.Loader[string, []*model.Term]
+	TermsCountByStudysetIDLoader   *dataloadgen.Loader[string, *int32]
+	TermProgressLoader             *dataloadgen.Loader[string, *model.TermProgress]
+	PracticeTestByStudysetIDLoader *dataloadgen.Loader[string, []*model.PracticeTest]
+	FSRSCardByTermIDLoader         *dataloadgen.Loader[string, *model.FSRSCard]
+	FSRSReviewLogsByTermIDLoader   *dataloadgen.Loader[string, []*model.FSRSReviewLog]
+	PracticeTestByTermIDLoader     *dataloadgen.Loader[string, []*model.PracticeTest]
 }
 
 // NewLoaders instantiates data loaders for the middleware
@@ -736,17 +597,15 @@ func NewLoaders(db *pgxpool.Pool, usercontentBaseURL *string) *Loaders {
 		usercontentBaseURL: usercontentBaseURL,
 	}
 	return &Loaders{
-		UserLoader:                         dataloadgen.NewLoader(dr.getUsers, dataloadgen.WithWait(time.Millisecond)),
-		TermByIDLoader:                     dataloadgen.NewLoader(dr.getTermsByIDs, dataloadgen.WithWait(time.Millisecond)),
-		TermByStudysetIDLoader:             dataloadgen.NewLoader(dr.getTermsByStudysetIDs, dataloadgen.WithWait(time.Millisecond)),
-		TermsCountByStudysetIDLoader:       dataloadgen.NewLoader(dr.getTermsCountByStudysetIDs, dataloadgen.WithWait(time.Millisecond)),
-		TermProgressLoader:                 dataloadgen.NewLoader(dr.getTermsProgress, dataloadgen.WithWait(time.Millisecond)),
-		TermTopConfusionPairsLoader:        dataloadgen.NewLoader(dr.getTermsTopConfusionPairs, dataloadgen.WithWait(time.Millisecond)),
-		TermTopReverseConfusionPairsLoader: dataloadgen.NewLoader(dr.getTermsTopReverseConfusionPairs, dataloadgen.WithWait(time.Millisecond)),
-		PracticeTestByStudysetIDLoader:     dataloadgen.NewLoader(dr.getPracticeTestsByStudysetIDs, dataloadgen.WithWait(time.Millisecond)),
-		FSRSCardByTermIDLoader:             dataloadgen.NewLoader(dr.getFSRSCardsByTermIDs, dataloadgen.WithWait(time.Millisecond)),
-		FSRSReviewLogsByTermIDLoader:       dataloadgen.NewLoader(dr.getFSRSReviewLogsByTermIDs, dataloadgen.WithWait(time.Millisecond)),
-		PracticeTestByTermIDLoader:         dataloadgen.NewLoader(dr.getPracticeTestsByTermIDs, dataloadgen.WithWait(time.Millisecond)),
+		UserLoader:                     dataloadgen.NewLoader(dr.getUsers, dataloadgen.WithWait(time.Millisecond)),
+		TermByIDLoader:                 dataloadgen.NewLoader(dr.getTermsByIDs, dataloadgen.WithWait(time.Millisecond)),
+		TermByStudysetIDLoader:         dataloadgen.NewLoader(dr.getTermsByStudysetIDs, dataloadgen.WithWait(time.Millisecond)),
+		TermsCountByStudysetIDLoader:   dataloadgen.NewLoader(dr.getTermsCountByStudysetIDs, dataloadgen.WithWait(time.Millisecond)),
+		TermProgressLoader:             dataloadgen.NewLoader(dr.getTermsProgress, dataloadgen.WithWait(time.Millisecond)),
+		PracticeTestByStudysetIDLoader: dataloadgen.NewLoader(dr.getPracticeTestsByStudysetIDs, dataloadgen.WithWait(time.Millisecond)),
+		FSRSCardByTermIDLoader:         dataloadgen.NewLoader(dr.getFSRSCardsByTermIDs, dataloadgen.WithWait(time.Millisecond)),
+		FSRSReviewLogsByTermIDLoader:   dataloadgen.NewLoader(dr.getFSRSReviewLogsByTermIDs, dataloadgen.WithWait(time.Millisecond)),
+		PracticeTestByTermIDLoader:     dataloadgen.NewLoader(dr.getPracticeTestsByTermIDs, dataloadgen.WithWait(time.Millisecond)),
 	}
 }
 
@@ -824,29 +683,6 @@ func GetTermsProgress(ctx context.Context, termIDs []string) ([]*model.TermProgr
 }
 
 
-// GetTermTopReverseConfusionPairs returns a single term's confusion pairs
-func GetTermTopReverseConfusionPairs(ctx context.Context, termID string) ([]*model.TermConfusionPair, error) {
-	loaders := For(ctx)
-	return loaders.TermTopReverseConfusionPairsLoader.Load(ctx, termID)
-}
-
-// GetTermsTopReverseConfusionPairs returns many terms' confusion pairs
-func GetTermsTopReverseConfusionPairs(ctx context.Context, termIDs []string) ([][]*model.TermConfusionPair, error) {
-	loaders := For(ctx)
-	return loaders.TermTopReverseConfusionPairsLoader.LoadAll(ctx, termIDs)
-}
-
-// GetTermTopConfusionPairs returns a single term's confusion pairs
-func GetTermTopConfusionPairs(ctx context.Context, termID string) ([]*model.TermConfusionPair, error) {
-	loaders := For(ctx)
-	return loaders.TermTopConfusionPairsLoader.Load(ctx, termID)
-}
-
-// GetTermsTopConfusionPairs returns many terms' confusion pairs
-func GetTermsTopConfusionPairs(ctx context.Context, termIDs []string) ([][]*model.TermConfusionPair, error) {
-	loaders := For(ctx)
-	return loaders.TermTopConfusionPairsLoader.LoadAll(ctx, termIDs)
-}
 
 func GetPracticeTestsByStudysetID(ctx context.Context, studysetID string) ([]*model.PracticeTest, error) {
 	loaders := For(ctx)
