@@ -17,6 +17,16 @@ import (
 	"github.com/georgysavva/scany/v2/pgxscan"
 )
 
+// TermIds is the resolver for the termIds field.
+func (r *matchActivityResolver) TermIds(ctx context.Context, obj *model.MatchActivity) ([]string, error) {
+	panic(fmt.Errorf("not implemented: TermIds - termIds"))
+}
+
+// IncorrectPairIds is the resolver for the incorrectPairIds field.
+func (r *matchActivityResolver) IncorrectPairIds(ctx context.Context, obj *model.MatchActivity) ([][]string, error) {
+	panic(fmt.Errorf("not implemented: IncorrectPairIds - incorrectPairIds"))
+}
+
 // StudysetIds is the resolver for the studysetIds field.
 func (r *practiceTestResolver) StudysetIds(ctx context.Context, obj *model.PracticeTest) ([]string, error) {
 	if obj == nil || obj.ID == nil {
@@ -40,8 +50,8 @@ func (r *practiceTestResolver) Questions(ctx context.Context, obj *model.Practic
 	}
 
 	if obj.Questions != nil {
-        return obj.Questions, nil
-    }
+		return obj.Questions, nil
+	}
 
 	var rows []*model.QuestionRow
 	sql := `SELECT id, practice_test_id, term_id, term_snapshot, def_snapshot, type, answer_with, correct, position, data
@@ -1309,11 +1319,20 @@ func (r *queryResolver) MySavedStudysetCount(ctx context.Context) (int32, error)
 	return count, nil
 }
 
+// MatchActivity is the resolver for the matchActivity field.
+func (r *queryResolver) MatchActivity(ctx context.Context, id string) (*model.MatchActivity, error) {
+	panic(fmt.Errorf("not implemented: MatchActivity - matchActivity"))
+}
+
+// MatchActivity returns graph.MatchActivityResolver implementation.
+func (r *Resolver) MatchActivity() graph.MatchActivityResolver { return &matchActivityResolver{r} }
+
 // PracticeTest returns graph.PracticeTestResolver implementation.
 func (r *Resolver) PracticeTest() graph.PracticeTestResolver { return &practiceTestResolver{r} }
 
 // Query returns graph.QueryResolver implementation.
 func (r *Resolver) Query() graph.QueryResolver { return &queryResolver{r} }
 
+type matchActivityResolver struct{ *Resolver }
 type practiceTestResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }

@@ -1323,7 +1323,76 @@ func (r *mutationResolver) RecordFsrsReviewLog(ctx context.Context, termID strin
 
 // RecordMatchActivity is the resolver for the recordMatchActivity field.
 func (r *mutationResolver) RecordMatchActivity(ctx context.Context, input model.MatchActivityInput) (*model.MatchActivity, error) {
-	panic(fmt.Errorf("not implemented: RecordMatchSession - recordMatchSession"))
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil || authedUser.ID == nil {
+		return nil, fmt.Errorf("not authenticated")
+	}
+
+	tx, err := r.DB.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	var matchActivityID string
+	err = tx.QueryRow(ctx, `
+		INSERT INTO public.match_activities (user_id, duration_ms)
+		VALUES ($1, $2)
+		RETURNING id
+	`, authedUser.ID, input.DurationMs).Scan(&matchActivityID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to insert match activity: %w", err)
+	}
+
+	var errs []string
+	idx := 0
+	var placeholders []string
+	args := []interface{}{authedUser.ID, matchActivityID, model.ReviewActivityTypeMatch}
+
+	for _, termID := range input.TermIds {
+		base := idx*2 + 4
+		placeholders = append(placeholders, fmt.Sprintf("($1, $%d, true, NULL, $%d, $3, $2)", base, base+1))
+		args = append(args, termID, termID)
+		idx++
+	}
+
+	for _, pair := range input.IncorrectPairIds {
+		if len(pair) < 2 {
+			errs = append(errs, "invalid incorrect pair: expected at least 2 elements")
+			continue
+		}
+		base := idx*2 + 4
+		placeholders = append(placeholders, fmt.Sprintf("($1, $%d, false, NULL, $%d, $3, $2)", base, base+1))
+		args = append(args, pair[0], pair[1])
+		idx++
+	}
+
+	if len(placeholders) > 0 {
+		sql := fmt.Sprintf(`INSERT INTO review_events (
+			user_id, term_id, correct, answer_with, answered_term_id, review_activity_type, match_activity_id
+		) VALUES %s`, strings.Join(placeholders, ","))
+
+		if _, err := tx.Exec(ctx, sql, args...); err != nil {
+			return nil, fmt.Errorf("failed to insert review events: %w", err)
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	result := &model.MatchActivity{
+		DurationMs:       input.DurationMs,
+		EndTimestamp:     time.Now().UTC().Format(time.RFC3339Nano),
+		TermIds:          input.TermIds,
+		IncorrectPairIds: input.IncorrectPairIds,
+	}
+
+	if len(errs) > 0 {
+		return result, fmt.Errorf(strings.Join(errs, "; "))
+	}
+
+	return result, nil
 }
 
 // Mutation returns graph.MutationResolver implementation.
