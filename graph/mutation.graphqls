@@ -57,14 +57,8 @@ input FRQInput {
     userMarkedCorrect: Boolean
     answeredString: String!
 }
-type MatchActivity {
-    durationMs: Int!
-    endTimestamp: String!
-    termsIds: [ID!]!
-    incorrectPairIds: [[ID!]!]!
-}
 input MatchActivityInput {
     durationMs: Int!
-    termsIds: [ID!]!
+    termIds: [ID!]!
     incorrectPairIds: [[ID!]!]!
 }

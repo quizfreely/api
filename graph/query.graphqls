@@ -22,6 +22,7 @@ type Query {
     searchStudysetCount(q: String!): Int!
     myStudysetCount(hideFoldered: Boolean, includeDrafts: Boolean = false): Int!
     mySavedStudysetCount: Int!
+    matchActivity(id: ID!): MatchActivity
 }
 type PageInfo {
     hasNextPage: Boolean!
@@ -73,4 +74,10 @@ type FRQ {
     correct: Boolean!
     userMarkedCorrect: Boolean
     answeredString: String!
+}
+type MatchActivity {
+    durationMs: Int!
+    endTimestamp: String!
+    termIds: [ID!]!
+    incorrectPairIds: [[ID!]!]!
 }
