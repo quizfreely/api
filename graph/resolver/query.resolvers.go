@@ -73,7 +73,18 @@ func (r *matchActivityResolver) IncorrectPairIds(ctx context.Context, obj *model
 
 // StudysetIds is the resolver for the studysetIds field.
 func (r *matchActivityResolver) StudysetIds(ctx context.Context, obj *model.MatchActivity) ([]string, error) {
-	panic(fmt.Errorf("not implemented: StudysetIds - studysetIds"))
+	if obj == nil || obj.ID == nil {
+		return nil, nil
+	}
+
+	var ids []string
+	sql := `SELECT studyset_id FROM match_activity_studysets WHERE match_id = $1`
+	err := pgxscan.Select(ctx, r.DB, &ids, sql, *obj.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch studyset ids for match activity: %w", err)
+	}
+
+	return ids, nil
 }
 
 // StudysetIds is the resolver for the studysetIds field.
