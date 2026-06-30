@@ -101,13 +101,6 @@ type MCQInput struct {
 	Distractors        []*TermATPInput `json:"distractors"`
 }
 
-type MatchActivity struct {
-	DurationMs       int32      `json:"durationMs"`
-	EndTimestamp     string     `json:"endTimestamp"`
-	TermIds          []string   `json:"termIds"`
-	IncorrectPairIds [][]string `json:"incorrectPairIds"`
-}
-
 type MatchActivityInput struct {
 	DurationMs       int32      `json:"durationMs"`
 	TermIds          []string   `json:"termIds"`

@@ -19,12 +19,56 @@ import (
 
 // TermIds is the resolver for the termIds field.
 func (r *matchActivityResolver) TermIds(ctx context.Context, obj *model.MatchActivity) ([]string, error) {
-	panic(fmt.Errorf("not implemented: TermIds - termIds"))
+	if obj == nil || obj.ID == nil {
+		return nil, fmt.Errorf("match activity not found")
+	}
+
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil || authedUser.ID == nil {
+		return nil, fmt.Errorf("not authenticated")
+	}
+
+	var ids []string
+	err := pgxscan.Select(ctx, r.DB, &ids, `
+		SELECT term_id FROM review_events
+		WHERE match_activity_id = $1 AND user_id = $2 AND correct = true
+	`, *obj.ID, authedUser.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch correct term ids: %w", err)
+	}
+
+	return ids, nil
 }
 
 // IncorrectPairIds is the resolver for the incorrectPairIds field.
 func (r *matchActivityResolver) IncorrectPairIds(ctx context.Context, obj *model.MatchActivity) ([][]string, error) {
-	panic(fmt.Errorf("not implemented: IncorrectPairIds - incorrectPairIds"))
+	if obj == nil || obj.ID == nil {
+		return nil, fmt.Errorf("match activity not found")
+	}
+
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil || authedUser.ID == nil {
+		return nil, fmt.Errorf("not authenticated")
+	}
+
+	var rows []struct {
+		TermID         string `db:"term_id"`
+		AnsweredTermID string `db:"answered_term_id"`
+	}
+	err := pgxscan.Select(ctx, r.DB, &rows, `
+		SELECT term_id, answered_term_id FROM review_events
+		WHERE match_activity_id = $1 AND user_id = $2 AND correct = false
+	`, *obj.ID, authedUser.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch incorrect pairs: %w", err)
+	}
+
+	pairs := make([][]string, len(rows))
+	for i, row := range rows {
+		pairs[i] = []string{row.TermID, row.AnsweredTermID}
+	}
+
+	return pairs, nil
 }
 
 // StudysetIds is the resolver for the studysetIds field.
@@ -1321,7 +1365,16 @@ func (r *queryResolver) MySavedStudysetCount(ctx context.Context) (int32, error)
 
 // MatchActivity is the resolver for the matchActivity field.
 func (r *queryResolver) MatchActivity(ctx context.Context, id string) (*model.MatchActivity, error) {
-	panic(fmt.Errorf("not implemented: MatchActivity - matchActivity"))
+	var ma model.MatchActivity
+	err := pgxscan.Get(ctx, r.DB, &ma, `
+		SELECT id, duration_ms, to_char(end_timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as end_timestamp
+		FROM public.match_activities WHERE id = $1
+	`, id)
+	if err != nil {
+		return nil, fmt.Errorf("match activity not found")
+	}
+
+	return &ma, nil
 }
 
 // MatchActivity returns graph.MatchActivityResolver implementation.
