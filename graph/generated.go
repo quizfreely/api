@@ -127,6 +127,7 @@ type ComplexityRoot struct {
 		DurationMs       func(childComplexity int) int
 		EndTimestamp     func(childComplexity int) int
 		IncorrectPairIds func(childComplexity int) int
+		StudysetIds      func(childComplexity int) int
 		TermIds          func(childComplexity int) int
 	}
 
@@ -209,6 +210,7 @@ type ComplexityRoot struct {
 		Draft               func(childComplexity int) int
 		Folder              func(childComplexity int) int
 		ID                  func(childComplexity int) int
+		MatchActivities     func(childComplexity int) int
 		PracticeTests       func(childComplexity int) int
 		Private             func(childComplexity int) int
 		SEOIndexingApproved func(childComplexity int) int
@@ -299,6 +301,7 @@ type FolderResolver interface {
 type MatchActivityResolver interface {
 	TermIds(ctx context.Context, obj *model.MatchActivity) ([]string, error)
 	IncorrectPairIds(ctx context.Context, obj *model.MatchActivity) ([][]string, error)
+	StudysetIds(ctx context.Context, obj *model.MatchActivity) ([]string, error)
 }
 type MutationResolver interface {
 	CreateStudyset(ctx context.Context, studyset model.StudysetInput, draft bool, folderID *string) (*model.Studyset, error)
@@ -361,6 +364,7 @@ type StudysetResolver interface {
 	Terms(ctx context.Context, obj *model.Studyset) ([]*model.Term, error)
 	TermsCount(ctx context.Context, obj *model.Studyset) (*int32, error)
 	PracticeTests(ctx context.Context, obj *model.Studyset) ([]*model.PracticeTest, error)
+	MatchActivities(ctx context.Context, obj *model.Studyset) ([]*model.MatchActivity, error)
 	Saved(ctx context.Context, obj *model.Studyset) (*bool, error)
 	Folder(ctx context.Context, obj *model.Studyset) (*model.Folder, error)
 }
@@ -743,6 +747,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.MatchActivity.IncorrectPairIds(childComplexity), true
+
+	case "MatchActivity.studysetIds":
+		if e.complexity.MatchActivity.StudysetIds == nil {
+			break
+		}
+
+		return e.complexity.MatchActivity.StudysetIds(childComplexity), true
 
 	case "MatchActivity.termIds":
 		if e.complexity.MatchActivity.TermIds == nil {
@@ -1396,6 +1407,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Studyset.ID(childComplexity), true
+
+	case "Studyset.matchActivities":
+		if e.complexity.Studyset.MatchActivities == nil {
+			break
+		}
+
+		return e.complexity.Studyset.MatchActivities(childComplexity), true
 
 	case "Studyset.practiceTests":
 		if e.complexity.Studyset.PracticeTests == nil {
@@ -5020,6 +5038,50 @@ func (ec *executionContext) fieldContext_MatchActivity_incorrectPairIds(_ contex
 	return fc, nil
 }
 
+func (ec *executionContext) _MatchActivity_studysetIds(ctx context.Context, field graphql.CollectedField, obj *model.MatchActivity) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MatchActivity_studysetIds(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.MatchActivity().StudysetIds(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNID2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MatchActivity_studysetIds(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MatchActivity",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_createStudyset(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_createStudyset(ctx, field)
 	if err != nil {
@@ -5078,6 +5140,8 @@ func (ec *executionContext) fieldContext_Mutation_createStudyset(ctx context.Con
 				return ec.fieldContext_Studyset_termsCount(ctx, field)
 			case "practiceTests":
 				return ec.fieldContext_Studyset_practiceTests(ctx, field)
+			case "matchActivities":
+				return ec.fieldContext_Studyset_matchActivities(ctx, field)
 			case "saved":
 				return ec.fieldContext_Studyset_saved(ctx, field)
 			case "folder":
@@ -5160,6 +5224,8 @@ func (ec *executionContext) fieldContext_Mutation_updateStudyset(ctx context.Con
 				return ec.fieldContext_Studyset_termsCount(ctx, field)
 			case "practiceTests":
 				return ec.fieldContext_Studyset_practiceTests(ctx, field)
+			case "matchActivities":
+				return ec.fieldContext_Studyset_matchActivities(ctx, field)
 			case "saved":
 				return ec.fieldContext_Studyset_saved(ctx, field)
 			case "folder":
@@ -6315,6 +6381,8 @@ func (ec *executionContext) fieldContext_Mutation_recordMatchActivity(ctx contex
 				return ec.fieldContext_MatchActivity_termIds(ctx, field)
 			case "incorrectPairIds":
 				return ec.fieldContext_MatchActivity_incorrectPairIds(ctx, field)
+			case "studysetIds":
+				return ec.fieldContext_MatchActivity_studysetIds(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MatchActivity", field.Name)
 		},
@@ -6928,6 +6996,8 @@ func (ec *executionContext) fieldContext_Query_studyset(ctx context.Context, fie
 				return ec.fieldContext_Studyset_termsCount(ctx, field)
 			case "practiceTests":
 				return ec.fieldContext_Studyset_practiceTests(ctx, field)
+			case "matchActivities":
+				return ec.fieldContext_Studyset_matchActivities(ctx, field)
 			case "saved":
 				return ec.fieldContext_Studyset_saved(ctx, field)
 			case "folder":
@@ -8206,6 +8276,8 @@ func (ec *executionContext) fieldContext_Query_matchActivity(ctx context.Context
 				return ec.fieldContext_MatchActivity_termIds(ctx, field)
 			case "incorrectPairIds":
 				return ec.fieldContext_MatchActivity_incorrectPairIds(ctx, field)
+			case "studysetIds":
+				return ec.fieldContext_MatchActivity_studysetIds(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MatchActivity", field.Name)
 		},
@@ -9087,6 +9159,59 @@ func (ec *executionContext) fieldContext_Studyset_practiceTests(_ context.Contex
 	return fc, nil
 }
 
+func (ec *executionContext) _Studyset_matchActivities(ctx context.Context, field graphql.CollectedField, obj *model.Studyset) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Studyset_matchActivities(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Studyset().MatchActivities(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.MatchActivity)
+	fc.Result = res
+	return ec.marshalOMatchActivity2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐMatchActivityᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Studyset_matchActivities(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Studyset",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "durationMs":
+				return ec.fieldContext_MatchActivity_durationMs(ctx, field)
+			case "endTimestamp":
+				return ec.fieldContext_MatchActivity_endTimestamp(ctx, field)
+			case "termIds":
+				return ec.fieldContext_MatchActivity_termIds(ctx, field)
+			case "incorrectPairIds":
+				return ec.fieldContext_MatchActivity_incorrectPairIds(ctx, field)
+			case "studysetIds":
+				return ec.fieldContext_MatchActivity_studysetIds(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MatchActivity", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Studyset_saved(ctx context.Context, field graphql.CollectedField, obj *model.Studyset) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Studyset_saved(ctx, field)
 	if err != nil {
@@ -9392,6 +9517,8 @@ func (ec *executionContext) fieldContext_StudysetEdge_node(_ context.Context, fi
 				return ec.fieldContext_Studyset_termsCount(ctx, field)
 			case "practiceTests":
 				return ec.fieldContext_Studyset_practiceTests(ctx, field)
+			case "matchActivities":
+				return ec.fieldContext_Studyset_matchActivities(ctx, field)
 			case "saved":
 				return ec.fieldContext_Studyset_saved(ctx, field)
 			case "folder":
@@ -14653,6 +14780,42 @@ func (ec *executionContext) _MatchActivity(ctx context.Context, sel ast.Selectio
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "studysetIds":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MatchActivity_studysetIds(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -15746,6 +15909,39 @@ func (ec *executionContext) _Studyset(ctx context.Context, sel ast.SelectionSet,
 					}
 				}()
 				res = ec._Studyset_practiceTests(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "matchActivities":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Studyset_matchActivities(ctx, field, obj)
 				return res
 			}
 
@@ -17217,6 +17413,16 @@ func (ec *executionContext) marshalNInt2ᚖint32(ctx context.Context, sel ast.Se
 	return res
 }
 
+func (ec *executionContext) marshalNMatchActivity2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐMatchActivity(ctx context.Context, sel ast.SelectionSet, v *model.MatchActivity) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._MatchActivity(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNMatchActivityInput2quizfreelyᚋapiᚋgraphᚋmodelᚐMatchActivityInput(ctx context.Context, v any) (model.MatchActivityInput, error) {
 	res, err := ec.unmarshalInputMatchActivityInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -18101,6 +18307,53 @@ func (ec *executionContext) unmarshalOMCQInput2ᚖquizfreelyᚋapiᚋgraphᚋmod
 	}
 	res, err := ec.unmarshalInputMCQInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOMatchActivity2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐMatchActivityᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.MatchActivity) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNMatchActivity2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐMatchActivity(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalOMatchActivity2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐMatchActivity(ctx context.Context, sel ast.SelectionSet, v *model.MatchActivity) graphql.Marshaler {
