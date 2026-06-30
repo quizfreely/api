@@ -40,6 +40,7 @@ type Config struct {
 
 type ResolverRoot interface {
 	Folder() FolderResolver
+	MatchActivity() MatchActivityResolver
 	Mutation() MutationResolver
 	PracticeTest() PracticeTestResolver
 	Query() QueryResolver
@@ -126,7 +127,7 @@ type ComplexityRoot struct {
 		DurationMs       func(childComplexity int) int
 		EndTimestamp     func(childComplexity int) int
 		IncorrectPairIds func(childComplexity int) int
-		TermsIds         func(childComplexity int) int
+		TermIds          func(childComplexity int) int
 	}
 
 	Mutation struct {
@@ -174,6 +175,7 @@ type ComplexityRoot struct {
 		Authed                   func(childComplexity int) int
 		AuthedUser               func(childComplexity int) int
 		Folder                   func(childComplexity int, id string) int
+		MatchActivity            func(childComplexity int, id string) int
 		MyFolders                func(childComplexity int, first *int32, after *string) int
 		MySavedStudysetCount     func(childComplexity int) int
 		MySavedStudysets         func(childComplexity int, first *int32, after *string, last *int32, before *string) int
@@ -294,6 +296,10 @@ type FolderResolver interface {
 	StudysetDrafts(ctx context.Context, obj *model.Folder, first *int32, after *string, last *int32, before *string) (*model.StudysetConnection, error)
 	StudysetCount(ctx context.Context, obj *model.Folder) (int32, error)
 }
+type MatchActivityResolver interface {
+	TermIds(ctx context.Context, obj *model.MatchActivity) ([]string, error)
+	IncorrectPairIds(ctx context.Context, obj *model.MatchActivity) ([][]string, error)
+}
 type MutationResolver interface {
 	CreateStudyset(ctx context.Context, studyset model.StudysetInput, draft bool, folderID *string) (*model.Studyset, error)
 	UpdateStudyset(ctx context.Context, id string, studyset *model.StudysetInput, draft bool) (*model.Studyset, error)
@@ -346,6 +352,7 @@ type QueryResolver interface {
 	SearchStudysetCount(ctx context.Context, q string) (int32, error)
 	MyStudysetCount(ctx context.Context, hideFoldered *bool, includeDrafts *bool) (int32, error)
 	MySavedStudysetCount(ctx context.Context) (int32, error)
+	MatchActivity(ctx context.Context, id string) (*model.MatchActivity, error)
 }
 type StudysetResolver interface {
 	Subject(ctx context.Context, obj *model.Studyset) (*model.Subject, error)
@@ -737,12 +744,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.MatchActivity.IncorrectPairIds(childComplexity), true
 
-	case "MatchActivity.termsIds":
-		if e.complexity.MatchActivity.TermsIds == nil {
+	case "MatchActivity.termIds":
+		if e.complexity.MatchActivity.TermIds == nil {
 			break
 		}
 
-		return e.complexity.MatchActivity.TermsIds(childComplexity), true
+		return e.complexity.MatchActivity.TermIds(childComplexity), true
 
 	case "Mutation.createFolder":
 		if e.complexity.Mutation.CreateFolder == nil {
@@ -1098,6 +1105,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.Folder(childComplexity, args["id"].(string)), true
+
+	case "Query.matchActivity":
+		if e.complexity.Query.MatchActivity == nil {
+			break
+		}
+
+		args, err := ec.field_Query_matchActivity_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.MatchActivity(childComplexity, args["id"].(string)), true
 
 	case "Query.myFolders":
 		if e.complexity.Query.MyFolders == nil {
@@ -2286,6 +2305,17 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 }
 
 func (ec *executionContext) field_Query_folder_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_matchActivity_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
@@ -4902,8 +4932,8 @@ func (ec *executionContext) fieldContext_MatchActivity_endTimestamp(_ context.Co
 	return fc, nil
 }
 
-func (ec *executionContext) _MatchActivity_termsIds(ctx context.Context, field graphql.CollectedField, obj *model.MatchActivity) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MatchActivity_termsIds(ctx, field)
+func (ec *executionContext) _MatchActivity_termIds(ctx context.Context, field graphql.CollectedField, obj *model.MatchActivity) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MatchActivity_termIds(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -4916,7 +4946,7 @@ func (ec *executionContext) _MatchActivity_termsIds(ctx context.Context, field g
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.TermsIds, nil
+		return ec.resolvers.MatchActivity().TermIds(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4933,12 +4963,12 @@ func (ec *executionContext) _MatchActivity_termsIds(ctx context.Context, field g
 	return ec.marshalNID2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_MatchActivity_termsIds(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_MatchActivity_termIds(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "MatchActivity",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type ID does not have child fields")
 		},
@@ -4960,7 +4990,7 @@ func (ec *executionContext) _MatchActivity_incorrectPairIds(ctx context.Context,
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.IncorrectPairIds, nil
+		return ec.resolvers.MatchActivity().IncorrectPairIds(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4981,8 +5011,8 @@ func (ec *executionContext) fieldContext_MatchActivity_incorrectPairIds(_ contex
 	fc = &graphql.FieldContext{
 		Object:     "MatchActivity",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type ID does not have child fields")
 		},
@@ -6281,8 +6311,8 @@ func (ec *executionContext) fieldContext_Mutation_recordMatchActivity(ctx contex
 				return ec.fieldContext_MatchActivity_durationMs(ctx, field)
 			case "endTimestamp":
 				return ec.fieldContext_MatchActivity_endTimestamp(ctx, field)
-			case "termsIds":
-				return ec.fieldContext_MatchActivity_termsIds(ctx, field)
+			case "termIds":
+				return ec.fieldContext_MatchActivity_termIds(ctx, field)
 			case "incorrectPairIds":
 				return ec.fieldContext_MatchActivity_incorrectPairIds(ctx, field)
 			}
@@ -8128,6 +8158,68 @@ func (ec *executionContext) fieldContext_Query_mySavedStudysetCount(_ context.Co
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_matchActivity(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_matchActivity(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().MatchActivity(rctx, fc.Args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.MatchActivity)
+	fc.Result = res
+	return ec.marshalOMatchActivity2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐMatchActivity(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_matchActivity(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "durationMs":
+				return ec.fieldContext_MatchActivity_durationMs(ctx, field)
+			case "endTimestamp":
+				return ec.fieldContext_MatchActivity_endTimestamp(ctx, field)
+			case "termIds":
+				return ec.fieldContext_MatchActivity_termIds(ctx, field)
+			case "incorrectPairIds":
+				return ec.fieldContext_MatchActivity_incorrectPairIds(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MatchActivity", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_matchActivity_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -13481,7 +13573,7 @@ func (ec *executionContext) unmarshalInputMatchActivityInput(ctx context.Context
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"durationMs", "termsIds", "incorrectPairIds"}
+	fieldsInOrder := [...]string{"durationMs", "termIds", "incorrectPairIds"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -13495,13 +13587,13 @@ func (ec *executionContext) unmarshalInputMatchActivityInput(ctx context.Context
 				return it, err
 			}
 			it.DurationMs = data
-		case "termsIds":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("termsIds"))
+		case "termIds":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("termIds"))
 			data, err := ec.unmarshalNID2ᚕstringᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.TermsIds = data
+			it.TermIds = data
 		case "incorrectPairIds":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("incorrectPairIds"))
 			data, err := ec.unmarshalNID2ᚕᚕstringᚄ(ctx, v)
@@ -14482,23 +14574,85 @@ func (ec *executionContext) _MatchActivity(ctx context.Context, sel ast.Selectio
 		case "durationMs":
 			out.Values[i] = ec._MatchActivity_durationMs(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "endTimestamp":
 			out.Values[i] = ec._MatchActivity_endTimestamp(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
-		case "termsIds":
-			out.Values[i] = ec._MatchActivity_termsIds(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
+		case "termIds":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MatchActivity_termIds(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
 			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "incorrectPairIds":
-			out.Values[i] = ec._MatchActivity_incorrectPairIds(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MatchActivity_incorrectPairIds(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
 			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -15311,6 +15465,25 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "matchActivity":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_matchActivity(ctx, field)
 				return res
 			}
 
