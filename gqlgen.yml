@@ -207,3 +207,9 @@ models:
         resolver: true
       questions:
         resolver: true
+  MatchActivity:
+    fields:
+      termIds:
+        resolver: true
+      incorrectPairIds:
+        resolver: true
