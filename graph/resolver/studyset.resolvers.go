@@ -78,7 +78,28 @@ func (r *studysetResolver) PracticeTests(ctx context.Context, obj *model.Studyse
 
 // MatchActivities is the resolver for the matchActivities field.
 func (r *studysetResolver) MatchActivities(ctx context.Context, obj *model.Studyset) ([]*model.MatchActivity, error) {
-	panic(fmt.Errorf("not implemented: MatchActivities - matchActivities"))
+	if obj == nil || obj.ID == nil {
+		return nil, fmt.Errorf("studyset not found")
+	}
+
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil || authedUser.ID == nil {
+		return nil, fmt.Errorf("not authenticated")
+	}
+
+	var activities []*model.MatchActivity
+	err := pgxscan.Select(ctx, r.DB, &activities, `
+		SELECT ma.id, ma.duration_ms, to_char(ma.end_timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as end_timestamp
+		FROM public.match_activities ma
+		JOIN public.match_activity_studysets mas ON mas.match_id = ma.id
+		WHERE mas.studyset_id = $1 AND ma.user_id = $2
+		ORDER BY ma.end_timestamp DESC
+	`, *obj.ID, authedUser.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch match activities: %w", err)
+	}
+
+	return activities, nil
 }
 
 // Saved is the resolver for the saved field.
