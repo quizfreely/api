@@ -104,13 +104,13 @@ type MCQInput struct {
 type MatchActivity struct {
 	DurationMs       int32      `json:"durationMs"`
 	EndTimestamp     string     `json:"endTimestamp"`
-	TermsIds         []string   `json:"termsIds"`
+	TermIds          []string   `json:"termIds"`
 	IncorrectPairIds [][]string `json:"incorrectPairIds"`
 }
 
 type MatchActivityInput struct {
 	DurationMs       int32      `json:"durationMs"`
-	TermsIds         []string   `json:"termsIds"`
+	TermIds          []string   `json:"termIds"`
 	IncorrectPairIds [][]string `json:"incorrectPairIds"`
 }
 
