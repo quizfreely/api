@@ -1344,6 +1344,33 @@ func (r *mutationResolver) RecordMatchActivity(ctx context.Context, input model.
 		return nil, fmt.Errorf("failed to insert match activity: %w", err)
 	}
 
+	if len(input.TermIds) > 0 {
+		var studysetIDs []string
+		err = pgxscan.Select(ctx, tx, &studysetIDs, `
+			SELECT DISTINCT studyset_id FROM terms WHERE id = ANY($1)
+		`, input.TermIds)
+		if err != nil {
+			return nil, fmt.Errorf("failed to query studysets for terms: %w", err)
+		}
+
+		if len(studysetIDs) > 0 {
+			mssPlaceholders := make([]string, len(studysetIDs))
+			mssArgs := make([]interface{}, len(studysetIDs)+1)
+			mssArgs[0] = matchActivityID
+			for i, sid := range studysetIDs {
+				mssPlaceholders[i] = fmt.Sprintf("($1, $%d)", i+2)
+				mssArgs[i+1] = sid
+			}
+			_, err = tx.Exec(ctx, fmt.Sprintf(`
+				INSERT INTO match_activity_studysets (match_id, studyset_id)
+				VALUES %s ON CONFLICT DO NOTHING
+			`, strings.Join(mssPlaceholders, ",")), mssArgs...)
+			if err != nil {
+				return nil, fmt.Errorf("failed to insert match activity studysets: %w", err)
+			}
+		}
+	}
+
 	var errs []string
 	idx := 0
 	var placeholders []string
