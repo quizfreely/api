@@ -80,4 +80,5 @@ type MatchActivity {
     endTimestamp: String!
     termIds: [ID!]!
     incorrectPairIds: [[ID!]!]!
+    studysetIds: [ID!]!
 }

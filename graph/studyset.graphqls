@@ -18,6 +18,7 @@ type Studyset {
     terms: [Term]
     termsCount: Int
     practiceTests: [PracticeTest]
+    matchActivities: [MatchActivity!]
     saved: Boolean
     folder: Folder
     seoIndexingApproved: Boolean!
