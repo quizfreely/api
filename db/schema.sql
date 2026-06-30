@@ -1,4 +1,4 @@
-\restrict Xb0RqdNedVXEcz4JbK9e4FBZqcrL7wkbUyJgjMhlI7K98WglSRrAcLfEZfx8g4n
+\restrict fP17mnavMX2hiYuBcovWqw3QSwYZvHjvSdbqFl3b7QsYfebMbjMcen9LaDvLJZo
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -241,6 +241,28 @@ CREATE TABLE public.images (
 
 
 --
+-- Name: match_activities; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.match_activities (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    duration_ms integer NOT NULL,
+    end_timestamp timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: match_activity_studysets; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.match_activity_studysets (
+    match_id uuid NOT NULL,
+    studyset_id uuid NOT NULL
+);
+
+
+--
 -- Name: practice_test_questions; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -291,12 +313,13 @@ CREATE TABLE public.review_events (
     term_id uuid NOT NULL,
     practice_test_question_id uuid,
     correct boolean NOT NULL,
-    answer_with public.answer_with_enum NOT NULL,
+    answer_with public.answer_with_enum,
     "timestamp" timestamp with time zone DEFAULT now() NOT NULL,
     answered_term_id uuid,
     practice_test_question_type public.question_type,
     review_activity_type public.review_activity_type_enum NOT NULL,
-    answered_string text
+    answered_string text,
+    match_activity_id uuid
 );
 
 
@@ -478,6 +501,22 @@ ALTER TABLE ONLY public.fsrs_review_logs
 
 ALTER TABLE ONLY public.images
     ADD CONSTRAINT images_pkey PRIMARY KEY (object_key);
+
+
+--
+-- Name: match_activities match_activities_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.match_activities
+    ADD CONSTRAINT match_activities_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: match_activity_studysets match_activity_studysets_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.match_activity_studysets
+    ADD CONSTRAINT match_activity_studysets_pkey PRIMARY KEY (match_id, studyset_id);
 
 
 --
@@ -720,6 +759,30 @@ ALTER TABLE ONLY public.fsrs_review_logs
 
 
 --
+-- Name: match_activities match_activities_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.match_activities
+    ADD CONSTRAINT match_activities_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: match_activity_studysets match_activity_studysets_match_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.match_activity_studysets
+    ADD CONSTRAINT match_activity_studysets_match_id_fkey FOREIGN KEY (match_id) REFERENCES public.match_activities(id) ON DELETE CASCADE;
+
+
+--
+-- Name: match_activity_studysets match_activity_studysets_studyset_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.match_activity_studysets
+    ADD CONSTRAINT match_activity_studysets_studyset_id_fkey FOREIGN KEY (studyset_id) REFERENCES public.studysets(id) ON DELETE CASCADE;
+
+
+--
 -- Name: practice_test_questions practice_test_questions_practice_test_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -765,6 +828,14 @@ ALTER TABLE ONLY public.practice_tests
 
 ALTER TABLE ONLY public.review_events
     ADD CONSTRAINT review_events_answered_term_id_fkey FOREIGN KEY (answered_term_id) REFERENCES public.terms(id) ON DELETE CASCADE;
+
+
+--
+-- Name: review_events review_events_match_activity_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.review_events
+    ADD CONSTRAINT review_events_match_activity_id_fkey FOREIGN KEY (match_activity_id) REFERENCES public.match_activities(id) ON DELETE CASCADE;
 
 
 --
@@ -875,7 +946,7 @@ ALTER TABLE ONLY public.terms
 -- PostgreSQL database dump complete
 --
 
-\unrestrict Xb0RqdNedVXEcz4JbK9e4FBZqcrL7wkbUyJgjMhlI7K98WglSRrAcLfEZfx8g4n
+\unrestrict fP17mnavMX2hiYuBcovWqw3QSwYZvHjvSdbqFl3b7QsYfebMbjMcen9LaDvLJZo
 
 
 --
@@ -921,4 +992,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('202606261000'),
     ('202606290020'),
     ('202606291000'),
-    ('202606291100');
+    ('202606291100'),
+    ('202606301100');
