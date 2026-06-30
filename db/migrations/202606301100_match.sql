@@ -21,8 +21,8 @@ ALTER TABLE public.review_events
 ALTER COLUMN answer_with DROP NOT NULL;
 
 -- migrate:down
-ALTER TABLE public.review_events ALTER COLUMN answer_with SET NOT NULL;
-ALTER TABLE public.review_events DROP COLUMN IF EXISTS match_activity_id;
-DROP TABLE IF EXISTS public.match_activity_studysets;
 DROP TABLE IF EXISTS public.match_activities;
+DROP TABLE IF EXISTS public.match_activity_studysets;
+ALTER TABLE public.review_events DROP COLUMN IF EXISTS match_activity_id;
+ALTER TABLE public.review_events ALTER COLUMN answer_with SET NOT NULL;
 
