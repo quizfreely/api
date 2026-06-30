@@ -76,6 +76,11 @@ func (r *studysetResolver) PracticeTests(ctx context.Context, obj *model.Studyse
 	return loader.GetPracticeTestsByStudysetID(ctx, *obj.ID)
 }
 
+// MatchActivities is the resolver for the matchActivities field.
+func (r *studysetResolver) MatchActivities(ctx context.Context, obj *model.Studyset) ([]*model.MatchActivity, error) {
+	panic(fmt.Errorf("not implemented: MatchActivities - matchActivities"))
+}
+
 // Saved is the resolver for the saved field.
 func (r *studysetResolver) Saved(ctx context.Context, obj *model.Studyset) (*bool, error) {
 	authedUser := auth.AuthedUserContext(ctx)

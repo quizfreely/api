@@ -72,6 +72,11 @@ func (r *matchActivityResolver) IncorrectPairIds(ctx context.Context, obj *model
 }
 
 // StudysetIds is the resolver for the studysetIds field.
+func (r *matchActivityResolver) StudysetIds(ctx context.Context, obj *model.MatchActivity) ([]string, error) {
+	panic(fmt.Errorf("not implemented: StudysetIds - studysetIds"))
+}
+
+// StudysetIds is the resolver for the studysetIds field.
 func (r *practiceTestResolver) StudysetIds(ctx context.Context, obj *model.PracticeTest) ([]string, error) {
 	if obj == nil || obj.ID == nil {
 		return nil, nil
