@@ -167,6 +167,8 @@ models:
         resolver: true
       practiceTests:
         resolver: true
+      matchActivities:
+        resolver: true
       saved:
         resolver: true
       folder:
@@ -212,4 +214,6 @@ models:
       termIds:
         resolver: true
       incorrectPairIds:
+        resolver: true
+      studysetIds:
         resolver: true
