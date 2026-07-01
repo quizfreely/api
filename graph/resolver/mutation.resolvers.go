@@ -1404,6 +1404,128 @@ func (r *mutationResolver) RecordMatchActivity(ctx context.Context, input model.
 		}
 	}
 
+	nowStr := time.Now().Format(time.RFC3339)
+	termProgressMap := make(map[string]*model.TermProgressInput)
+
+	for _, termID := range input.TermIds {
+		tp, exists := termProgressMap[termID]
+		if !exists {
+			tp = &model.TermProgressInput{TermID: termID}
+			termProgressMap[termID] = tp
+		}
+		inc := int32(1)
+		if tp.TermCorrectIncrease == nil {
+			tp.TermCorrectIncrease = &inc
+		} else {
+			*tp.TermCorrectIncrease += inc
+		}
+		tp.TermReviewedAt = &nowStr
+	}
+
+	for _, pair := range input.IncorrectPairIds {
+		if len(pair) < 2 {
+			continue
+		}
+		termID := pair[0]
+		tp, exists := termProgressMap[termID]
+		if !exists {
+			tp = &model.TermProgressInput{TermID: termID}
+			termProgressMap[termID] = tp
+		}
+		inc := int32(1)
+		if tp.TermIncorrectIncrease == nil {
+			tp.TermIncorrectIncrease = &inc
+		} else {
+			*tp.TermIncorrectIncrease += inc
+		}
+		tp.TermReviewedAt = &nowStr
+	}
+
+	if len(termProgressMap) > 0 {
+		termProgress := make([]*model.TermProgressInput, 0, len(termProgressMap))
+		for _, tp := range termProgressMap {
+			termProgress = append(termProgress, tp)
+		}
+
+		valueStrings := make([]string, 0, len(termProgress))
+		valueArgs := make([]interface{}, 0, len(termProgress)*8)
+
+		for i, p := range termProgress {
+			base := i*8 + 1
+			valueStrings = append(valueStrings, fmt.Sprintf(
+				"($%d::uuid,$%d::uuid,$%d::timestamptz,$%d::timestamptz,CASE WHEN $%d IS NOT NULL THEN 1 ELSE 0 END,$%d::timestamptz,$%d::timestamptz,CASE WHEN $%d IS NOT NULL THEN 1 ELSE 0 END,COALESCE($%d::int,0),COALESCE($%d::int,0),COALESCE($%d::int,0),COALESCE($%d::int,0))",
+				base, base+1, base+2, base+2, base+2, base+3, base+3, base+3, base+4, base+5, base+6, base+7,
+			))
+
+			valueArgs = append(valueArgs,
+				p.TermID,
+				authedUser.ID,
+				p.TermReviewedAt,
+				nil, // DefReviewedAt
+				p.TermCorrectIncrease,
+				p.TermIncorrectIncrease,
+				int32(0), // DefCorrectIncrease
+				int32(0), // DefIncorrectIncrease
+			)
+		}
+
+		query := fmt.Sprintf(`
+			INSERT INTO term_progress (
+				term_id, user_id,
+				term_first_reviewed_at, term_last_reviewed_at,
+				term_review_count,
+				def_first_reviewed_at, def_last_reviewed_at,
+				def_review_count,
+				term_correct_count, term_incorrect_count,
+				def_correct_count, def_incorrect_count
+			)
+			SELECT v.term_id::uuid, v.user_id::uuid,
+				v.term_first_reviewed_at::timestamptz, v.term_last_reviewed_at::timestamptz,
+				v.term_review_count::int,
+				v.def_first_reviewed_at::timestamptz, v.def_last_reviewed_at::timestamptz,
+				v.def_review_count::int,
+				v.term_correct_count::int, v.term_incorrect_count::int,
+				v.def_correct_count::int, v.def_incorrect_count::int
+			FROM (VALUES %s) AS v(
+				term_id, user_id,
+				term_first_reviewed_at, term_last_reviewed_at,
+				term_review_count,
+				def_first_reviewed_at, def_last_reviewed_at,
+				def_review_count,
+				term_correct_count, term_incorrect_count,
+				def_correct_count, def_incorrect_count
+			)
+			JOIN terms t ON t.id = v.term_id::uuid
+			JOIN studysets s ON s.id = t.studyset_id
+			WHERE s.draft = false AND (s.private = false OR s.user_id = v.user_id::uuid)
+			ON CONFLICT (term_id, user_id) DO UPDATE SET
+				term_last_reviewed_at = COALESCE(EXCLUDED.term_last_reviewed_at, term_progress.term_last_reviewed_at),
+				def_last_reviewed_at = COALESCE(EXCLUDED.def_last_reviewed_at, term_progress.def_last_reviewed_at),
+				term_review_count = term_progress.term_review_count +
+					(CASE WHEN EXCLUDED.term_last_reviewed_at IS NOT NULL THEN 1 ELSE 0 END),
+				def_review_count = term_progress.def_review_count +
+					(CASE WHEN EXCLUDED.def_last_reviewed_at IS NOT NULL THEN 1 ELSE 0 END),
+				term_correct_count = term_progress.term_correct_count + EXCLUDED.term_correct_count,
+				term_incorrect_count = term_progress.term_incorrect_count + EXCLUDED.term_incorrect_count,
+				def_correct_count = term_progress.def_correct_count + EXCLUDED.def_correct_count,
+				def_incorrect_count = term_progress.def_incorrect_count + EXCLUDED.def_incorrect_count
+			RETURNING term_progress.id,
+				to_char(term_progress.term_first_reviewed_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as term_first_reviewed_at,
+				to_char(term_progress.term_last_reviewed_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as term_last_reviewed_at,
+				term_progress.term_review_count,
+				to_char(term_progress.def_first_reviewed_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as def_first_reviewed_at,
+				to_char(term_progress.def_last_reviewed_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as def_last_reviewed_at,
+				term_progress.def_review_count,
+				term_progress.term_correct_count, term_progress.term_incorrect_count,
+				term_progress.def_correct_count, term_progress.def_incorrect_count
+		`, strings.Join(valueStrings, ","))
+
+		var results []*model.TermProgress
+		if err := pgxscan.Select(ctx, tx, &results, query, valueArgs...); err != nil {
+			return nil, fmt.Errorf("bulk upsert of term progress failed: %w", err)
+		}
+	}
+
 	if err := tx.Commit(ctx); err != nil {
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
