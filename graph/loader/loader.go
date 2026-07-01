@@ -440,6 +440,138 @@ ORDER BY input.og_order`,
 	return fsrsCards, nil
 }
 
+func (dr *dataReader) getMatchActivityTermIDs(ctx context.Context, matchActivityIDs []string) ([][]string, []error) {
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil || authedUser.ID == nil {
+		results := make([][]string, len(matchActivityIDs))
+		for i := range matchActivityIDs {
+			results[i] = []string{}
+		}
+		return results, nil
+	}
+
+	type dbRow struct {
+		MatchActivityID string `db:"match_activity_id"`
+		TermID          string `db:"term_id"`
+	}
+	var rows []dbRow
+
+	err := pgxscan.Select(
+		ctx,
+		dr.db,
+		&rows,
+		`SELECT re.match_activity_id, re.term_id
+FROM review_events re
+WHERE re.match_activity_id = ANY($1::uuid[]) AND re.correct = true AND re.user_id = $2
+ORDER BY re.match_activity_id`,
+		matchActivityIDs,
+		authedUser.ID,
+	)
+	if err != nil {
+		return nil, []error{err}
+	}
+
+	grouped := make(map[string][]string)
+	for _, row := range rows {
+		grouped[row.MatchActivityID] = append(grouped[row.MatchActivityID], row.TermID)
+	}
+
+	ordered := make([][]string, len(matchActivityIDs))
+	for i, id := range matchActivityIDs {
+		ordered[i] = grouped[id]
+		if ordered[i] == nil {
+			ordered[i] = []string{}
+		}
+	}
+
+	return ordered, nil
+}
+
+func (dr *dataReader) getMatchActivityIncorrectPairIDs(ctx context.Context, matchActivityIDs []string) ([][][]string, []error) {
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil || authedUser.ID == nil {
+		results := make([][][]string, len(matchActivityIDs))
+		for i := range matchActivityIDs {
+			results[i] = [][]string{}
+		}
+		return results, nil
+	}
+
+	type dbRow struct {
+		MatchActivityID string `db:"match_activity_id"`
+		TermID          string `db:"term_id"`
+		AnsweredTermID  string `db:"answered_term_id"`
+	}
+	var rows []dbRow
+
+	err := pgxscan.Select(
+		ctx,
+		dr.db,
+		&rows,
+		`SELECT re.match_activity_id, re.term_id, re.answered_term_id
+FROM review_events re
+WHERE re.match_activity_id = ANY($1::uuid[]) AND re.correct = false AND re.user_id = $2
+ORDER BY re.match_activity_id`,
+		matchActivityIDs,
+		authedUser.ID,
+	)
+	if err != nil {
+		return nil, []error{err}
+	}
+
+	grouped := make(map[string][][]string)
+	for _, row := range rows {
+		grouped[row.MatchActivityID] = append(grouped[row.MatchActivityID], []string{row.TermID, row.AnsweredTermID})
+	}
+
+	ordered := make([][][]string, len(matchActivityIDs))
+	for i, id := range matchActivityIDs {
+		ordered[i] = grouped[id]
+		if ordered[i] == nil {
+			ordered[i] = [][]string{}
+		}
+	}
+
+	return ordered, nil
+}
+
+func (dr *dataReader) getMatchActivityStudysetIDs(ctx context.Context, matchActivityIDs []string) ([][]string, []error) {
+	type dbRow struct {
+		MatchActivityID string `db:"match_id"`
+		StudysetID      string `db:"studyset_id"`
+	}
+	var rows []dbRow
+
+	err := pgxscan.Select(
+		ctx,
+		dr.db,
+		&rows,
+		`SELECT mas.match_id, mas.studyset_id
+FROM match_activity_studysets mas
+WHERE mas.match_id = ANY($1::uuid[])
+ORDER BY mas.match_id`,
+		matchActivityIDs,
+	)
+	if err != nil {
+		return nil, []error{err}
+	}
+
+	grouped := make(map[string][]string)
+	for _, row := range rows {
+		grouped[row.MatchActivityID] = append(grouped[row.MatchActivityID], row.StudysetID)
+	}
+
+	ordered := make([][]string, len(matchActivityIDs))
+	for i, id := range matchActivityIDs {
+		ordered[i] = grouped[id]
+		if ordered[i] == nil {
+			ordered[i] = []string{}
+		}
+	}
+
+	return ordered, nil
+}
+
 func (dr *dataReader) getPracticeTestsByTermIDs(ctx context.Context, termIDs []string) ([][]*model.PracticeTest, []error) {
 	authedUser := auth.AuthedUserContext(ctx)
 	if authedUser == nil || authedUser.ID == nil {
@@ -578,15 +710,18 @@ ORDER BY input.og_order ASC, rl.review DESC`,
 
 // Loaders wrap your data loaders to inject via middleware
 type Loaders struct {
-	UserLoader                     *dataloadgen.Loader[string, *model.User]
-	TermByIDLoader                 *dataloadgen.Loader[string, *model.Term]
-	TermByStudysetIDLoader         *dataloadgen.Loader[string, []*model.Term]
-	TermsCountByStudysetIDLoader   *dataloadgen.Loader[string, *int32]
-	TermProgressLoader             *dataloadgen.Loader[string, *model.TermProgress]
-	PracticeTestByStudysetIDLoader *dataloadgen.Loader[string, []*model.PracticeTest]
-	FSRSCardByTermIDLoader         *dataloadgen.Loader[string, *model.FSRSCard]
-	FSRSReviewLogsByTermIDLoader   *dataloadgen.Loader[string, []*model.FSRSReviewLog]
-	PracticeTestByTermIDLoader     *dataloadgen.Loader[string, []*model.PracticeTest]
+	UserLoader                        *dataloadgen.Loader[string, *model.User]
+	TermByIDLoader                    *dataloadgen.Loader[string, *model.Term]
+	TermByStudysetIDLoader            *dataloadgen.Loader[string, []*model.Term]
+	TermsCountByStudysetIDLoader      *dataloadgen.Loader[string, *int32]
+	TermProgressLoader                *dataloadgen.Loader[string, *model.TermProgress]
+	PracticeTestByStudysetIDLoader    *dataloadgen.Loader[string, []*model.PracticeTest]
+	FSRSCardByTermIDLoader            *dataloadgen.Loader[string, *model.FSRSCard]
+	FSRSReviewLogsByTermIDLoader      *dataloadgen.Loader[string, []*model.FSRSReviewLog]
+	PracticeTestByTermIDLoader        *dataloadgen.Loader[string, []*model.PracticeTest]
+	MatchActivityTermIDsLoader        *dataloadgen.Loader[string, []string]
+	MatchActivityIncorrectPairIDsLoader *dataloadgen.Loader[string, [][]string]
+	MatchActivityStudysetIDsLoader    *dataloadgen.Loader[string, []string]
 }
 
 // NewLoaders instantiates data loaders for the middleware
@@ -597,15 +732,18 @@ func NewLoaders(db *pgxpool.Pool, usercontentBaseURL *string) *Loaders {
 		usercontentBaseURL: usercontentBaseURL,
 	}
 	return &Loaders{
-		UserLoader:                     dataloadgen.NewLoader(dr.getUsers, dataloadgen.WithWait(time.Millisecond)),
-		TermByIDLoader:                 dataloadgen.NewLoader(dr.getTermsByIDs, dataloadgen.WithWait(time.Millisecond)),
-		TermByStudysetIDLoader:         dataloadgen.NewLoader(dr.getTermsByStudysetIDs, dataloadgen.WithWait(time.Millisecond)),
-		TermsCountByStudysetIDLoader:   dataloadgen.NewLoader(dr.getTermsCountByStudysetIDs, dataloadgen.WithWait(time.Millisecond)),
-		TermProgressLoader:             dataloadgen.NewLoader(dr.getTermsProgress, dataloadgen.WithWait(time.Millisecond)),
-		PracticeTestByStudysetIDLoader: dataloadgen.NewLoader(dr.getPracticeTestsByStudysetIDs, dataloadgen.WithWait(time.Millisecond)),
-		FSRSCardByTermIDLoader:         dataloadgen.NewLoader(dr.getFSRSCardsByTermIDs, dataloadgen.WithWait(time.Millisecond)),
-		FSRSReviewLogsByTermIDLoader:   dataloadgen.NewLoader(dr.getFSRSReviewLogsByTermIDs, dataloadgen.WithWait(time.Millisecond)),
-		PracticeTestByTermIDLoader:     dataloadgen.NewLoader(dr.getPracticeTestsByTermIDs, dataloadgen.WithWait(time.Millisecond)),
+		UserLoader:                        dataloadgen.NewLoader(dr.getUsers, dataloadgen.WithWait(time.Millisecond)),
+		TermByIDLoader:                    dataloadgen.NewLoader(dr.getTermsByIDs, dataloadgen.WithWait(time.Millisecond)),
+		TermByStudysetIDLoader:            dataloadgen.NewLoader(dr.getTermsByStudysetIDs, dataloadgen.WithWait(time.Millisecond)),
+		TermsCountByStudysetIDLoader:      dataloadgen.NewLoader(dr.getTermsCountByStudysetIDs, dataloadgen.WithWait(time.Millisecond)),
+		TermProgressLoader:                dataloadgen.NewLoader(dr.getTermsProgress, dataloadgen.WithWait(time.Millisecond)),
+		PracticeTestByStudysetIDLoader:    dataloadgen.NewLoader(dr.getPracticeTestsByStudysetIDs, dataloadgen.WithWait(time.Millisecond)),
+		FSRSCardByTermIDLoader:            dataloadgen.NewLoader(dr.getFSRSCardsByTermIDs, dataloadgen.WithWait(time.Millisecond)),
+		FSRSReviewLogsByTermIDLoader:      dataloadgen.NewLoader(dr.getFSRSReviewLogsByTermIDs, dataloadgen.WithWait(time.Millisecond)),
+		PracticeTestByTermIDLoader:        dataloadgen.NewLoader(dr.getPracticeTestsByTermIDs, dataloadgen.WithWait(time.Millisecond)),
+		MatchActivityTermIDsLoader:        dataloadgen.NewLoader(dr.getMatchActivityTermIDs, dataloadgen.WithWait(time.Millisecond)),
+		MatchActivityIncorrectPairIDsLoader: dataloadgen.NewLoader(dr.getMatchActivityIncorrectPairIDs, dataloadgen.WithWait(time.Millisecond)),
+		MatchActivityStudysetIDsLoader:    dataloadgen.NewLoader(dr.getMatchActivityStudysetIDs, dataloadgen.WithWait(time.Millisecond)),
 	}
 }
 
@@ -722,4 +860,34 @@ func GetPracticeTestsByTermID(ctx context.Context, termID string) ([]*model.Prac
 func GetPracticeTestsByTermIDs(ctx context.Context, termIDs []string) ([][]*model.PracticeTest, error) {
 	loaders := For(ctx)
 	return loaders.PracticeTestByTermIDLoader.LoadAll(ctx, termIDs)
+}
+
+func GetMatchActivityTermIDs(ctx context.Context, matchActivityID string) ([]string, error) {
+	loaders := For(ctx)
+	return loaders.MatchActivityTermIDsLoader.Load(ctx, matchActivityID)
+}
+
+func GetMatchActivityTermIDsByIDs(ctx context.Context, matchActivityIDs []string) ([][]string, error) {
+	loaders := For(ctx)
+	return loaders.MatchActivityTermIDsLoader.LoadAll(ctx, matchActivityIDs)
+}
+
+func GetMatchActivityIncorrectPairIDs(ctx context.Context, matchActivityID string) ([][]string, error) {
+	loaders := For(ctx)
+	return loaders.MatchActivityIncorrectPairIDsLoader.Load(ctx, matchActivityID)
+}
+
+func GetMatchActivityIncorrectPairIDsByIDs(ctx context.Context, matchActivityIDs []string) ([][][]string, error) {
+	loaders := For(ctx)
+	return loaders.MatchActivityIncorrectPairIDsLoader.LoadAll(ctx, matchActivityIDs)
+}
+
+func GetMatchActivityStudysetIDs(ctx context.Context, matchActivityID string) ([]string, error) {
+	loaders := For(ctx)
+	return loaders.MatchActivityStudysetIDsLoader.Load(ctx, matchActivityID)
+}
+
+func GetMatchActivityStudysetIDsByIDs(ctx context.Context, matchActivityIDs []string) ([][]string, error) {
+	loaders := For(ctx)
+	return loaders.MatchActivityStudysetIDsLoader.LoadAll(ctx, matchActivityIDs)
 }
