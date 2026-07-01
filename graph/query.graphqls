@@ -76,6 +76,7 @@ type FRQ {
     answeredString: String!
 }
 type MatchActivity {
+    id: ID!
     durationMs: Int!
     endTimestamp: String!
     termIds: [ID!]!
