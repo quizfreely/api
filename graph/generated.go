@@ -196,7 +196,7 @@ type ComplexityRoot struct {
 		SubjectsByCategory       func(childComplexity int, category *model.SubjectCategory) int
 		SubjectsByKeyword        func(childComplexity int, keyword *string) int
 		Term                     func(childComplexity int, id string) int
-		TermsByIds               func(childComplexity int, ids []string) int
+		Terms                    func(childComplexity int, ids []string) int
 		User                     func(childComplexity int, id string) int
 	}
 
@@ -339,7 +339,7 @@ type QueryResolver interface {
 	Studyset(ctx context.Context, id string) (*model.Studyset, error)
 	User(ctx context.Context, id string) (*model.User, error)
 	Term(ctx context.Context, id string) (*model.Term, error)
-	TermsByIds(ctx context.Context, ids []string) ([]*model.Term, error)
+	Terms(ctx context.Context, ids []string) ([]*model.Term, error)
 	RecentlyCreatedStudysets(ctx context.Context, first *int32, after *string, last *int32, before *string) (*model.StudysetConnection, error)
 	RecentlyUpdatedStudysets(ctx context.Context, first *int32, after *string, last *int32, before *string) (*model.StudysetConnection, error)
 	SearchStudysets(ctx context.Context, q string, first *int32, after *string, last *int32, before *string) (*model.StudysetConnection, error)
@@ -1350,17 +1350,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Query.Term(childComplexity, args["id"].(string)), true
 
-	case "Query.termsByIds":
-		if e.complexity.Query.TermsByIds == nil {
+	case "Query.terms":
+		if e.complexity.Query.Terms == nil {
 			break
 		}
 
-		args, err := ec.field_Query_termsByIds_args(ctx, rawArgs)
+		args, err := ec.field_Query_terms_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.TermsByIds(childComplexity, args["ids"].([]string)), true
+		return e.complexity.Query.Terms(childComplexity, args["ids"].([]string)), true
 
 	case "Query.user":
 		if e.complexity.Query.User == nil {
@@ -2688,7 +2688,7 @@ func (ec *executionContext) field_Query_term_args(ctx context.Context, rawArgs m
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_termsByIds_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+func (ec *executionContext) field_Query_terms_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "ids", ec.unmarshalNID2ᚕstringᚄ)
@@ -7243,8 +7243,8 @@ func (ec *executionContext) fieldContext_Query_term(ctx context.Context, field g
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_termsByIds(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_termsByIds(ctx, field)
+func (ec *executionContext) _Query_terms(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_terms(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -7257,7 +7257,7 @@ func (ec *executionContext) _Query_termsByIds(ctx context.Context, field graphql
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().TermsByIds(rctx, fc.Args["ids"].([]string))
+		return ec.resolvers.Query().Terms(rctx, fc.Args["ids"].([]string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7274,7 +7274,7 @@ func (ec *executionContext) _Query_termsByIds(ctx context.Context, field graphql
 	return ec.marshalNTerm2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐTerm(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_termsByIds(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_terms(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -7317,7 +7317,7 @@ func (ec *executionContext) fieldContext_Query_termsByIds(ctx context.Context, f
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_termsByIds_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Query_terms_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -15428,7 +15428,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "termsByIds":
+		case "terms":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -15437,7 +15437,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_termsByIds(ctx, field)
+				res = ec._Query_terms(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
