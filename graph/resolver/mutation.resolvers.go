@@ -1531,6 +1531,7 @@ func (r *mutationResolver) RecordMatchActivity(ctx context.Context, input model.
 	}
 
 	result := &model.MatchActivity{
+		ID:               &matchActivityID,
 		DurationMs:       input.DurationMs,
 		EndTimestamp:     time.Now().UTC().Format(time.RFC3339Nano),
 		TermIds:          input.TermIds,
