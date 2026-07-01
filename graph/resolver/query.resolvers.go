@@ -11,6 +11,7 @@ import (
 	"quizfreely/api/auth"
 	"quizfreely/api/graph"
 	"quizfreely/api/graph/cursor"
+	"quizfreely/api/graph/loader"
 	"quizfreely/api/graph/model"
 	"time"
 
@@ -28,16 +29,7 @@ func (r *matchActivityResolver) TermIds(ctx context.Context, obj *model.MatchAct
 		return nil, fmt.Errorf("not authenticated")
 	}
 
-	var ids []string
-	err := pgxscan.Select(ctx, r.DB, &ids, `
-		SELECT term_id FROM review_events
-		WHERE match_activity_id = $1 AND user_id = $2 AND correct = true
-	`, *obj.ID, authedUser.ID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch correct term ids: %w", err)
-	}
-
-	return ids, nil
+	return loader.GetMatchActivityTermIDs(ctx, *obj.ID)
 }
 
 // IncorrectPairIds is the resolver for the incorrectPairIds field.
@@ -51,24 +43,7 @@ func (r *matchActivityResolver) IncorrectPairIds(ctx context.Context, obj *model
 		return nil, fmt.Errorf("not authenticated")
 	}
 
-	var rows []struct {
-		TermID         string `db:"term_id"`
-		AnsweredTermID string `db:"answered_term_id"`
-	}
-	err := pgxscan.Select(ctx, r.DB, &rows, `
-		SELECT term_id, answered_term_id FROM review_events
-		WHERE match_activity_id = $1 AND user_id = $2 AND correct = false
-	`, *obj.ID, authedUser.ID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch incorrect pairs: %w", err)
-	}
-
-	pairs := make([][]string, len(rows))
-	for i, row := range rows {
-		pairs[i] = []string{row.TermID, row.AnsweredTermID}
-	}
-
-	return pairs, nil
+	return loader.GetMatchActivityIncorrectPairIDs(ctx, *obj.ID)
 }
 
 // StudysetIds is the resolver for the studysetIds field.
@@ -77,14 +52,7 @@ func (r *matchActivityResolver) StudysetIds(ctx context.Context, obj *model.Matc
 		return nil, nil
 	}
 
-	var ids []string
-	sql := `SELECT studyset_id FROM match_activity_studysets WHERE match_id = $1`
-	err := pgxscan.Select(ctx, r.DB, &ids, sql, *obj.ID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch studyset ids for match activity: %w", err)
-	}
-
-	return ids, nil
+	return loader.GetMatchActivityStudysetIDs(ctx, *obj.ID)
 }
 
 // StudysetIds is the resolver for the studysetIds field.
