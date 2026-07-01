@@ -270,6 +270,11 @@ WHERE terms.id = $1 AND studysets.private = FALSE AND studysets.draft = FALSE`,
 	return &term, nil
 }
 
+// Terms is the resolver for the terms field.
+func (r *queryResolver) Terms(ctx context.Context, ids []string) ([]*model.Term, error) {
+	return loader.GetTermsByIDs(ctx, ids)
+}
+
 // RecentlyCreatedStudysets is the resolver for the recentlyCreatedStudysets field.
 func (r *queryResolver) RecentlyCreatedStudysets(ctx context.Context, first *int32, after *string, last *int32, before *string) (*model.StudysetConnection, error) {
 	l := 24
