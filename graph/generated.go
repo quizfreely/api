@@ -126,6 +126,7 @@ type ComplexityRoot struct {
 	MatchActivity struct {
 		DurationMs       func(childComplexity int) int
 		EndTimestamp     func(childComplexity int) int
+		ID               func(childComplexity int) int
 		IncorrectPairIds func(childComplexity int) int
 		StudysetIds      func(childComplexity int) int
 		TermIds          func(childComplexity int) int
@@ -740,6 +741,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.MatchActivity.EndTimestamp(childComplexity), true
+
+	case "MatchActivity.id":
+		if e.complexity.MatchActivity.ID == nil {
+			break
+		}
+
+		return e.complexity.MatchActivity.ID(childComplexity), true
 
 	case "MatchActivity.incorrectPairIds":
 		if e.complexity.MatchActivity.IncorrectPairIds == nil {
@@ -4862,6 +4870,50 @@ func (ec *executionContext) fieldContext_MCQ_distractors(_ context.Context, fiel
 	return fc, nil
 }
 
+func (ec *executionContext) _MatchActivity_id(ctx context.Context, field graphql.CollectedField, obj *model.MatchActivity) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MatchActivity_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalNID2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MatchActivity_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MatchActivity",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _MatchActivity_durationMs(ctx context.Context, field graphql.CollectedField, obj *model.MatchActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_MatchActivity_durationMs(ctx, field)
 	if err != nil {
@@ -6373,6 +6425,8 @@ func (ec *executionContext) fieldContext_Mutation_recordMatchActivity(ctx contex
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "id":
+				return ec.fieldContext_MatchActivity_id(ctx, field)
 			case "durationMs":
 				return ec.fieldContext_MatchActivity_durationMs(ctx, field)
 			case "endTimestamp":
@@ -8268,6 +8322,8 @@ func (ec *executionContext) fieldContext_Query_matchActivity(ctx context.Context
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "id":
+				return ec.fieldContext_MatchActivity_id(ctx, field)
 			case "durationMs":
 				return ec.fieldContext_MatchActivity_durationMs(ctx, field)
 			case "endTimestamp":
@@ -9195,6 +9251,8 @@ func (ec *executionContext) fieldContext_Studyset_matchActivities(_ context.Cont
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "id":
+				return ec.fieldContext_MatchActivity_id(ctx, field)
 			case "durationMs":
 				return ec.fieldContext_MatchActivity_durationMs(ctx, field)
 			case "endTimestamp":
@@ -14698,6 +14756,11 @@ func (ec *executionContext) _MatchActivity(ctx context.Context, sel ast.Selectio
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("MatchActivity")
+		case "id":
+			out.Values[i] = ec._MatchActivity_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		case "durationMs":
 			out.Values[i] = ec._MatchActivity_durationMs(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
