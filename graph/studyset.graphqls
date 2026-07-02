@@ -20,7 +20,7 @@ type Studyset {
     practiceTests: [PracticeTest]
     matchActivities: [MatchActivity!]
     saved: Boolean
-    folder: Folder
+    myFolder: Folder
     seoIndexingApproved: Boolean!
 }
 input StudysetInput {

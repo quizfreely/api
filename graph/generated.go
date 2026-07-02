@@ -210,9 +210,9 @@ type ComplexityRoot struct {
 	Studyset struct {
 		CreatedAt           func(childComplexity int) int
 		Draft               func(childComplexity int) int
-		Folder              func(childComplexity int) int
 		ID                  func(childComplexity int) int
 		MatchActivities     func(childComplexity int) int
+		MyFolder            func(childComplexity int) int
 		PracticeTests       func(childComplexity int) int
 		Private             func(childComplexity int) int
 		SEOIndexingApproved func(childComplexity int) int
@@ -369,7 +369,7 @@ type StudysetResolver interface {
 	PracticeTests(ctx context.Context, obj *model.Studyset) ([]*model.PracticeTest, error)
 	MatchActivities(ctx context.Context, obj *model.Studyset) ([]*model.MatchActivity, error)
 	Saved(ctx context.Context, obj *model.Studyset) (*bool, error)
-	Folder(ctx context.Context, obj *model.Studyset) (*model.Folder, error)
+	MyFolder(ctx context.Context, obj *model.Studyset) (*model.Folder, error)
 }
 type SubjectResolver interface {
 	Studysets(ctx context.Context, obj *model.Subject, first *int32, after *string, last *int32, before *string) (*model.StudysetConnection, error)
@@ -1416,13 +1416,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Studyset.Draft(childComplexity), true
 
-	case "Studyset.folder":
-		if e.complexity.Studyset.Folder == nil {
-			break
-		}
-
-		return e.complexity.Studyset.Folder(childComplexity), true
-
 	case "Studyset.id":
 		if e.complexity.Studyset.ID == nil {
 			break
@@ -1436,6 +1429,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Studyset.MatchActivities(childComplexity), true
+
+	case "Studyset.myFolder":
+		if e.complexity.Studyset.MyFolder == nil {
+			break
+		}
+
+		return e.complexity.Studyset.MyFolder(childComplexity), true
 
 	case "Studyset.practiceTests":
 		if e.complexity.Studyset.PracticeTests == nil {
@@ -5221,8 +5221,8 @@ func (ec *executionContext) fieldContext_Mutation_createStudyset(ctx context.Con
 				return ec.fieldContext_Studyset_matchActivities(ctx, field)
 			case "saved":
 				return ec.fieldContext_Studyset_saved(ctx, field)
-			case "folder":
-				return ec.fieldContext_Studyset_folder(ctx, field)
+			case "myFolder":
+				return ec.fieldContext_Studyset_myFolder(ctx, field)
 			case "seoIndexingApproved":
 				return ec.fieldContext_Studyset_seoIndexingApproved(ctx, field)
 			}
@@ -5305,8 +5305,8 @@ func (ec *executionContext) fieldContext_Mutation_updateStudyset(ctx context.Con
 				return ec.fieldContext_Studyset_matchActivities(ctx, field)
 			case "saved":
 				return ec.fieldContext_Studyset_saved(ctx, field)
-			case "folder":
-				return ec.fieldContext_Studyset_folder(ctx, field)
+			case "myFolder":
+				return ec.fieldContext_Studyset_myFolder(ctx, field)
 			case "seoIndexingApproved":
 				return ec.fieldContext_Studyset_seoIndexingApproved(ctx, field)
 			}
@@ -7079,8 +7079,8 @@ func (ec *executionContext) fieldContext_Query_studyset(ctx context.Context, fie
 				return ec.fieldContext_Studyset_matchActivities(ctx, field)
 			case "saved":
 				return ec.fieldContext_Studyset_saved(ctx, field)
-			case "folder":
-				return ec.fieldContext_Studyset_folder(ctx, field)
+			case "myFolder":
+				return ec.fieldContext_Studyset_myFolder(ctx, field)
 			case "seoIndexingApproved":
 				return ec.fieldContext_Studyset_seoIndexingApproved(ctx, field)
 			}
@@ -9417,8 +9417,8 @@ func (ec *executionContext) fieldContext_Studyset_saved(_ context.Context, field
 	return fc, nil
 }
 
-func (ec *executionContext) _Studyset_folder(ctx context.Context, field graphql.CollectedField, obj *model.Studyset) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Studyset_folder(ctx, field)
+func (ec *executionContext) _Studyset_myFolder(ctx context.Context, field graphql.CollectedField, obj *model.Studyset) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Studyset_myFolder(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -9431,7 +9431,7 @@ func (ec *executionContext) _Studyset_folder(ctx context.Context, field graphql.
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Studyset().Folder(rctx, obj)
+		return ec.resolvers.Studyset().MyFolder(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -9445,7 +9445,7 @@ func (ec *executionContext) _Studyset_folder(ctx context.Context, field graphql.
 	return ec.marshalOFolder2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐFolder(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Studyset_folder(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Studyset_myFolder(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Studyset",
 		Field:      field,
@@ -9685,8 +9685,8 @@ func (ec *executionContext) fieldContext_StudysetEdge_node(_ context.Context, fi
 				return ec.fieldContext_Studyset_matchActivities(ctx, field)
 			case "saved":
 				return ec.fieldContext_Studyset_saved(ctx, field)
-			case "folder":
-				return ec.fieldContext_Studyset_folder(ctx, field)
+			case "myFolder":
+				return ec.fieldContext_Studyset_myFolder(ctx, field)
 			case "seoIndexingApproved":
 				return ec.fieldContext_Studyset_seoIndexingApproved(ctx, field)
 			}
@@ -16189,7 +16189,7 @@ func (ec *executionContext) _Studyset(ctx context.Context, sel ast.SelectionSet,
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "folder":
+		case "myFolder":
 			field := field
 
 			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
@@ -16198,7 +16198,7 @@ func (ec *executionContext) _Studyset(ctx context.Context, sel ast.SelectionSet,
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Studyset_folder(ctx, field, obj)
+				res = ec._Studyset_myFolder(ctx, field, obj)
 				return res
 			}
 
