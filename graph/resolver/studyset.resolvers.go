@@ -125,8 +125,8 @@ func (r *studysetResolver) Saved(ctx context.Context, obj *model.Studyset) (*boo
 	return &result, nil
 }
 
-// Folder is the resolver for the folder field.
-func (r *studysetResolver) Folder(ctx context.Context, obj *model.Studyset) (*model.Folder, error) {
+// MyFolder is the resolver for the myFolder field.
+func (r *studysetResolver) MyFolder(ctx context.Context, obj *model.Studyset) (*model.Folder, error) {
 	authedUser := auth.AuthedUserContext(ctx)
 	if authedUser == nil {
 		return nil, fmt.Errorf("not authenticated")
