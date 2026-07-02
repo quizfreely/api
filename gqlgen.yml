@@ -171,7 +171,7 @@ models:
         resolver: true
       saved:
         resolver: true
-      folder:
+      myFolder:
         resolver: true
       subject:
         resolver: true
