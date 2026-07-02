@@ -318,6 +318,13 @@ func (r *folderResolver) User(ctx context.Context, obj *model.Folder) (*model.Us
 		return nil, nil
 	}
 
+	if obj.Private != nil && *obj.Private {
+		authedUser := auth.AuthedUserContext(ctx)
+		if authedUser == nil || *authedUser.ID != *obj.User.ID {
+			return nil, nil
+		}
+	}
+
 	if obj.User.DisplayName != nil {
 		return obj.User, nil
 	}
