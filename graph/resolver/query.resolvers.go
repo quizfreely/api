@@ -895,7 +895,7 @@ func (r *queryResolver) MyFolders(ctx context.Context, first *int32, after *stri
 	var err error
 	if cursorID != "" {
 		sql := `
-			SELECT id, name
+			SELECT id, name, private
 			FROM folders
 			WHERE user_id = $1 AND id < $2::uuid
 			ORDER BY id DESC
@@ -904,7 +904,7 @@ func (r *queryResolver) MyFolders(ctx context.Context, first *int32, after *stri
 		err = pgxscan.Select(ctx, r.DB, &folders, sql, authedUser.ID, cursorID, limit)
 	} else {
 		sql := `
-			SELECT id, name
+			SELECT id, name, private
 			FROM folders
 			WHERE user_id = $1
 			ORDER BY id DESC
@@ -914,6 +914,10 @@ func (r *queryResolver) MyFolders(ctx context.Context, first *int32, after *stri
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch my folders: %w", err)
+	}
+
+	for _, f := range folders {
+		f.User = &model.User{ID: authedUser.ID}
 	}
 
 	hasNext := len(folders) > l
@@ -1185,20 +1189,22 @@ func (r *queryResolver) AllSubjects(ctx context.Context) ([]*model.Subject, erro
 
 // Folder is the resolver for the folder field.
 func (r *queryResolver) Folder(ctx context.Context, id string) (*model.Folder, error) {
-	authedUser := auth.AuthedUserContext(ctx)
-	if authedUser == nil {
-		return nil, fmt.Errorf("not authenticated")
+	var row struct {
+		ID      *string `db:"id"`
+		Name    *string `db:"name"`
+		Private *bool   `db:"private"`
+		UserID  *string `db:"user_id"`
 	}
-
-	var folder model.Folder
 	sql := `
 		SELECT
 			id,
-			name
+			name,
+			user_id,
+			private
 		FROM folders
-		WHERE id = $1 AND user_id = $2
+		WHERE id = $1
 	`
-	err := pgxscan.Get(ctx, r.DB, &folder, sql, id, authedUser.ID)
+	err := pgxscan.Get(ctx, r.DB, &row, sql, id)
 	if err != nil {
 		if pgxscan.NotFound(err) {
 			return nil, nil
@@ -1206,7 +1212,21 @@ func (r *queryResolver) Folder(ctx context.Context, id string) (*model.Folder, e
 		return nil, fmt.Errorf("failed to get folder: %w", err)
 	}
 
-	return &folder, nil
+	folder := &model.Folder{
+		ID:      row.ID,
+		Name:    row.Name,
+		Private: row.Private,
+		User:    &model.User{ID: row.UserID},
+	}
+
+	if folder.Private != nil && *folder.Private {
+		authedUser := auth.AuthedUserContext(ctx)
+		if authedUser == nil || folder.User == nil || folder.User.ID == nil || *authedUser.ID != *folder.User.ID {
+			return nil, nil
+		}
+	}
+
+	return folder, nil
 }
 
 // StudysetCount is the resolver for the studysetCount field.

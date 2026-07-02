@@ -9,8 +9,8 @@ type Mutation {
     updateTermProgress(termProgress: [TermProgressInput!]!): [TermProgress!]
     recordPracticeTest(input: PracticeTestInput!): PracticeTest
     updatePracticeTestQuestion(id: ID!, correct: Boolean!, userMarkedCorrect: Boolean): Question
-    createFolder(name: String!): Folder
-    renameFolder(id: ID!, name: String!): Folder
+    createFolder(name: String!, private: Boolean): Folder
+    updateFolder(id: ID!, name: String!, private: Boolean): Folder
     deleteFolder(id: ID!): ID
     setStudysetFolder(studysetId: ID!, folderId: ID!): Boolean
     removeStudysetFromFolder(studysetId: ID!): Boolean

@@ -312,6 +312,28 @@ func (r *folderResolver) StudysetCount(ctx context.Context, obj *model.Folder) (
 	return count, nil
 }
 
+// User is the resolver for the user field.
+func (r *folderResolver) User(ctx context.Context, obj *model.Folder) (*model.User, error) {
+	if obj == nil || obj.User == nil || obj.User.ID == nil {
+		return nil, nil
+	}
+
+	if obj.User.DisplayName != nil {
+		return obj.User, nil
+	}
+
+	var user model.User
+	err := pgxscan.Get(ctx, r.DB, &user, "SELECT id, display_name FROM users WHERE id = $1", obj.User.ID)
+	if err != nil {
+		if pgxscan.NotFound(err) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to fetch folder user: %w", err)
+	}
+
+	return &user, nil
+}
+
 // Folder returns graph.FolderResolver implementation.
 func (r *Resolver) Folder() graph.FolderResolver { return &folderResolver{r} }
 

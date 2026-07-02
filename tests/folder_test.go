@@ -40,21 +40,23 @@ func TestFolderLifecycle(t *testing.T) {
 	require.NotEmpty(t, folderID)
 	require.Equal(t, "Test Folder", getNested(createResult, "data", "createFolder", "name"))
 
-	// 2. Rename Folder (Valid Auth - user1)
-	renameBody := map[string]interface{}{
-		"query": `mutation RenameFolder($id: ID!, $name: String!) {
-			renameFolder(id: $id, name: $name) {
+	// 2. Update Folder (Valid Auth - user1)
+	updateBody := map[string]interface{}{
+		"query": `mutation UpdateFolder($id: ID!, $name: String!, $private: Boolean) {
+			updateFolder(id: $id, name: $name, private: $private) {
 				id
 				name
+				private
 			}
 		}`,
 		"variables": map[string]interface{}{
-			"id":   folderID,
-			"name": "Renamed Folder",
+			"id":      folderID,
+			"name":    "Renamed Folder",
+			"private": true,
 		},
 	}
 
-	req, err = http.NewRequest(http.MethodPost, testServer.URL+"/graphql", marshal(renameBody))
+	req, err = http.NewRequest(http.MethodPost, testServer.URL+"/graphql", marshal(updateBody))
 	require.NoError(t, err)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+user1Token)
@@ -63,14 +65,14 @@ func TestFolderLifecycle(t *testing.T) {
 	require.NoError(t, err)
 	defer resp.Body.Close()
 
-	var renameResult map[string]interface{}
-	err = json.NewDecoder(resp.Body).Decode(&renameResult)
+	var updateResult map[string]interface{}
+	err = json.NewDecoder(resp.Body).Decode(&updateResult)
 	require.NoError(t, err)
-	require.Nil(t, renameResult["errors"], "should have no errors on rename")
-	require.Equal(t, "Renamed Folder", getNested(renameResult, "data", "renameFolder", "name"))
+	require.Nil(t, updateResult["errors"], "should have no errors on update")
+	require.Equal(t, "Renamed Folder", getNested(updateResult, "data", "updateFolder", "name"))
 
-	// 3. Unauthorized Rename (user2 trying to rename user1's folder)
-	req, err = http.NewRequest(http.MethodPost, testServer.URL+"/graphql", marshal(renameBody))
+	// 3. Unauthorized Update (user2 trying to update user1's folder)
+	req, err = http.NewRequest(http.MethodPost, testServer.URL+"/graphql", marshal(updateBody))
 	require.NoError(t, err)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+user2Token)
@@ -79,10 +81,10 @@ func TestFolderLifecycle(t *testing.T) {
 	require.NoError(t, err)
 	defer resp.Body.Close()
 
-	var unauthorizedRenameResult map[string]interface{}
-	err = json.NewDecoder(resp.Body).Decode(&unauthorizedRenameResult)
+	var unauthorizedUpdateResult map[string]interface{}
+	err = json.NewDecoder(resp.Body).Decode(&unauthorizedUpdateResult)
 	require.NoError(t, err)
-	require.NotNil(t, unauthorizedRenameResult["errors"], "should return authorization error on rename")
+	require.NotNil(t, unauthorizedUpdateResult["errors"], "should return authorization error on update")
 
 	// 4. Query Folder (Valid Auth - user1)
 	queryBody := map[string]interface{}{

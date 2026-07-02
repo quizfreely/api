@@ -1036,7 +1036,7 @@ func (r *mutationResolver) UpdatePracticeTestQuestion(ctx context.Context, id st
 }
 
 // CreateFolder is the resolver for the createFolder field.
-func (r *mutationResolver) CreateFolder(ctx context.Context, name string) (*model.Folder, error) {
+func (r *mutationResolver) CreateFolder(ctx context.Context, name string, private *bool) (*model.Folder, error) {
 	authedUser := auth.AuthedUserContext(ctx)
 	if authedUser == nil {
 		return nil, fmt.Errorf("not authenticated")
@@ -1046,22 +1046,29 @@ func (r *mutationResolver) CreateFolder(ctx context.Context, name string) (*mode
 		name = name[:MaxFolderNameLen]
 	}
 
+	isPrivate := true
+	if private != nil {
+		isPrivate = *private
+	}
+
 	sql := `
-		INSERT INTO folders (user_id, name)
-		VALUES ($1, $2)
-		RETURNING id, name
+		INSERT INTO folders (user_id, name, private)
+		VALUES ($1, $2, $3)
+		RETURNING id, name, private
 	`
 	var newFolder model.Folder
-	err := pgxscan.Get(ctx, r.DB, &newFolder, sql, authedUser.ID, name)
+	err := pgxscan.Get(ctx, r.DB, &newFolder, sql, authedUser.ID, name, isPrivate)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create studyset: %w", err)
+		return nil, fmt.Errorf("failed to create folder: %w", err)
 	}
+
+	newFolder.User = &model.User{ID: authedUser.ID}
 
 	return &newFolder, nil
 }
 
-// RenameFolder is the resolver for the renameFolder field.
-func (r *mutationResolver) RenameFolder(ctx context.Context, id string, name string) (*model.Folder, error) {
+// UpdateFolder is the resolver for the updateFolder field.
+func (r *mutationResolver) UpdateFolder(ctx context.Context, id string, name string, private *bool) (*model.Folder, error) {
 	authedUser := auth.AuthedUserContext(ctx)
 	if authedUser == nil {
 		return nil, fmt.Errorf("not authenticated")
@@ -1071,18 +1078,39 @@ func (r *mutationResolver) RenameFolder(ctx context.Context, id string, name str
 		name = name[:MaxFolderNameLen]
 	}
 
-	sql := `
-		UPDATE folders SET name = $1
-		WHERE user_id = $2 AND id = $3
-		RETURNING id, name
-	`
-	var folder model.Folder
-	err := pgxscan.Get(ctx, r.DB, &folder, sql, name, authedUser.ID, id)
+	var row struct {
+		ID      *string `db:"id"`
+		Name    *string `db:"name"`
+		Private *bool   `db:"private"`
+	}
+	var err error
+	if private != nil {
+		sql := `
+			UPDATE folders SET name = $1, private = $2
+			WHERE user_id = $3 AND id = $4
+			RETURNING id, name, private
+		`
+		err = pgxscan.Get(ctx, r.DB, &row, sql, name, *private, authedUser.ID, id)
+	} else {
+		sql := `
+			UPDATE folders SET name = $1
+			WHERE user_id = $2 AND id = $3
+			RETURNING id, name, private
+		`
+		err = pgxscan.Get(ctx, r.DB, &row, sql, name, authedUser.ID, id)
+	}
 	if err != nil {
-		return nil, fmt.Errorf("failed to rename folder: %w", err)
+		return nil, fmt.Errorf("failed to update folder: %w", err)
 	}
 
-	return &folder, nil
+	folder := &model.Folder{
+		ID:      row.ID,
+		Name:    row.Name,
+		Private: row.Private,
+		User:    &model.User{ID: authedUser.ID},
+	}
+
+	return folder, nil
 }
 
 // DeleteFolder is the resolver for the deleteFolder field.

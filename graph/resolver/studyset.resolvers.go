@@ -136,13 +136,17 @@ func (r *studysetResolver) MyFolder(ctx context.Context, obj *model.Studyset) (*
 		return nil, nil
 	}
 
-	var folder model.Folder
+	var row struct {
+		ID      *string `db:"id"`
+		Name    *string `db:"name"`
+		Private *bool   `db:"private"`
+	}
 	sql := `
-		SELECT f.id, f.name FROM folders f
+		SELECT f.id, f.name, f.private FROM folders f
 	    JOIN folder_studysets fs ON fs.folder_id = f.id
 	    WHERE fs.studyset_id = $1 AND fs.user_id = $2 AND f.user_id = $2
 	`
-	err := pgxscan.Get(ctx, r.DB, &folder, sql, *obj.ID, authedUser.ID)
+	err := pgxscan.Get(ctx, r.DB, &row, sql, *obj.ID, authedUser.ID)
 	if err != nil {
 		if pgxscan.NotFound(err) {
 			return nil, nil
@@ -151,7 +155,14 @@ func (r *studysetResolver) MyFolder(ctx context.Context, obj *model.Studyset) (*
 		return nil, fmt.Errorf("failed to check studyset folder field: %w", err)
 	}
 
-	return &folder, nil
+	folder := &model.Folder{
+		ID:      row.ID,
+		Name:    row.Name,
+		Private: row.Private,
+		User:    &model.User{ID: authedUser.ID},
+	}
+
+	return folder, nil
 }
 
 // Studyset returns graph.StudysetResolver implementation.
