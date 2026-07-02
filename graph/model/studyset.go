@@ -14,6 +14,6 @@ type Studyset struct {
 	Terms               []*Term  `json:"terms,omitempty"`
 	TermsCount          *int32   `json:"termsCount,omitempty"`
 	Saved               *bool    `json:"saved,omitempty"`
-	Folder              *Folder  `json:"folder,omitempty"`
+	MyFolder            *Folder  `json:"myFolder,omitempty"`
 	SEOIndexingApproved *bool    `json:"seoIndexingApproved,omitempty" db:"seo_indexing_approved"`
 }
