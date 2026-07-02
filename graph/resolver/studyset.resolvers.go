@@ -165,6 +165,44 @@ func (r *studysetResolver) MyFolder(ctx context.Context, obj *model.Studyset) (*
 	return folder, nil
 }
 
+// AuthorFolder is the resolver for the authorFolder field.
+func (r *studysetResolver) AuthorFolder(ctx context.Context, obj *model.Studyset) (*model.Folder, error) {
+	if obj == nil || obj.ID == nil {
+		return nil, nil
+	}
+
+	var row struct {
+		ID      *string `db:"id"`
+		Name    *string `db:"name"`
+		UserID  *string `db:"user_id"`
+	}
+	sql := `
+		SELECT f.id, f.name, f.user_id FROM folders f
+		JOIN folder_studysets fs ON fs.folder_id = f.id
+		JOIN studysets s ON s.id = fs.studyset_id
+		WHERE fs.studyset_id = $1
+		  AND fs.user_id = s.user_id
+		  AND f.user_id = s.user_id
+		  AND f.private = false
+	`
+	err := pgxscan.Get(ctx, r.DB, &row, sql, *obj.ID)
+	if err != nil {
+		if pgxscan.NotFound(err) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to check author folder: %w", err)
+	}
+
+	folder := &model.Folder{
+		ID:      row.ID,
+		Name:    row.Name,
+		Private: &[]bool{false}[0],
+		User:    &model.User{ID: row.UserID},
+	}
+
+	return folder, nil
+}
+
 // Studyset returns graph.StudysetResolver implementation.
 func (r *Resolver) Studyset() graph.StudysetResolver { return &studysetResolver{r} }
 

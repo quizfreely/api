@@ -173,6 +173,8 @@ models:
         resolver: true
       myFolder:
         resolver: true
+      authorFolder:
+        resolver: true
       subject:
         resolver: true
   Term:

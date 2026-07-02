@@ -21,6 +21,7 @@ type Studyset {
     matchActivities: [MatchActivity!]
     saved: Boolean
     myFolder: Folder
+    authorFolder: Folder
     seoIndexingApproved: Boolean!
 }
 input StudysetInput {
