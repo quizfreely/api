@@ -330,7 +330,7 @@ func (r *folderResolver) User(ctx context.Context, obj *model.Folder) (*model.Us
 	}
 
 	var user model.User
-	err := pgxscan.Get(ctx, r.DB, &user, "SELECT id, display_name FROM users WHERE id = $1", obj.User.ID)
+	err := pgxscan.Get(ctx, r.DB, &user, "SELECT id, display_name FROM auth.users WHERE id = $1", obj.User.ID)
 	if err != nil {
 		if pgxscan.NotFound(err) {
 			return nil, nil
