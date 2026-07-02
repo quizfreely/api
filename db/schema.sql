@@ -1,4 +1,4 @@
-\restrict fP17mnavMX2hiYuBcovWqw3QSwYZvHjvSdbqFl3b7QsYfebMbjMcen9LaDvLJZo
+\restrict BNHcv39vDkDMzy4uZuRsGdZmnpTOnueAVQigO9ggzBixUe9qdtCldOJsARZhK3t
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -189,7 +189,8 @@ CREATE TABLE public.folder_studysets (
 CREATE TABLE public.folders (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     user_id uuid,
-    name text NOT NULL
+    name text NOT NULL,
+    private boolean DEFAULT true NOT NULL
 );
 
 
@@ -946,7 +947,7 @@ ALTER TABLE ONLY public.terms
 -- PostgreSQL database dump complete
 --
 
-\unrestrict fP17mnavMX2hiYuBcovWqw3QSwYZvHjvSdbqFl3b7QsYfebMbjMcen9LaDvLJZo
+\unrestrict BNHcv39vDkDMzy4uZuRsGdZmnpTOnueAVQigO9ggzBixUe9qdtCldOJsARZhK3t
 
 
 --
@@ -993,4 +994,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('202606290020'),
     ('202606291000'),
     ('202606291100'),
-    ('202606301100');
+    ('202606301100'),
+    ('202607012025');
