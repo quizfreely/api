@@ -248,7 +248,7 @@ func TestStudysetFolderOperations(t *testing.T) {
 	queryStudyset := map[string]interface{}{
 		"query": `query GetStudyset($id: ID!) {
 			studyset(id: $id) {
-				folder {
+				myFolder {
 					id
 				}
 			}
@@ -261,7 +261,7 @@ func TestStudysetFolderOperations(t *testing.T) {
 	resp, _ = http.DefaultClient.Do(req)
 	var queryResult map[string]interface{}
 	json.NewDecoder(resp.Body).Decode(&queryResult)
-	require.Equal(t, folderID, getNested(queryResult, "data", "studyset", "folder", "id"))
+	require.Equal(t, folderID, getNested(queryResult, "data", "studyset", "myFolder", "id"))
 
 	// 4. Remove Studyset From Folder
 	removeFolderBody := map[string]interface{}{
@@ -287,7 +287,7 @@ func TestStudysetFolderOperations(t *testing.T) {
 	req.Header.Set("Authorization", "Bearer "+user1Token)
 	resp, _ = http.DefaultClient.Do(req)
 	json.NewDecoder(resp.Body).Decode(&queryResult)
-	require.Nil(t, getNested(queryResult, "data", "studyset", "folder"))
+	require.Nil(t, getNested(queryResult, "data", "studyset", "myFolder"))
 }
 
 func TestFolderNoAuth(t *testing.T) {
