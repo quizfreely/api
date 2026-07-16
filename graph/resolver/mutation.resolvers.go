@@ -661,8 +661,9 @@ func (r *mutationResolver) RecordPracticeTest(ctx context.Context, input model.P
 		}
 
 		for _, s := range studysets {
-			if s.Draft || (s.Private && (s.UserID == nil || authedUser.ID == nil || *s.UserID != *authedUser.ID)) {
-				return nil, fmt.Errorf("studyset not found or not accessible")
+			// if s.Draft || (s.Private && (s.UserID == nil || authedUser.ID == nil || *s.UserID != *authedUser.ID)) {
+			if s.Draft {
+				continue
 			}
 			studysetIDs = append(studysetIDs, s.ID)
 		}
