@@ -172,9 +172,9 @@ func (r *studysetResolver) AuthorFolder(ctx context.Context, obj *model.Studyset
 	}
 
 	var row struct {
-		ID      *string `db:"id"`
-		Name    *string `db:"name"`
-		UserID  *string `db:"user_id"`
+		ID     *string `db:"id"`
+		Name   *string `db:"name"`
+		UserID *string `db:"user_id"`
 	}
 	sql := `
 		SELECT f.id, f.name, f.user_id FROM folders f
