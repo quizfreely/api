@@ -40,14 +40,14 @@ input MCQInput {
     answerWith: AnswerWith!
     correct: Boolean!
     correctChoiceIndex: Int!
-    answeredIndex: Int!
+    answeredIndex: Int
     distractors: [TermATPInput!]!
 }
 input TFQInput {
     term: TermATPInput!
     answerWith: AnswerWith!
     correct: Boolean!
-    answeredBool: Boolean!
+    answeredBool: Boolean
     distractor: TermATPInput
 }
 input FRQInput {
@@ -55,7 +55,7 @@ input FRQInput {
     answerWith: AnswerWith!
     correct: Boolean!
     userMarkedCorrect: Boolean
-    answeredString: String!
+    answeredString: String
 }
 input MatchActivityInput {
     durationMs: Int!
