@@ -59,14 +59,14 @@ type MCQ {
     answerWith: AnswerWith!
     correct: Boolean!
     correctChoiceIndex: Int!
-    answeredIndex: Int!
+    answeredIndex: Int
     distractors: [TermATP!]!
 }
 type TFQ {
     term: TermATP!
     answerWith: AnswerWith!
     correct: Boolean!
-    answeredBool: Boolean!
+    answeredBool: Boolean
     distractor: TermATP
 }
 type FRQ {
@@ -74,7 +74,7 @@ type FRQ {
     answerWith: AnswerWith!
     correct: Boolean!
     userMarkedCorrect: Boolean
-    answeredString: String!
+    answeredString: String
 }
 type MatchActivity {
     id: ID!

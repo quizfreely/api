@@ -741,22 +741,22 @@ RETURNING
 						choices[j] = mcq.Distractors[j-1]
 					}
 				}
-				if mcq.AnsweredIndex >= 0 && mcq.AnsweredIndex < int32(len(choices)) {
-					answeredTermID = &choices[mcq.AnsweredIndex].ID
+				if mcq.AnsweredIndex != nil && *mcq.AnsweredIndex >= 0 && int(*mcq.AnsweredIndex) < len(choices) {
+					answeredTermID = &choices[*mcq.AnsweredIndex].ID
 				}
 			} else if qInput.Tfq != nil {
 				tfq := qInput.Tfq
 				if tfq.Correct {
 					answeredTermID = &tfq.Term.ID
 				} else {
-					if tfq.AnsweredBool {
+					if tfq.AnsweredBool != nil && *tfq.AnsweredBool {
 						if tfq.Distractor != nil {
 							answeredTermID = &tfq.Distractor.ID
 						}
 					}
 				}
 			} else if qInput.Frq != nil {
-				answeredString = &qInput.Frq.AnsweredString
+				answeredString = qInput.Frq.AnsweredString
 			}
 
 			reviewEventArgs = append(reviewEventArgs,
@@ -1030,7 +1030,9 @@ func (r *mutationResolver) UpdatePracticeTestQuestion(ctx context.Context, id st
 		AnswerWith:        row.AnswerWith,
 		Correct:           newCorrect,
 		UserMarkedCorrect: &umc,
-		AnsweredString:    data["answeredString"].(string),
+	}
+	if answeredStr, ok := data["answeredString"].(string); ok {
+		q.Frq.AnsweredString = &answeredStr
 	}
 
 	return q, nil

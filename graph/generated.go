@@ -3318,14 +3318,11 @@ func (ec *executionContext) _FRQ_answeredString(ctx context.Context, field graph
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_FRQ_answeredString(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -4894,14 +4891,11 @@ func (ec *executionContext) _MCQ_answeredIndex(ctx context.Context, field graphq
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(int32)
+	res := resTmp.(*int32)
 	fc.Result = res
-	return ec.marshalNInt2int32(ctx, field.Selections, res)
+	return ec.marshalOInt2ᚖint32(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_MCQ_answeredIndex(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -10279,14 +10273,11 @@ func (ec *executionContext) _TFQ_answeredBool(ctx context.Context, field graphql
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(bool)
+	res := resTmp.(*bool)
 	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_TFQ_answeredBool(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -13765,7 +13756,7 @@ func (ec *executionContext) unmarshalInputFRQInput(ctx context.Context, obj any)
 			it.UserMarkedCorrect = data
 		case "answeredString":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("answeredString"))
-			data, err := ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -13986,7 +13977,7 @@ func (ec *executionContext) unmarshalInputMCQInput(ctx context.Context, obj any)
 			it.CorrectChoiceIndex = data
 		case "answeredIndex":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("answeredIndex"))
-			data, err := ec.unmarshalNInt2int32(ctx, v)
+			data, err := ec.unmarshalOInt2ᚖint32(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -14239,7 +14230,7 @@ func (ec *executionContext) unmarshalInputTFQInput(ctx context.Context, obj any)
 			it.Correct = data
 		case "answeredBool":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("answeredBool"))
-			data, err := ec.unmarshalNBoolean2bool(ctx, v)
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -14511,9 +14502,6 @@ func (ec *executionContext) _FRQ(ctx context.Context, sel ast.SelectionSet, obj 
 			out.Values[i] = ec._FRQ_userMarkedCorrect(ctx, field, obj)
 		case "answeredString":
 			out.Values[i] = ec._FRQ_answeredString(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -15003,9 +14991,6 @@ func (ec *executionContext) _MCQ(ctx context.Context, sel ast.SelectionSet, obj 
 			}
 		case "answeredIndex":
 			out.Values[i] = ec._MCQ_answeredIndex(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "distractors":
 			out.Values[i] = ec._MCQ_distractors(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -16697,9 +16682,6 @@ func (ec *executionContext) _TFQ(ctx context.Context, sel ast.SelectionSet, obj 
 			}
 		case "answeredBool":
 			out.Values[i] = ec._TFQ_answeredBool(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "distractor":
 			out.Values[i] = ec._TFQ_distractor(ctx, field, obj)
 		default:

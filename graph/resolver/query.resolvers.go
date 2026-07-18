@@ -103,7 +103,7 @@ func (r *practiceTestResolver) Questions(ctx context.Context, obj *model.Practic
 			var data struct {
 				Distractors        []*model.TermAtp `json:"distractors"`
 				CorrectChoiceIndex int32            `json:"correctChoiceIndex"`
-				AnsweredIndex      int32            `json:"answeredIndex"`
+				AnsweredIndex      *int32           `json:"answeredIndex"`
 			}
 			if err := json.Unmarshal(row.Data, &data); err != nil {
 				return nil, fmt.Errorf("failed to unmarshal MCQ data: %w", err)
@@ -119,7 +119,7 @@ func (r *practiceTestResolver) Questions(ctx context.Context, obj *model.Practic
 			}
 		case "TFQ":
 			var data struct {
-				AnsweredBool bool           `json:"answeredBool"`
+				AnsweredBool *bool          `json:"answeredBool"`
 				Distractor   *model.TermAtp `json:"distractor"`
 			}
 			if err := json.Unmarshal(row.Data, &data); err != nil {
@@ -135,8 +135,8 @@ func (r *practiceTestResolver) Questions(ctx context.Context, obj *model.Practic
 			}
 		case "FRQ":
 			var data struct {
-				AnsweredString    string `json:"answeredString"`
-				UserMarkedCorrect bool   `json:"userMarkedCorrect"`
+				AnsweredString    *string `json:"answeredString"`
+				UserMarkedCorrect bool    `json:"userMarkedCorrect"`
 			}
 			if err := json.Unmarshal(row.Data, &data); err != nil {
 				return nil, fmt.Errorf("failed to unmarshal FRQ data: %w", err)

@@ -14,7 +14,7 @@ type Frq struct {
 	AnswerWith        AnswerWith `json:"answerWith"`
 	Correct           bool       `json:"correct"`
 	UserMarkedCorrect *bool      `json:"userMarkedCorrect,omitempty"`
-	AnsweredString    string     `json:"answeredString"`
+	AnsweredString    *string    `json:"answeredString,omitempty"`
 }
 
 type FRQInput struct {
@@ -22,7 +22,7 @@ type FRQInput struct {
 	AnswerWith        AnswerWith    `json:"answerWith"`
 	Correct           bool          `json:"correct"`
 	UserMarkedCorrect *bool         `json:"userMarkedCorrect,omitempty"`
-	AnsweredString    string        `json:"answeredString"`
+	AnsweredString    *string       `json:"answeredString,omitempty"`
 }
 
 type FSRSCard struct {
@@ -88,7 +88,7 @@ type Mcq struct {
 	AnswerWith         AnswerWith `json:"answerWith"`
 	Correct            bool       `json:"correct"`
 	CorrectChoiceIndex int32      `json:"correctChoiceIndex"`
-	AnsweredIndex      int32      `json:"answeredIndex"`
+	AnsweredIndex      *int32     `json:"answeredIndex,omitempty"`
 	Distractors        []*TermAtp `json:"distractors"`
 }
 
@@ -97,7 +97,7 @@ type MCQInput struct {
 	AnswerWith         AnswerWith      `json:"answerWith"`
 	Correct            bool            `json:"correct"`
 	CorrectChoiceIndex int32           `json:"correctChoiceIndex"`
-	AnsweredIndex      int32           `json:"answeredIndex"`
+	AnsweredIndex      *int32          `json:"answeredIndex,omitempty"`
 	Distractors        []*TermATPInput `json:"distractors"`
 }
 
@@ -164,7 +164,7 @@ type Tfq struct {
 	Term         *TermAtp   `json:"term"`
 	AnswerWith   AnswerWith `json:"answerWith"`
 	Correct      bool       `json:"correct"`
-	AnsweredBool bool       `json:"answeredBool"`
+	AnsweredBool *bool      `json:"answeredBool,omitempty"`
 	Distractor   *TermAtp   `json:"distractor,omitempty"`
 }
 
@@ -172,7 +172,7 @@ type TFQInput struct {
 	Term         *TermATPInput `json:"term"`
 	AnswerWith   AnswerWith    `json:"answerWith"`
 	Correct      bool          `json:"correct"`
-	AnsweredBool bool          `json:"answeredBool"`
+	AnsweredBool *bool         `json:"answeredBool,omitempty"`
 	Distractor   *TermATPInput `json:"distractor,omitempty"`
 }
 
