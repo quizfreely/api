@@ -174,31 +174,33 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		AllSubjects              func(childComplexity int) int
-		Authed                   func(childComplexity int) int
-		AuthedUser               func(childComplexity int) int
-		Folder                   func(childComplexity int, id string) int
-		MatchActivity            func(childComplexity int, id string) int
-		MyFolders                func(childComplexity int, first *int32, after *string) int
-		MySavedStudysetCount     func(childComplexity int) int
-		MySavedStudysets         func(childComplexity int, first *int32, after *string, last *int32, before *string) int
-		MyStudysetCount          func(childComplexity int, hideFoldered *bool, includeDrafts *bool) int
-		MyStudysetDrafts         func(childComplexity int, first *int32, after *string, last *int32, before *string, hideFoldered *bool) int
-		MyStudysets              func(childComplexity int, first *int32, after *string, last *int32, before *string, hideFoldered *bool) int
-		PracticeTest             func(childComplexity int, id string) int
-		RecentlyCreatedStudysets func(childComplexity int, first *int32, after *string, last *int32, before *string) int
-		RecentlyUpdatedStudysets func(childComplexity int, first *int32, after *string, last *int32, before *string) int
-		SearchStudysetCount      func(childComplexity int, q string) int
-		SearchStudysets          func(childComplexity int, q string, first *int32, after *string, last *int32, before *string) int
-		Studyset                 func(childComplexity int, id string) int
-		StudysetCount            func(childComplexity int, after *string, includePrivate *bool, includeDrafts *bool) int
-		StudysetUpdateCount      func(childComplexity int, after *string, includePrivate *bool, includeDrafts *bool) int
-		Subject                  func(childComplexity int, id string) int
-		SubjectsByCategory       func(childComplexity int, category *model.SubjectCategory) int
-		SubjectsByKeyword        func(childComplexity int, keyword *string) int
-		Term                     func(childComplexity int, id string) int
-		Terms                    func(childComplexity int, ids []string) int
-		User                     func(childComplexity int, id string) int
+		AllSubjects                   func(childComplexity int) int
+		Authed                        func(childComplexity int) int
+		AuthedUser                    func(childComplexity int) int
+		Folder                        func(childComplexity int, id string) int
+		MatchActivity                 func(childComplexity int, id string) int
+		MyFolders                     func(childComplexity int, first *int32, after *string) int
+		MyRecentActivityStudysetCount func(childComplexity int) int
+		MyRecentActivityStudysets     func(childComplexity int, first *int32, after *string, last *int32, before *string) int
+		MySavedStudysetCount          func(childComplexity int) int
+		MySavedStudysets              func(childComplexity int, first *int32, after *string, last *int32, before *string) int
+		MyStudysetCount               func(childComplexity int, hideFoldered *bool, includeDrafts *bool) int
+		MyStudysetDrafts              func(childComplexity int, first *int32, after *string, last *int32, before *string, hideFoldered *bool) int
+		MyStudysets                   func(childComplexity int, first *int32, after *string, last *int32, before *string, hideFoldered *bool) int
+		PracticeTest                  func(childComplexity int, id string) int
+		RecentlyCreatedStudysets      func(childComplexity int, first *int32, after *string, last *int32, before *string) int
+		RecentlyUpdatedStudysets      func(childComplexity int, first *int32, after *string, last *int32, before *string) int
+		SearchStudysetCount           func(childComplexity int, q string) int
+		SearchStudysets               func(childComplexity int, q string, first *int32, after *string, last *int32, before *string) int
+		Studyset                      func(childComplexity int, id string) int
+		StudysetCount                 func(childComplexity int, after *string, includePrivate *bool, includeDrafts *bool) int
+		StudysetUpdateCount           func(childComplexity int, after *string, includePrivate *bool, includeDrafts *bool) int
+		Subject                       func(childComplexity int, id string) int
+		SubjectsByCategory            func(childComplexity int, category *model.SubjectCategory) int
+		SubjectsByKeyword             func(childComplexity int, keyword *string) int
+		Term                          func(childComplexity int, id string) int
+		Terms                         func(childComplexity int, ids []string) int
+		User                          func(childComplexity int, id string) int
 	}
 
 	Question struct {
@@ -361,6 +363,8 @@ type QueryResolver interface {
 	SearchStudysetCount(ctx context.Context, q string) (int32, error)
 	MyStudysetCount(ctx context.Context, hideFoldered *bool, includeDrafts *bool) (int32, error)
 	MySavedStudysetCount(ctx context.Context) (int32, error)
+	MyRecentActivityStudysets(ctx context.Context, first *int32, after *string, last *int32, before *string) (*model.StudysetConnection, error)
+	MyRecentActivityStudysetCount(ctx context.Context) (int32, error)
 	MatchActivity(ctx context.Context, id string) (*model.MatchActivity, error)
 }
 type StudysetResolver interface {
@@ -1161,6 +1165,25 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.MyFolders(childComplexity, args["first"].(*int32), args["after"].(*string)), true
+
+	case "Query.myRecentActivityStudysetCount":
+		if e.complexity.Query.MyRecentActivityStudysetCount == nil {
+			break
+		}
+
+		return e.complexity.Query.MyRecentActivityStudysetCount(childComplexity), true
+
+	case "Query.myRecentActivityStudysets":
+		if e.complexity.Query.MyRecentActivityStudysets == nil {
+			break
+		}
+
+		args, err := ec.field_Query_myRecentActivityStudysets_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.MyRecentActivityStudysets(childComplexity, args["first"].(*int32), args["after"].(*string), args["last"].(*int32), args["before"].(*string)), true
 
 	case "Query.mySavedStudysetCount":
 		if e.complexity.Query.MySavedStudysetCount == nil {
@@ -2407,6 +2430,32 @@ func (ec *executionContext) field_Query_myFolders_args(ctx context.Context, rawA
 		return nil, err
 	}
 	args["after"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_myRecentActivityStudysets_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint32)
+	if err != nil {
+		return nil, err
+	}
+	args["first"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOString2ᚖstring)
+	if err != nil {
+		return nil, err
+	}
+	args["after"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint32)
+	if err != nil {
+		return nil, err
+	}
+	args["last"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOString2ᚖstring)
+	if err != nil {
+		return nil, err
+	}
+	args["before"] = arg3
 	return args, nil
 }
 
@@ -8460,6 +8509,111 @@ func (ec *executionContext) _Query_mySavedStudysetCount(ctx context.Context, fie
 }
 
 func (ec *executionContext) fieldContext_Query_mySavedStudysetCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_myRecentActivityStudysets(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_myRecentActivityStudysets(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().MyRecentActivityStudysets(rctx, fc.Args["first"].(*int32), fc.Args["after"].(*string), fc.Args["last"].(*int32), fc.Args["before"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.StudysetConnection)
+	fc.Result = res
+	return ec.marshalNStudysetConnection2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐStudysetConnection(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_myRecentActivityStudysets(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "edges":
+				return ec.fieldContext_StudysetConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_StudysetConnection_pageInfo(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type StudysetConnection", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_myRecentActivityStudysets_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_myRecentActivityStudysetCount(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_myRecentActivityStudysetCount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().MyRecentActivityStudysetCount(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int32)
+	fc.Result = res
+	return ec.marshalNInt2int32(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_myRecentActivityStudysetCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -15984,6 +16138,50 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_mySavedStudysetCount(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "myRecentActivityStudysets":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_myRecentActivityStudysets(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "myRecentActivityStudysetCount":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_myRecentActivityStudysetCount(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}

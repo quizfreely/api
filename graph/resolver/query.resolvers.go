@@ -1372,6 +1372,16 @@ func (r *queryResolver) MySavedStudysetCount(ctx context.Context) (int32, error)
 	return count, nil
 }
 
+// MyRecentActivityStudysets is the resolver for the myRecentActivityStudysets field.
+func (r *queryResolver) MyRecentActivityStudysets(ctx context.Context, first *int32, after *string, last *int32, before *string) (*model.StudysetConnection, error) {
+	panic(fmt.Errorf("not implemented: MyRecentActivityStudysets - myRecentActivityStudysets"))
+}
+
+// MyRecentActivityStudysetCount is the resolver for the myRecentActivityStudysetCount field.
+func (r *queryResolver) MyRecentActivityStudysetCount(ctx context.Context) (int32, error) {
+	panic(fmt.Errorf("not implemented: MyRecentActivityStudysetCount - myRecentActivityStudysetCount"))
+}
+
 // MatchActivity is the resolver for the matchActivity field.
 func (r *queryResolver) MatchActivity(ctx context.Context, id string) (*model.MatchActivity, error) {
 	var ma model.MatchActivity
