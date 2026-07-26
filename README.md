@@ -33,7 +33,7 @@ CREATE ROLE quizfreely_api LOGIN PASSWORD 'password_here';
 CREATE DATABASE quizfreely_db OWNER quizfreely_db_admin;
 GRANT CONNECT ON DATABASE quizfreely_db TO quizfreely_api;
 
--- Exit with `\q` when done
+-- Exit with `\q` when we're done
 \q
 ```
 
