@@ -8,6 +8,8 @@ This is the GraphQL API for Quizfreely, a free and open source studying tool.
 
 Quizfreely's frontend web app source code repository is `quizfreely/quizfreely` [on Codeberg](https://codeberg.org/quizfreely/quizfreely) and [on GitHub](https://github.com/quizfreely/quizfreely).
 
+Documentation for developers and contributors is at [docs.quizfreely.org](https://docs.quizfreely.org)
+
 ---
 
 ### First-time contributor/developer setup
@@ -54,7 +56,6 @@ If you don't change anything else in config.toml or .env, everything should "jus
 Now use dbmate to set up your database. (Run this inside your `api` folder you got after this repository was cloned)
 ```bash
 # cd api
-
 dbmate -e DB_MIGRATION_URL migrate
 ```
 
