@@ -47,6 +47,10 @@ Next, edit `config.toml`. Pur your new password for `quizfreely_api` and your sa
 db_url = 'postgres://quizfreely_api:password_here@localhost:5432/quizfreely_db'
 ```
 
+There are lots of helpful and detailed comments inside of config.toml for all the other options.
+
+If you don't change anything else in config.toml or .env, everything should "just work" by default.
+
 Now use dbmate to set up your database. (Run this inside your `api` folder you got after this repository was cloned)
 ```bash
 # cd api
