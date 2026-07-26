@@ -21,10 +21,12 @@ Clone this repository, then copy `.env.example` to `.env`.
 Copy `config.example.toml` to `config.toml`
 
 Create PostgreSQL roles named `quizfreely_db_admin` and `quizfreely_api`. You can use `psql`.
-```sql
+```bash
+# systemctl start postgresql
 sudo -u postgres psql
-
--- Now, inside your `psql` database shell:
+```
+Now, inside your `psql` database shell, create our roles and our database:
+```sql
 CREATE ROLE quizfreely_db_admin LOGIN PASSWORD 'your_new_password_here';
 CREATE ROLE quizfreely_api LOGIN PASSWORD 'password_here';
 
@@ -45,7 +47,7 @@ Next, edit `config.toml`. Pur your new password for `quizfreely_api` and your sa
 db_url = 'postgres://quizfreely_api:password_here@localhost:5432/quizfreely_db'
 ```
 
-Now use dbmate to set up your database. (Run this inside the `api` folder you got after this repository was cloned)
+Now use dbmate to set up your database. (Run this inside your `api` folder you got after this repository was cloned)
 ```bash
 # cd api
 
@@ -66,10 +68,10 @@ Make sure PostgreSQL is running:
 ```bash
 systemctl status postgresql
 
-# start it if you need to:
+# start postgres if you need to:
 # systemctl start postgresql
 
-# enable it if you want to automatically start on boot:
+# enable postgres if you want it to automatically start on boot:
 # systemctl enable postgresql
 ```
 
