@@ -12,6 +12,12 @@ type SavedStudysetRow struct {
 	SavedAt *string `db:"saved_at"`
 }
 
+// ActivityStudysetRow is used for MyRecentActivityStudysets to include activity_ts for cursor.
+type ActivityStudysetRow struct {
+	model.Studyset
+	ActivityTs *string `db:"activity_ts"`
+}
+
 // EncodeStudysetCursor encodes (timestampStr, id) for keyset pagination.
 // timestampStr is the sort key (e.g. created_at or updated_at from to_char).
 func EncodeStudysetCursor(timestampStr, id string) string {
