@@ -202,7 +202,60 @@ func (r *queryResolver) Studyset(ctx context.Context, id string) (*model.Studyse
 
 // Studysets is the resolver for the studysets field.
 func (r *queryResolver) Studysets(ctx context.Context, ids []string) ([]*model.Studyset, error) {
-	panic(fmt.Errorf("not implemented: Studysets - studysets"))
+	if len(ids) == 0 {
+		return []*model.Studyset{}, nil
+	}
+
+	authedUser := auth.AuthedUserContext(ctx)
+
+	type row struct {
+		model.Studyset
+		Ordinality int `db:"ordinality"`
+	}
+
+	selectCols := `
+		s.id, s.user_id, s.title, s.private, s.draft, s.subject_id, s.seo_indexing_approved,
+		to_char(s.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
+		to_char(s.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at,
+		input.ordinality
+	`
+
+	var rows []row
+	var err error
+
+	if authedUser != nil {
+		err = pgxscan.Select(ctx, r.DB, &rows, `
+			SELECT `+selectCols+`
+			FROM unnest($1::uuid[]) WITH ORDINALITY AS input(id, ordinality)
+			LEFT JOIN studysets s ON s.id = input.id
+				AND s.draft = false
+				AND (s.private = false OR s.user_id = $2)
+			ORDER BY input.ordinality
+		`, ids, authedUser.ID)
+	} else {
+		err = pgxscan.Select(ctx, r.DB, &rows, `
+			SELECT `+selectCols+`
+			FROM unnest($1::uuid[]) WITH ORDINALITY AS input(id, ordinality)
+			LEFT JOIN studysets s ON s.id = input.id
+				AND s.draft = false
+				AND s.private = false
+			ORDER BY input.ordinality
+		`, ids)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch studysets: %w", err)
+	}
+
+	result := make([]*model.Studyset, len(ids))
+	for _, r := range rows {
+		idx := r.Ordinality - 1
+		if r.Studyset.ID != nil {
+			s := r.Studyset
+			result[idx] = &s
+		}
+	}
+
+	return result, nil
 }
 
 // User is the resolver for the user field.
