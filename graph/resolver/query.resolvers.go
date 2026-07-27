@@ -200,6 +200,11 @@ func (r *queryResolver) Studyset(ctx context.Context, id string) (*model.Studyse
 	return &studyset, nil
 }
 
+// Studysets is the resolver for the studysets field.
+func (r *queryResolver) Studysets(ctx context.Context, ids []string) ([]*model.Studyset, error) {
+	panic(fmt.Errorf("not implemented: Studysets - studysets"))
+}
+
 // User is the resolver for the user field.
 func (r *queryResolver) User(ctx context.Context, id string) (*model.User, error) {
 	var user model.User

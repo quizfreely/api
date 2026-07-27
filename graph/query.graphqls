@@ -2,6 +2,7 @@ type Query {
     authed: Boolean!
     authedUser: AuthedUser
     studyset(id: ID!): Studyset
+    studysets(ids: [ID!]!): [Studyset]!
     user(id: ID!): User
     term(id: ID!): Term
     terms(ids: [ID!]!): [Term]!
