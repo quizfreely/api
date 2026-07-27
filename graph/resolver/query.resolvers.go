@@ -200,6 +200,64 @@ func (r *queryResolver) Studyset(ctx context.Context, id string) (*model.Studyse
 	return &studyset, nil
 }
 
+// Studysets is the resolver for the studysets field.
+func (r *queryResolver) Studysets(ctx context.Context, ids []string) ([]*model.Studyset, error) {
+	if len(ids) == 0 {
+		return []*model.Studyset{}, nil
+	}
+
+	authedUser := auth.AuthedUserContext(ctx)
+
+	type row struct {
+		model.Studyset
+		Ordinality int `db:"ordinality"`
+	}
+
+	selectCols := `
+		s.id, s.user_id, s.title, s.private, s.draft, s.subject_id, s.seo_indexing_approved,
+		to_char(s.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
+		to_char(s.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at,
+		input.ordinality
+	`
+
+	var rows []row
+	var err error
+
+	if authedUser != nil {
+		err = pgxscan.Select(ctx, r.DB, &rows, `
+			SELECT `+selectCols+`
+			FROM unnest($1::uuid[]) WITH ORDINALITY AS input(id, ordinality)
+			LEFT JOIN studysets s ON s.id = input.id
+				AND s.draft = false
+				AND (s.private = false OR s.user_id = $2)
+			ORDER BY input.ordinality
+		`, ids, authedUser.ID)
+	} else {
+		err = pgxscan.Select(ctx, r.DB, &rows, `
+			SELECT `+selectCols+`
+			FROM unnest($1::uuid[]) WITH ORDINALITY AS input(id, ordinality)
+			LEFT JOIN studysets s ON s.id = input.id
+				AND s.draft = false
+				AND s.private = false
+			ORDER BY input.ordinality
+		`, ids)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch studysets: %w", err)
+	}
+
+	result := make([]*model.Studyset, len(ids))
+	for _, r := range rows {
+		idx := r.Ordinality - 1
+		if r.Studyset.ID != nil {
+			s := r.Studyset
+			result[idx] = &s
+		}
+	}
+
+	return result, nil
+}
+
 // User is the resolver for the user field.
 func (r *queryResolver) User(ctx context.Context, id string) (*model.User, error) {
 	var user model.User
@@ -1368,6 +1426,169 @@ func (r *queryResolver) MySavedStudysetCount(ctx context.Context) (int32, error)
 	err := r.DB.QueryRow(ctx, sql, authedUser.ID).Scan(&count)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count saved studysets: %w", err)
+	}
+	return count, nil
+}
+
+// MyRecentActivityStudysets is the resolver for the myRecentActivityStudysets field.
+func (r *queryResolver) MyRecentActivityStudysets(ctx context.Context, first *int32, after *string, last *int32, before *string) (*model.StudysetConnection, error) {
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil {
+		return nil, fmt.Errorf("not authenticated")
+	}
+
+	l := 240
+	if first != nil && *first > 0 && *first < 1000 {
+		l = int(*first)
+	} else if last != nil && *last > 0 && *last < 1000 {
+		l = int(*last)
+	}
+	limit := l + 1
+
+	cursorTS, cursorID := cursor.DecodeStudysetCursor(ptrToString(after))
+	beforeCursorTS, beforeCursorID := cursor.DecodeStudysetCursor(ptrToString(before))
+
+	isBackward := beforeCursorID != ""
+	hasPrevious := false
+	if !isBackward {
+		hasPrevious = cursorTS != "" || cursorID != ""
+	}
+
+	activityQuery := `
+		SELECT studyset_id, to_char(MAX(timestamp), 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') AS activity_ts
+		FROM (
+			SELECT pts.studyset_id, pt.timestamp
+			FROM practice_tests pt
+			JOIN practice_test_studysets pts ON pts.practice_test_id = pt.id
+			WHERE pt.user_id = $1
+			UNION ALL
+			SELECT mas.studyset_id, ma.end_timestamp AS timestamp
+			FROM match_activities ma
+			JOIN match_activity_studysets mas ON mas.match_id = ma.id
+			WHERE ma.user_id = $1
+		) combined
+		GROUP BY studyset_id
+	`
+
+	selectCols := `
+		s.id, s.user_id, s.title, s.private, s.draft, s.subject_id, s.seo_indexing_approved,
+		to_char(s.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
+		to_char(s.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at,
+		a.activity_ts
+	`
+
+	visibilityWhere := `WHERE s.draft = false AND (s.private = false OR s.user_id = $2)`
+
+	var rows []*cursor.ActivityStudysetRow
+	var err error
+
+	if isBackward {
+		sql := fmt.Sprintf(`
+			SELECT %s
+			FROM (%s) a
+			JOIN studysets s ON s.id = a.studyset_id
+			%s AND (a.activity_ts, s.id) > ($3, $4::uuid)
+			ORDER BY a.activity_ts ASC, s.id ASC
+			LIMIT $5
+		`, selectCols, activityQuery, visibilityWhere)
+		err = pgxscan.Select(ctx, r.DB, &rows, sql, authedUser.ID, authedUser.ID, beforeCursorTS, beforeCursorID, limit)
+		if err == nil {
+			hasPrevious = len(rows) > l
+			if hasPrevious {
+				rows = rows[:l]
+			}
+			for i, j := 0, len(rows)-1; i < j; i, j = i+1, j-1 {
+				rows[i], rows[j] = rows[j], rows[i]
+			}
+		}
+	} else if cursorID != "" {
+		sql := fmt.Sprintf(`
+			SELECT %s
+			FROM (%s) a
+			JOIN studysets s ON s.id = a.studyset_id
+			%s AND (a.activity_ts, s.id) < ($3, $4::uuid)
+			ORDER BY a.activity_ts DESC, s.id DESC
+			LIMIT $5
+		`, selectCols, activityQuery, visibilityWhere)
+		err = pgxscan.Select(ctx, r.DB, &rows, sql, authedUser.ID, authedUser.ID, cursorTS, cursorID, limit)
+	} else {
+		sql := fmt.Sprintf(`
+			SELECT %s
+			FROM (%s) a
+			JOIN studysets s ON s.id = a.studyset_id
+			%s
+			ORDER BY a.activity_ts DESC, s.id DESC
+			LIMIT $3
+		`, selectCols, activityQuery, visibilityWhere)
+		err = pgxscan.Select(ctx, r.DB, &rows, sql, authedUser.ID, authedUser.ID, limit)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch recent activity studysets: %w", err)
+	}
+
+	hasNext := false
+	if isBackward {
+		hasNext = true
+	} else {
+		hasNext = len(rows) > l
+		if hasNext {
+			rows = rows[:l]
+		}
+	}
+
+	edges := make([]*model.StudysetEdge, 0, len(rows))
+	for _, row := range rows {
+		edges = append(edges, &model.StudysetEdge{
+			Node:   &row.Studyset,
+			Cursor: cursor.EncodeStudysetCursor(ptrToString(row.ActivityTs), ptrToString(row.ID)),
+		})
+	}
+	var startCursor, endCursor *string
+	if len(edges) > 0 {
+		startCursor = &edges[0].Cursor
+		endCursor = &edges[len(edges)-1].Cursor
+	}
+	return &model.StudysetConnection{
+		Edges: edges,
+		PageInfo: &model.PageInfo{
+			HasNextPage:     hasNext,
+			HasPreviousPage: hasPrevious,
+			StartCursor:     startCursor,
+			EndCursor:       endCursor,
+		},
+	}, nil
+}
+
+// MyRecentActivityStudysetCount is the resolver for the myRecentActivityStudysetCount field.
+func (r *queryResolver) MyRecentActivityStudysetCount(ctx context.Context) (int32, error) {
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil {
+		return 0, fmt.Errorf("not authenticated")
+	}
+
+	sql := `
+		SELECT COUNT(*)
+		FROM (
+			SELECT DISTINCT a.studyset_id
+			FROM (
+				SELECT pts.studyset_id
+				FROM practice_tests pt
+				JOIN practice_test_studysets pts ON pts.practice_test_id = pt.id
+				WHERE pt.user_id = $1
+				UNION
+				SELECT mas.studyset_id
+				FROM match_activities ma
+				JOIN match_activity_studysets mas ON mas.match_id = ma.id
+				WHERE ma.user_id = $1
+			) a
+			JOIN studysets s ON s.id = a.studyset_id
+			WHERE s.draft = false AND (s.private = false OR s.user_id = $1)
+		) distinct_studysets
+	`
+	var count int32
+	err := r.DB.QueryRow(ctx, sql, authedUser.ID).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count recent activity studysets: %w", err)
 	}
 	return count, nil
 }

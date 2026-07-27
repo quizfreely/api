@@ -2,6 +2,7 @@ type Query {
     authed: Boolean!
     authedUser: AuthedUser
     studyset(id: ID!): Studyset
+    studysets(ids: [ID!]!): [Studyset]!
     user(id: ID!): User
     term(id: ID!): Term
     terms(ids: [ID!]!): [Term]!
@@ -23,6 +24,8 @@ type Query {
     searchStudysetCount(q: String!): Int!
     myStudysetCount(hideFoldered: Boolean, includeDrafts: Boolean = false): Int!
     mySavedStudysetCount: Int!
+    myRecentActivityStudysets(first: Int = 24, after: String, last: Int, before: String): StudysetConnection!
+    myRecentActivityStudysetCount: Int!
     matchActivity(id: ID!): MatchActivity
 }
 type PageInfo {
