@@ -224,7 +224,7 @@ func (r *studysetResolver) ReviewEventStatsByDay(ctx context.Context, obj *model
 
 	query := `
 		SELECT
-			(date_trunc('day', timestamp AT TIME ZONE $2) AT TIME ZONE $2)::text AS timestamp
+			(date_trunc('day', timestamp AT TIME ZONE $2) AT TIME ZONE $2)::text AS timestamp,
 			COUNT(*) FILTER (WHERE correct = true)::int AS correct,
 			COUNT(*) FILTER (WHERE correct = false)::int AS incorrect
 		FROM
