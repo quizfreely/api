@@ -211,23 +211,30 @@ type ComplexityRoot struct {
 		Tfq func(childComplexity int) int
 	}
 
+	ReviewEventStats struct {
+		Correct   func(childComplexity int) int
+		Incorrect func(childComplexity int) int
+		Timestamp func(childComplexity int) int
+	}
+
 	Studyset struct {
-		AuthorFolder        func(childComplexity int) int
-		CreatedAt           func(childComplexity int) int
-		Draft               func(childComplexity int) int
-		ID                  func(childComplexity int) int
-		MatchActivities     func(childComplexity int) int
-		MyFolder            func(childComplexity int) int
-		PracticeTests       func(childComplexity int) int
-		Private             func(childComplexity int) int
-		SEOIndexingApproved func(childComplexity int) int
-		Saved               func(childComplexity int) int
-		Subject             func(childComplexity int) int
-		Terms               func(childComplexity int) int
-		TermsCount          func(childComplexity int) int
-		Title               func(childComplexity int) int
-		UpdatedAt           func(childComplexity int) int
-		User                func(childComplexity int) int
+		AuthorFolder          func(childComplexity int) int
+		CreatedAt             func(childComplexity int) int
+		Draft                 func(childComplexity int) int
+		ID                    func(childComplexity int) int
+		MatchActivities       func(childComplexity int) int
+		MyFolder              func(childComplexity int) int
+		PracticeTests         func(childComplexity int) int
+		Private               func(childComplexity int) int
+		ReviewEventStatsByDay func(childComplexity int, last *int32) int
+		SEOIndexingApproved   func(childComplexity int) int
+		Saved                 func(childComplexity int) int
+		Subject               func(childComplexity int) int
+		Terms                 func(childComplexity int) int
+		TermsCount            func(childComplexity int) int
+		Title                 func(childComplexity int) int
+		UpdatedAt             func(childComplexity int) int
+		User                  func(childComplexity int) int
 	}
 
 	StudysetConnection struct {
@@ -380,6 +387,8 @@ type StudysetResolver interface {
 	Saved(ctx context.Context, obj *model.Studyset) (*bool, error)
 	MyFolder(ctx context.Context, obj *model.Studyset) (*model.Folder, error)
 	AuthorFolder(ctx context.Context, obj *model.Studyset) (*model.Folder, error)
+
+	ReviewEventStatsByDay(ctx context.Context, obj *model.Studyset, last *int32) ([]*model.ReviewEventStats, error)
 }
 type SubjectResolver interface {
 	Studysets(ctx context.Context, obj *model.Subject, first *int32, after *string, last *int32, before *string) (*model.StudysetConnection, error)
@@ -1450,6 +1459,27 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Question.Tfq(childComplexity), true
 
+	case "ReviewEventStats.correct":
+		if e.complexity.ReviewEventStats.Correct == nil {
+			break
+		}
+
+		return e.complexity.ReviewEventStats.Correct(childComplexity), true
+
+	case "ReviewEventStats.incorrect":
+		if e.complexity.ReviewEventStats.Incorrect == nil {
+			break
+		}
+
+		return e.complexity.ReviewEventStats.Incorrect(childComplexity), true
+
+	case "ReviewEventStats.timestamp":
+		if e.complexity.ReviewEventStats.Timestamp == nil {
+			break
+		}
+
+		return e.complexity.ReviewEventStats.Timestamp(childComplexity), true
+
 	case "Studyset.authorFolder":
 		if e.complexity.Studyset.AuthorFolder == nil {
 			break
@@ -1505,6 +1535,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Studyset.Private(childComplexity), true
+
+	case "Studyset.reviewEventStatsByDay":
+		if e.complexity.Studyset.ReviewEventStatsByDay == nil {
+			break
+		}
+
+		args, err := ec.field_Studyset_reviewEventStatsByDay_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Studyset.ReviewEventStatsByDay(childComplexity, args["last"].(*int32)), true
 
 	case "Studyset.seoIndexingApproved":
 		if e.complexity.Studyset.SEOIndexingApproved == nil {
@@ -2809,6 +2851,17 @@ func (ec *executionContext) field_Query_user_args(ctx context.Context, rawArgs m
 		return nil, err
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Studyset_reviewEventStatsByDay_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint32)
+	if err != nil {
+		return nil, err
+	}
+	args["last"] = arg0
 	return args, nil
 }
 
@@ -5369,6 +5422,8 @@ func (ec *executionContext) fieldContext_Mutation_createStudyset(ctx context.Con
 				return ec.fieldContext_Studyset_authorFolder(ctx, field)
 			case "seoIndexingApproved":
 				return ec.fieldContext_Studyset_seoIndexingApproved(ctx, field)
+			case "reviewEventStatsByDay":
+				return ec.fieldContext_Studyset_reviewEventStatsByDay(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Studyset", field.Name)
 		},
@@ -5455,6 +5510,8 @@ func (ec *executionContext) fieldContext_Mutation_updateStudyset(ctx context.Con
 				return ec.fieldContext_Studyset_authorFolder(ctx, field)
 			case "seoIndexingApproved":
 				return ec.fieldContext_Studyset_seoIndexingApproved(ctx, field)
+			case "reviewEventStatsByDay":
+				return ec.fieldContext_Studyset_reviewEventStatsByDay(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Studyset", field.Name)
 		},
@@ -7235,6 +7292,8 @@ func (ec *executionContext) fieldContext_Query_studyset(ctx context.Context, fie
 				return ec.fieldContext_Studyset_authorFolder(ctx, field)
 			case "seoIndexingApproved":
 				return ec.fieldContext_Studyset_seoIndexingApproved(ctx, field)
+			case "reviewEventStatsByDay":
+				return ec.fieldContext_Studyset_reviewEventStatsByDay(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Studyset", field.Name)
 		},
@@ -7324,6 +7383,8 @@ func (ec *executionContext) fieldContext_Query_studysets(ctx context.Context, fi
 				return ec.fieldContext_Studyset_authorFolder(ctx, field)
 			case "seoIndexingApproved":
 				return ec.fieldContext_Studyset_seoIndexingApproved(ctx, field)
+			case "reviewEventStatsByDay":
+				return ec.fieldContext_Studyset_reviewEventStatsByDay(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Studyset", field.Name)
 		},
@@ -9142,6 +9203,138 @@ func (ec *executionContext) fieldContext_Question_frq(_ context.Context, field g
 	return fc, nil
 }
 
+func (ec *executionContext) _ReviewEventStats_timestamp(ctx context.Context, field graphql.CollectedField, obj *model.ReviewEventStats) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReviewEventStats_timestamp(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Timestamp, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ReviewEventStats_timestamp(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ReviewEventStats",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ReviewEventStats_correct(ctx context.Context, field graphql.CollectedField, obj *model.ReviewEventStats) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReviewEventStats_correct(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Correct, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int32)
+	fc.Result = res
+	return ec.marshalNInt2int32(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ReviewEventStats_correct(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ReviewEventStats",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ReviewEventStats_incorrect(ctx context.Context, field graphql.CollectedField, obj *model.ReviewEventStats) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReviewEventStats_incorrect(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Incorrect, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int32)
+	fc.Result = res
+	return ec.marshalNInt2int32(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ReviewEventStats_incorrect(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ReviewEventStats",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Studyset_id(ctx context.Context, field graphql.CollectedField, obj *model.Studyset) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Studyset_id(ctx, field)
 	if err != nil {
@@ -9923,6 +10116,66 @@ func (ec *executionContext) fieldContext_Studyset_seoIndexingApproved(_ context.
 	return fc, nil
 }
 
+func (ec *executionContext) _Studyset_reviewEventStatsByDay(ctx context.Context, field graphql.CollectedField, obj *model.Studyset) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Studyset_reviewEventStatsByDay(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Studyset().ReviewEventStatsByDay(rctx, obj, fc.Args["last"].(*int32))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.ReviewEventStats)
+	fc.Result = res
+	return ec.marshalOReviewEventStats2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐReviewEventStatsᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Studyset_reviewEventStatsByDay(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Studyset",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "timestamp":
+				return ec.fieldContext_ReviewEventStats_timestamp(ctx, field)
+			case "correct":
+				return ec.fieldContext_ReviewEventStats_correct(ctx, field)
+			case "incorrect":
+				return ec.fieldContext_ReviewEventStats_incorrect(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReviewEventStats", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Studyset_reviewEventStatsByDay_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _StudysetConnection_edges(ctx context.Context, field graphql.CollectedField, obj *model.StudysetConnection) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_StudysetConnection_edges(ctx, field)
 	if err != nil {
@@ -10098,6 +10351,8 @@ func (ec *executionContext) fieldContext_StudysetEdge_node(_ context.Context, fi
 				return ec.fieldContext_Studyset_authorFolder(ctx, field)
 			case "seoIndexingApproved":
 				return ec.fieldContext_Studyset_seoIndexingApproved(ctx, field)
+			case "reviewEventStatsByDay":
+				return ec.fieldContext_Studyset_reviewEventStatsByDay(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Studyset", field.Name)
 		},
@@ -16425,6 +16680,55 @@ func (ec *executionContext) _Question(ctx context.Context, sel ast.SelectionSet,
 	return out
 }
 
+var reviewEventStatsImplementors = []string{"ReviewEventStats"}
+
+func (ec *executionContext) _ReviewEventStats(ctx context.Context, sel ast.SelectionSet, obj *model.ReviewEventStats) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, reviewEventStatsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ReviewEventStats")
+		case "timestamp":
+			out.Values[i] = ec._ReviewEventStats_timestamp(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "correct":
+			out.Values[i] = ec._ReviewEventStats_correct(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "incorrect":
+			out.Values[i] = ec._ReviewEventStats_incorrect(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var studysetImplementors = []string{"Studyset"}
 
 func (ec *executionContext) _Studyset(ctx context.Context, sel ast.SelectionSet, obj *model.Studyset) graphql.Marshaler {
@@ -16762,6 +17066,39 @@ func (ec *executionContext) _Studyset(ctx context.Context, sel ast.SelectionSet,
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
+		case "reviewEventStatsByDay":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Studyset_reviewEventStatsByDay(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -18314,6 +18651,16 @@ func (ec *executionContext) unmarshalNQuestionInput2ᚖquizfreelyᚋapiᚋgraph�
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalNReviewEventStats2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐReviewEventStats(ctx context.Context, sel ast.SelectionSet, v *model.ReviewEventStats) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ReviewEventStats(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v any) (string, error) {
 	res, err := graphql.UnmarshalString(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -19215,6 +19562,53 @@ func (ec *executionContext) marshalOQuestion2ᚖquizfreelyᚋapiᚋgraphᚋmodel
 		return graphql.Null
 	}
 	return ec._Question(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOReviewEventStats2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐReviewEventStatsᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ReviewEventStats) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNReviewEventStats2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐReviewEventStats(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v any) (*string, error) {

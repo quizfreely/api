@@ -203,6 +203,11 @@ func (r *studysetResolver) AuthorFolder(ctx context.Context, obj *model.Studyset
 	return folder, nil
 }
 
+// ReviewEventStatsByDay is the resolver for the reviewEventStatsByDay field.
+func (r *studysetResolver) ReviewEventStatsByDay(ctx context.Context, obj *model.Studyset, last *int32) ([]*model.ReviewEventStats, error) {
+	panic(fmt.Errorf("not implemented: ReviewEventStatsByDay - reviewEventStatsByDay"))
+}
+
 // Studyset returns graph.StudysetResolver implementation.
 func (r *Resolver) Studyset() graph.StudysetResolver { return &studysetResolver{r} }
 

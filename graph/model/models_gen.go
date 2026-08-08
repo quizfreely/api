@@ -144,6 +144,12 @@ type QuestionInput struct {
 	Frq *FRQInput `json:"frq,omitempty"`
 }
 
+type ReviewEventStats struct {
+	Timestamp string `json:"timestamp"`
+	Correct   int32  `json:"correct"`
+	Incorrect int32  `json:"incorrect"`
+}
+
 type StudysetConnection struct {
 	Edges    []*StudysetEdge `json:"edges"`
 	PageInfo *PageInfo       `json:"pageInfo"`
