@@ -23,9 +23,15 @@ type Studyset {
     myFolder: Folder
     authorFolder: Folder
     seoIndexingApproved: Boolean!
+    reviewEventStatsByDay(last: Int): [ReviewEventStats!]
 }
 input StudysetInput {
     title: String!
     private: Boolean!
     subjectId: ID
+}
+type ReviewEventStats {
+    timestamp: String!
+    correct: Int!
+    incorrect: Int!
 }
