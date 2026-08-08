@@ -11,6 +11,7 @@ import (
 	"quizfreely/api/graph"
 	"quizfreely/api/graph/loader"
 	"quizfreely/api/graph/model"
+	"quizfreely/api/rest/middleware"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
 )
@@ -204,7 +205,7 @@ func (r *studysetResolver) AuthorFolder(ctx context.Context, obj *model.Studyset
 }
 
 // ReviewEventStatsByDay is the resolver for the reviewEventStatsByDay field.
-func (r *studysetResolver) ReviewEventStatsByDay(ctx context.Context, obj *model.Studyset, last *int32) ([]*model.ReviewEventStats, error) {
+func (r *studysetResolver) ReviewEventStatsByDay(ctx context.Context, obj *model.Studyset, last int32) ([]*model.ReviewEventStats, error) {
 	authedUser := auth.AuthedUserContext(ctx)
 	if authedUser == nil {
 		return nil, fmt.Errorf("not authenticated")
@@ -212,7 +213,7 @@ func (r *studysetResolver) ReviewEventStatsByDay(ctx context.Context, obj *model
 
 	// fallback to UTC if user timezone from ctx is not available
 	tz := "UTC"
-	if tzCtx := server.TimezoneContext(ctx); tzCtx != nil && *tzCtx != "" {
+	if tzCtx := middleware.TimezoneContext(ctx); tzCtx != nil && *tzCtx != "" {
 		tz = *tzCtx
 	}
 
@@ -238,7 +239,7 @@ func (r *studysetResolver) ReviewEventStatsByDay(ctx context.Context, obj *model
 	`
 
 	var stats []*model.ReviewEventStats
-	err := pgxscan.Select(ctx, r.dbPool, &stats, query, authedUser.ID, tz, days)
+	err := pgxscan.Select(ctx, r.DB, &stats, query, authedUser.ID, tz, days)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch review event stats by day: %w", err)
 	}

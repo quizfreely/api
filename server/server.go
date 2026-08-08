@@ -9,6 +9,7 @@ import (
 	"quizfreely/api/graph/loader"
 	"quizfreely/api/graph/resolver"
 	"quizfreely/api/rest"
+	"quizfreely/api/rest/middleware"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/extension"
@@ -114,7 +115,7 @@ func NewRouter(config qzfrAPIConfig.Config, dbPool *pgxpool.Pool, s3Client *s3.C
 
 	router.Group(func(r chi.Router) {
 		r.Use(authHandler.AuthMiddleware)
-		r.Use(TimezoneMiddleware)
+		r.Use(middleware.TimezoneMiddleware)
 
 		h := handler.New(graph.NewExecutableSchema(graph.Config{Resolvers: &resolver.Resolver{
 			DB:                 dbPool,

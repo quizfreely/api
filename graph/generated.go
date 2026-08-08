@@ -226,7 +226,7 @@ type ComplexityRoot struct {
 		MyFolder              func(childComplexity int) int
 		PracticeTests         func(childComplexity int) int
 		Private               func(childComplexity int) int
-		ReviewEventStatsByDay func(childComplexity int, last *int32) int
+		ReviewEventStatsByDay func(childComplexity int, last int32) int
 		SEOIndexingApproved   func(childComplexity int) int
 		Saved                 func(childComplexity int) int
 		Subject               func(childComplexity int) int
@@ -388,7 +388,7 @@ type StudysetResolver interface {
 	MyFolder(ctx context.Context, obj *model.Studyset) (*model.Folder, error)
 	AuthorFolder(ctx context.Context, obj *model.Studyset) (*model.Folder, error)
 
-	ReviewEventStatsByDay(ctx context.Context, obj *model.Studyset, last *int32) ([]*model.ReviewEventStats, error)
+	ReviewEventStatsByDay(ctx context.Context, obj *model.Studyset, last int32) ([]*model.ReviewEventStats, error)
 }
 type SubjectResolver interface {
 	Studysets(ctx context.Context, obj *model.Subject, first *int32, after *string, last *int32, before *string) (*model.StudysetConnection, error)
@@ -1546,7 +1546,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Studyset.ReviewEventStatsByDay(childComplexity, args["last"].(*int32)), true
+		return e.complexity.Studyset.ReviewEventStatsByDay(childComplexity, args["last"].(int32)), true
 
 	case "Studyset.seoIndexingApproved":
 		if e.complexity.Studyset.SEOIndexingApproved == nil {
@@ -2857,7 +2857,7 @@ func (ec *executionContext) field_Query_user_args(ctx context.Context, rawArgs m
 func (ec *executionContext) field_Studyset_reviewEventStatsByDay_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint32)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalNInt2int32)
 	if err != nil {
 		return nil, err
 	}
@@ -10130,7 +10130,7 @@ func (ec *executionContext) _Studyset_reviewEventStatsByDay(ctx context.Context,
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Studyset().ReviewEventStatsByDay(rctx, obj, fc.Args["last"].(*int32))
+		return ec.resolvers.Studyset().ReviewEventStatsByDay(rctx, obj, fc.Args["last"].(int32))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
