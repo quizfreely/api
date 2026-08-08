@@ -38,7 +38,7 @@ func TimezoneMiddleware(next http.Handler) http.Handler {
 func TimezoneContext(ctx context.Context) *string {
 	v, ok := ctx.Value(tzCtxKey).(string)
 	if ok && v != "" {
-		return v
+		return &v
 	} else {
 		return nil
 	}
