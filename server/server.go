@@ -114,6 +114,7 @@ func NewRouter(config qzfrAPIConfig.Config, dbPool *pgxpool.Pool, s3Client *s3.C
 
 	router.Group(func(r chi.Router) {
 		r.Use(authHandler.AuthMiddleware)
+		r.Use(TimezoneMiddleware)
 
 		h := handler.New(graph.NewExecutableSchema(graph.Config{Resolvers: &resolver.Resolver{
 			DB:                 dbPool,
