@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"net/http"
+	"net/url"
 	"time"
 	_ "time/tzdata"
 )
@@ -20,8 +21,8 @@ func TimezoneMiddleware(next http.Handler) http.Handler {
 	) {
 		cookie, err := r.Cookie("tz")
 		if err == nil && cookie != nil {
-			tz := cookie.Value
-			if tz != "" {
+			tz, err = url.QueryUnescape(cookie.Value)
+			if err == nil && tz != "" {
 				loc, err := time.LoadLocation(tz)
 				if err == nil {
 					tz = loc.String()
