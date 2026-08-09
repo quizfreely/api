@@ -224,14 +224,17 @@ func (r *studysetResolver) ReviewEventStatsByDay(ctx context.Context, obj *model
 
 	query := `
 		SELECT
-			(date_trunc('day', timestamp AT TIME ZONE $2) AT TIME ZONE $2)::text AS timestamp,
-			COUNT(*) FILTER (WHERE correct = true)::int AS correct,
-			COUNT(*) FILTER (WHERE correct = false)::int AS incorrect
+			(date_trunc('day', re.timestamp AT TIME ZONE $3) AT TIME ZONE $3)::text AS timestamp,
+			COUNT(*) FILTER (WHERE re.correct = true)::int AS correct,
+			COUNT(*) FILTER (WHERE re.correct = false)::int AS incorrect
 		FROM
-			public.review_events
+			public.review_events re
+		JOIN
+			public.terms t ON t.id = re.term_id
 		WHERE
-			user_id = $1
-			AND timestamp >= ((NOW() AT TIME ZONE $2)::date - ($3 - 1) * INTERVAL '1 day') AT TIME ZONE $2
+			re.user_id = $1
+			AND t.studyset_id = $2
+			AND re.timestamp >= ((NOW() AT TIME ZONE $3)::date - ($4 - 1) * INTERVAL '1 day') AT TIME ZONE $3
 		GROUP BY
 			1
 		ORDER BY
@@ -239,7 +242,7 @@ func (r *studysetResolver) ReviewEventStatsByDay(ctx context.Context, obj *model
 	`
 
 	var stats []*model.ReviewEventStats
-	err := pgxscan.Select(ctx, r.DB, &stats, query, authedUser.ID, tz, days)
+	err := pgxscan.Select(ctx, r.DB, &stats, query, authedUser.ID, obj.ID, tz, days)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch review event stats by day: %w", err)
 	}
