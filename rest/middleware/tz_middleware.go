@@ -21,7 +21,7 @@ func TimezoneMiddleware(next http.Handler) http.Handler {
 	) {
 		cookie, err := r.Cookie("tz")
 		if err == nil && cookie != nil {
-			tz, err = url.QueryUnescape(cookie.Value)
+			tz, err := url.QueryUnescape(cookie.Value)
 			if err == nil && tz != "" {
 				loc, err := time.LoadLocation(tz)
 				if err == nil {
