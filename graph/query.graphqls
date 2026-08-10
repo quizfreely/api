@@ -27,6 +27,7 @@ type Query {
     myRecentActivityStudysets(first: Int = 24, after: String, last: Int, before: String): StudysetConnection!
     myRecentActivityStudysetCount: Int!
     matchActivity(id: ID!): MatchActivity
+    reviewEventStatsByDay(last: Int!): [ReviewEventStats!]
 }
 type PageInfo {
     hasNextPage: Boolean!
@@ -86,4 +87,9 @@ type MatchActivity {
     termIds: [ID!]!
     incorrectPairIds: [[ID!]!]!
     studysetIds: [ID!]!
+}
+type ReviewEventStats {
+    timestamp: String!
+    correct: Int!
+    incorrect: Int!
 }
