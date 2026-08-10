@@ -9,7 +9,7 @@ import (
 	"quizfreely/api/graph/loader"
 	"quizfreely/api/graph/resolver"
 	"quizfreely/api/rest"
-	"quizfreely/api/rest/middleware"
+	"quizfreely/api/server/middleware"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/extension"

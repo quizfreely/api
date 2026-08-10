@@ -11,7 +11,7 @@ import (
 	"quizfreely/api/graph"
 	"quizfreely/api/graph/loader"
 	"quizfreely/api/graph/model"
-	"quizfreely/api/rest/middleware"
+	"quizfreely/api/server/middleware"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
 )
