@@ -190,6 +190,7 @@ type ComplexityRoot struct {
 		PracticeTest                  func(childComplexity int, id string) int
 		RecentlyCreatedStudysets      func(childComplexity int, first *int32, after *string, last *int32, before *string) int
 		RecentlyUpdatedStudysets      func(childComplexity int, first *int32, after *string, last *int32, before *string) int
+		ReviewEventStatsByDay         func(childComplexity int, last int32) int
 		SearchStudysetCount           func(childComplexity int, q string) int
 		SearchStudysets               func(childComplexity int, q string, first *int32, after *string, last *int32, before *string) int
 		Studyset                      func(childComplexity int, id string) int
@@ -375,6 +376,7 @@ type QueryResolver interface {
 	MyRecentActivityStudysets(ctx context.Context, first *int32, after *string, last *int32, before *string) (*model.StudysetConnection, error)
 	MyRecentActivityStudysetCount(ctx context.Context) (int32, error)
 	MatchActivity(ctx context.Context, id string) (*model.MatchActivity, error)
+	ReviewEventStatsByDay(ctx context.Context, last int32) ([]*model.ReviewEventStats, error)
 }
 type StudysetResolver interface {
 	Subject(ctx context.Context, obj *model.Studyset) (*model.Subject, error)
@@ -1286,6 +1288,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.RecentlyUpdatedStudysets(childComplexity, args["first"].(*int32), args["after"].(*string), args["last"].(*int32), args["before"].(*string)), true
+
+	case "Query.reviewEventStatsByDay":
+		if e.complexity.Query.ReviewEventStatsByDay == nil {
+			break
+		}
+
+		args, err := ec.field_Query_reviewEventStatsByDay_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.ReviewEventStatsByDay(childComplexity, args["last"].(int32)), true
 
 	case "Query.searchStudysetCount":
 		if e.complexity.Query.SearchStudysetCount == nil {
@@ -2679,6 +2693,17 @@ func (ec *executionContext) field_Query_recentlyUpdatedStudysets_args(ctx contex
 		return nil, err
 	}
 	args["before"] = arg3
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_reviewEventStatsByDay_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalNInt2int32)
+	if err != nil {
+		return nil, err
+	}
+	args["last"] = arg0
 	return args, nil
 }
 
@@ -8861,6 +8886,66 @@ func (ec *executionContext) fieldContext_Query_matchActivity(ctx context.Context
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_matchActivity_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_reviewEventStatsByDay(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_reviewEventStatsByDay(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().ReviewEventStatsByDay(rctx, fc.Args["last"].(int32))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.ReviewEventStats)
+	fc.Result = res
+	return ec.marshalOReviewEventStats2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐReviewEventStatsᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_reviewEventStatsByDay(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "timestamp":
+				return ec.fieldContext_ReviewEventStats_timestamp(ctx, field)
+			case "correct":
+				return ec.fieldContext_ReviewEventStats_correct(ctx, field)
+			case "incorrect":
+				return ec.fieldContext_ReviewEventStats_incorrect(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReviewEventStats", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_reviewEventStatsByDay_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -16595,6 +16680,25 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_matchActivity(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "reviewEventStatsByDay":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_reviewEventStatsByDay(ctx, field)
 				return res
 			}
 
