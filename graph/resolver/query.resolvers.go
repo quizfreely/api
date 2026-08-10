@@ -8,12 +8,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 	"quizfreely/api/auth"
 	"quizfreely/api/graph"
 	"quizfreely/api/graph/cursor"
 	"quizfreely/api/graph/loader"
 	"quizfreely/api/graph/model"
-	"time"
+	"quizfreely/api/rest/middleware"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
 )
