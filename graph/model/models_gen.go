@@ -9,6 +9,10 @@ import (
 	"strconv"
 )
 
+type ReviewActivity interface {
+	IsReviewActivity()
+}
+
 type Frq struct {
 	Term              *TermAtp   `json:"term"`
 	AnswerWith        AnswerWith `json:"answerWith"`

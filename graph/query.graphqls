@@ -28,7 +28,7 @@ type Query {
     myRecentActivityStudysetCount: Int!
     matchActivity(id: ID!): MatchActivity
     reviewEventStatsByDay(last: Int!): [ReviewEventStats!]
-    activityHistory(last: Int!): [PracticeTest! | MatchActivity!]
+    activityHistory(last: Int!): [ReviewActivity!]
 }
 type PageInfo {
     hasNextPage: Boolean!
@@ -40,6 +40,7 @@ enum AnswerWith {
     TERM
     DEF
 }
+union ReviewActivity = PracticeTest | MatchActivity
 type PracticeTest {
     id: ID!
     timestamp: String!

@@ -7,3 +7,5 @@ type MatchActivity struct {
 	TermIds          []string   `json:"termIds"`
 	IncorrectPairIds [][]string `json:"incorrectPairIds"`
 }
+
+func (MatchActivity) IsReviewActivity() {}

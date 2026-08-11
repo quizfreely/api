@@ -8,13 +8,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
 	"quizfreely/api/auth"
 	"quizfreely/api/graph"
 	"quizfreely/api/graph/cursor"
 	"quizfreely/api/graph/loader"
 	"quizfreely/api/graph/model"
 	"quizfreely/api/server/middleware"
+	"time"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
 )
@@ -1649,6 +1649,11 @@ func (r *queryResolver) ReviewEventStatsByDay(ctx context.Context, last int32) (
 	}
 
 	return stats, nil
+}
+
+// ActivityHistory is the resolver for the activityHistory field.
+func (r *queryResolver) ActivityHistory(ctx context.Context, last int32) ([]model.ReviewActivity, error) {
+	panic(fmt.Errorf("not implemented: ActivityHistory - activityHistory"))
 }
 
 // MatchActivity returns graph.MatchActivityResolver implementation.

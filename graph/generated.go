@@ -174,6 +174,7 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
+		ActivityHistory               func(childComplexity int, last int32) int
 		AllSubjects                   func(childComplexity int) int
 		Authed                        func(childComplexity int) int
 		AuthedUser                    func(childComplexity int) int
@@ -377,6 +378,7 @@ type QueryResolver interface {
 	MyRecentActivityStudysetCount(ctx context.Context) (int32, error)
 	MatchActivity(ctx context.Context, id string) (*model.MatchActivity, error)
 	ReviewEventStatsByDay(ctx context.Context, last int32) ([]*model.ReviewEventStats, error)
+	ActivityHistory(ctx context.Context, last int32) ([]model.ReviewActivity, error)
 }
 type StudysetResolver interface {
 	Subject(ctx context.Context, obj *model.Studyset) (*model.Subject, error)
@@ -1121,6 +1123,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.PracticeTest.Timestamp(childComplexity), true
+
+	case "Query.activityHistory":
+		if e.complexity.Query.ActivityHistory == nil {
+			break
+		}
+
+		args, err := ec.field_Query_activityHistory_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.ActivityHistory(childComplexity, args["last"].(int32)), true
 
 	case "Query.allSubjects":
 		if e.complexity.Query.AllSubjects == nil {
@@ -2462,6 +2476,17 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 		return nil, err
 	}
 	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_activityHistory_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalNInt2int32)
+	if err != nil {
+		return nil, err
+	}
+	args["last"] = arg0
 	return args, nil
 }
 
@@ -8952,6 +8977,58 @@ func (ec *executionContext) fieldContext_Query_reviewEventStatsByDay(ctx context
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_activityHistory(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_activityHistory(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().ActivityHistory(rctx, fc.Args["last"].(int32))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]model.ReviewActivity)
+	fc.Result = res
+	return ec.marshalOReviewActivity2ᚕquizfreelyᚋapiᚋgraphᚋmodelᚐReviewActivityᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_activityHistory(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ReviewActivity does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_activityHistory_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query___type(ctx, field)
 	if err != nil {
@@ -15018,6 +15095,29 @@ func (ec *executionContext) unmarshalInputTermProgressInput(ctx context.Context,
 
 // region    ************************** interface.gotpl ***************************
 
+func (ec *executionContext) _ReviewActivity(ctx context.Context, sel ast.SelectionSet, obj model.ReviewActivity) graphql.Marshaler {
+	switch obj := (obj).(type) {
+	case nil:
+		return graphql.Null
+	case model.PracticeTest:
+		return ec._PracticeTest(ctx, sel, &obj)
+	case *model.PracticeTest:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._PracticeTest(ctx, sel, obj)
+	case model.MatchActivity:
+		return ec._MatchActivity(ctx, sel, &obj)
+	case *model.MatchActivity:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._MatchActivity(ctx, sel, obj)
+	default:
+		panic(fmt.Errorf("unexpected type %T", obj))
+	}
+}
+
 // endregion ************************** interface.gotpl ***************************
 
 // region    **************************** object.gotpl ****************************
@@ -15627,7 +15727,7 @@ func (ec *executionContext) _MCQ(ctx context.Context, sel ast.SelectionSet, obj 
 	return out
 }
 
-var matchActivityImplementors = []string{"MatchActivity"}
+var matchActivityImplementors = []string{"MatchActivity", "ReviewActivity"}
 
 func (ec *executionContext) _MatchActivity(ctx context.Context, sel ast.SelectionSet, obj *model.MatchActivity) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, matchActivityImplementors)
@@ -15967,7 +16067,7 @@ func (ec *executionContext) _PageInfo(ctx context.Context, sel ast.SelectionSet,
 	return out
 }
 
-var practiceTestImplementors = []string{"PracticeTest"}
+var practiceTestImplementors = []string{"PracticeTest", "ReviewActivity"}
 
 func (ec *executionContext) _PracticeTest(ctx context.Context, sel ast.SelectionSet, obj *model.PracticeTest) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, practiceTestImplementors)
@@ -16699,6 +16799,25 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_reviewEventStatsByDay(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "activityHistory":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_activityHistory(ctx, field)
 				return res
 			}
 
@@ -18755,6 +18874,16 @@ func (ec *executionContext) unmarshalNQuestionInput2ᚖquizfreelyᚋapiᚋgraph�
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalNReviewActivity2quizfreelyᚋapiᚋgraphᚋmodelᚐReviewActivity(ctx context.Context, sel ast.SelectionSet, v model.ReviewActivity) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ReviewActivity(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNReviewEventStats2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐReviewEventStats(ctx context.Context, sel ast.SelectionSet, v *model.ReviewEventStats) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -19666,6 +19795,53 @@ func (ec *executionContext) marshalOQuestion2ᚖquizfreelyᚋapiᚋgraphᚋmodel
 		return graphql.Null
 	}
 	return ec._Question(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOReviewActivity2ᚕquizfreelyᚋapiᚋgraphᚋmodelᚐReviewActivityᚄ(ctx context.Context, sel ast.SelectionSet, v []model.ReviewActivity) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNReviewActivity2quizfreelyᚋapiᚋgraphᚋmodelᚐReviewActivity(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalOReviewEventStats2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐReviewEventStatsᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ReviewEventStats) graphql.Marshaler {
