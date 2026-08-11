@@ -72,6 +72,11 @@ func (r *practiceTestResolver) StudysetIds(ctx context.Context, obj *model.Pract
 	return ids, nil
 }
 
+// Studysets is the resolver for the studysets field.
+func (r *practiceTestResolver) Studysets(ctx context.Context, obj *model.PracticeTest) ([]*model.Studyset, error) {
+	panic(fmt.Errorf("not implemented: Studysets - studysets"))
+}
+
 // Questions is the resolver for the questions field.
 func (r *practiceTestResolver) Questions(ctx context.Context, obj *model.PracticeTest) ([]*model.Question, error) {
 	if obj == nil || obj.ID == nil {

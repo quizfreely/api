@@ -170,6 +170,7 @@ type ComplexityRoot struct {
 		QuestionsCorrect func(childComplexity int) int
 		QuestionsTotal   func(childComplexity int) int
 		StudysetIds      func(childComplexity int) int
+		Studysets        func(childComplexity int) int
 		Timestamp        func(childComplexity int) int
 	}
 
@@ -345,6 +346,7 @@ type MutationResolver interface {
 }
 type PracticeTestResolver interface {
 	StudysetIds(ctx context.Context, obj *model.PracticeTest) ([]string, error)
+	Studysets(ctx context.Context, obj *model.PracticeTest) ([]*model.Studyset, error)
 
 	Questions(ctx context.Context, obj *model.PracticeTest) ([]*model.Question, error)
 }
@@ -1116,6 +1118,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.PracticeTest.StudysetIds(childComplexity), true
+
+	case "PracticeTest.studysets":
+		if e.complexity.PracticeTest.Studysets == nil {
+			break
+		}
+
+		return e.complexity.PracticeTest.Studysets(childComplexity), true
 
 	case "PracticeTest.timestamp":
 		if e.complexity.PracticeTest.Timestamp == nil {
@@ -6024,6 +6033,8 @@ func (ec *executionContext) fieldContext_Mutation_recordPracticeTest(ctx context
 				return ec.fieldContext_PracticeTest_timestamp(ctx, field)
 			case "studysetIds":
 				return ec.fieldContext_PracticeTest_studysetIds(ctx, field)
+			case "studysets":
+				return ec.fieldContext_PracticeTest_studysets(ctx, field)
 			case "questionsCorrect":
 				return ec.fieldContext_PracticeTest_questionsCorrect(ctx, field)
 			case "questionsTotal":
@@ -7034,6 +7045,83 @@ func (ec *executionContext) fieldContext_PracticeTest_studysetIds(_ context.Cont
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PracticeTest_studysets(ctx context.Context, field graphql.CollectedField, obj *model.PracticeTest) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PracticeTest_studysets(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PracticeTest().Studysets(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Studyset)
+	fc.Result = res
+	return ec.marshalOStudyset2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐStudyset(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PracticeTest_studysets(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PracticeTest",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Studyset_id(ctx, field)
+			case "title":
+				return ec.fieldContext_Studyset_title(ctx, field)
+			case "draft":
+				return ec.fieldContext_Studyset_draft(ctx, field)
+			case "private":
+				return ec.fieldContext_Studyset_private(ctx, field)
+			case "subject":
+				return ec.fieldContext_Studyset_subject(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Studyset_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Studyset_updatedAt(ctx, field)
+			case "user":
+				return ec.fieldContext_Studyset_user(ctx, field)
+			case "terms":
+				return ec.fieldContext_Studyset_terms(ctx, field)
+			case "termsCount":
+				return ec.fieldContext_Studyset_termsCount(ctx, field)
+			case "practiceTests":
+				return ec.fieldContext_Studyset_practiceTests(ctx, field)
+			case "matchActivities":
+				return ec.fieldContext_Studyset_matchActivities(ctx, field)
+			case "saved":
+				return ec.fieldContext_Studyset_saved(ctx, field)
+			case "myFolder":
+				return ec.fieldContext_Studyset_myFolder(ctx, field)
+			case "authorFolder":
+				return ec.fieldContext_Studyset_authorFolder(ctx, field)
+			case "seoIndexingApproved":
+				return ec.fieldContext_Studyset_seoIndexingApproved(ctx, field)
+			case "reviewEventStatsByDay":
+				return ec.fieldContext_Studyset_reviewEventStatsByDay(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Studyset", field.Name)
 		},
 	}
 	return fc, nil
@@ -8145,6 +8233,8 @@ func (ec *executionContext) fieldContext_Query_practiceTest(ctx context.Context,
 				return ec.fieldContext_PracticeTest_timestamp(ctx, field)
 			case "studysetIds":
 				return ec.fieldContext_PracticeTest_studysetIds(ctx, field)
+			case "studysets":
+				return ec.fieldContext_PracticeTest_studysets(ctx, field)
 			case "questionsCorrect":
 				return ec.fieldContext_PracticeTest_questionsCorrect(ctx, field)
 			case "questionsTotal":
@@ -10011,6 +10101,8 @@ func (ec *executionContext) fieldContext_Studyset_practiceTests(_ context.Contex
 				return ec.fieldContext_PracticeTest_timestamp(ctx, field)
 			case "studysetIds":
 				return ec.fieldContext_PracticeTest_studysetIds(ctx, field)
+			case "studysets":
+				return ec.fieldContext_PracticeTest_studysets(ctx, field)
 			case "questionsCorrect":
 				return ec.fieldContext_PracticeTest_questionsCorrect(ctx, field)
 			case "questionsTotal":
@@ -11511,6 +11603,8 @@ func (ec *executionContext) fieldContext_Term_practiceTests(_ context.Context, f
 				return ec.fieldContext_PracticeTest_timestamp(ctx, field)
 			case "studysetIds":
 				return ec.fieldContext_PracticeTest_studysetIds(ctx, field)
+			case "studysets":
+				return ec.fieldContext_PracticeTest_studysets(ctx, field)
 			case "questionsCorrect":
 				return ec.fieldContext_PracticeTest_questionsCorrect(ctx, field)
 			case "questionsTotal":
@@ -16124,6 +16218,39 @@ func (ec *executionContext) _PracticeTest(ctx context.Context, sel ast.Selection
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "studysets":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PracticeTest_studysets(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "questionsCorrect":
 			out.Values[i] = ec._PracticeTest_questionsCorrect(ctx, field, obj)
 		case "questionsTotal":
@@ -19907,6 +20034,47 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 	_ = ctx
 	res := graphql.MarshalString(*v)
 	return res
+}
+
+func (ec *executionContext) marshalOStudyset2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐStudyset(ctx context.Context, sel ast.SelectionSet, v []*model.Studyset) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOStudyset2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐStudyset(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
 }
 
 func (ec *executionContext) marshalOStudyset2ᚖquizfreelyᚋapiᚋgraphᚋmodelᚐStudyset(ctx context.Context, sel ast.SelectionSet, v *model.Studyset) graphql.Marshaler {
