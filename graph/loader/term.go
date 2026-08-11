@@ -154,17 +154,17 @@ ORDER BY input.og_order`,
 
 	// Define a struct with pointers to handle potential NULLs from LEFT JOIN
 	type dbTermProgress struct {
-		ID                   *string `db:"id"`
-		TermFirstReviewedAt  *string `db:"term_first_reviewed_at"`
-		TermLastReviewedAt   *string `db:"term_last_reviewed_at"`
-		TermReviewCount      *int32  `db:"term_review_count"`
-		DefFirstReviewedAt   *string `db:"def_first_reviewed_at"`
-		DefLastReviewedAt    *string `db:"def_last_reviewed_at"`
-		DefReviewCount       *int32  `db:"def_review_count"`
-		TermCorrectCount     *int32  `db:"term_correct_count"`
-		TermIncorrectCount   *int32  `db:"term_incorrect_count"`
-		DefCorrectCount      *int32  `db:"def_correct_count"`
-		DefIncorrectCount    *int32  `db:"def_incorrect_count"`
+		ID                  *string `db:"id"`
+		TermFirstReviewedAt *string `db:"term_first_reviewed_at"`
+		TermLastReviewedAt  *string `db:"term_last_reviewed_at"`
+		TermReviewCount     *int32  `db:"term_review_count"`
+		DefFirstReviewedAt  *string `db:"def_first_reviewed_at"`
+		DefLastReviewedAt   *string `db:"def_last_reviewed_at"`
+		DefReviewCount      *int32  `db:"def_review_count"`
+		TermCorrectCount    *int32  `db:"term_correct_count"`
+		TermIncorrectCount  *int32  `db:"term_incorrect_count"`
+		DefCorrectCount     *int32  `db:"def_correct_count"`
+		DefIncorrectCount   *int32  `db:"def_incorrect_count"`
 	}
 
 	var termsProgress []*model.TermProgress
@@ -179,13 +179,13 @@ ORDER BY input.og_order`,
 			termsProgress = append(termsProgress, nil)
 		} else {
 			modelTp := &model.TermProgress{
-				ID:                   tp.ID,
-				TermFirstReviewedAt:  tp.TermFirstReviewedAt,
-				TermLastReviewedAt:   tp.TermLastReviewedAt,
-				TermReviewCount:      tp.TermReviewCount,
-				DefFirstReviewedAt:   tp.DefFirstReviewedAt,
-				DefLastReviewedAt:    tp.DefLastReviewedAt,
-				DefReviewCount:       tp.DefReviewCount,
+				ID:                  tp.ID,
+				TermFirstReviewedAt: tp.TermFirstReviewedAt,
+				TermLastReviewedAt:  tp.TermLastReviewedAt,
+				TermReviewCount:     tp.TermReviewCount,
+				DefFirstReviewedAt:  tp.DefFirstReviewedAt,
+				DefLastReviewedAt:   tp.DefLastReviewedAt,
+				DefReviewCount:      tp.DefReviewCount,
 			}
 			if tp.TermCorrectCount != nil {
 				modelTp.TermCorrectCount = *tp.TermCorrectCount
@@ -220,6 +220,7 @@ func GetTermsByStudysetID(ctx context.Context, studysetID string) ([]*model.Term
 	loaders := For(ctx)
 	return loaders.TermByStudysetIDLoader.Load(ctx, studysetID)
 }
+
 // GetTermsByStudysetIDs returns many studysets' terms efficiently
 func GetTermsByStudysetIDs(ctx context.Context, studysetIDs []string) ([][]*model.Term, error) {
 	loaders := For(ctx)
@@ -231,6 +232,7 @@ func GetTermProgress(ctx context.Context, termID string) (*model.TermProgress, e
 	loaders := For(ctx)
 	return loaders.TermProgressLoader.Load(ctx, termID)
 }
+
 // GetTermsProgress returns many terms' progress records by term ids efficiently
 func GetTermsProgress(ctx context.Context, termIDs []string) ([]*model.TermProgress, error) {
 	loaders := For(ctx)

@@ -1,18 +1,18 @@
 package rest
 
 import (
+	"bytes"
+	"context"
+	"encoding/base64"
+	"encoding/json"
+	"errors"
+	"github.com/PuerkitoBio/goquery"
+	"github.com/go-chi/render"
+	"github.com/rs/zerolog/log"
+	"io"
 	"net/http"
 	"net/url"
 	"time"
-	"context"
-	"errors"
-	"encoding/base64"
-	"encoding/json"
-	"io"
-	"bytes"
-	"github.com/go-chi/render"
-	"github.com/rs/zerolog/log"
-	"github.com/PuerkitoBio/goquery"
 	// "os"
 	// "path/filepath"
 	"strings"
@@ -105,7 +105,7 @@ func (rh *RESTHandler) crawlbaseReq(targetURL string, reqCtx context.Context) (i
 	req, err := http.NewRequestWithContext(
 		ctx,
 		http.MethodGet,
-		"https://api.crawlbase.com/?" + params.Encode(),
+		"https://api.crawlbase.com/?"+params.Encode(),
 		nil,
 	)
 	if err != nil {
@@ -127,12 +127,13 @@ func (rh *RESTHandler) crawlbaseReq(targetURL string, reqCtx context.Context) (i
 }
 
 type zyteReqBody struct {
-	URL string `json:"url"`
-	HTTPResponseBody bool `json:"httpResponseBody"`
+	URL              string `json:"url"`
+	HTTPResponseBody bool   `json:"httpResponseBody"`
 }
 type zyteRespBody struct {
 	HTTPResponseBody string `json:"httpResponseBody"`
 }
+
 func (rh *RESTHandler) zyteReq(targetURL string, reqCtx context.Context) (io.Reader, error) {
 	log.Trace().Msg("zyte attempted")
 	ctx, cancel := context.WithTimeout(reqCtx, 90*time.Second)
@@ -140,7 +141,7 @@ func (rh *RESTHandler) zyteReq(targetURL string, reqCtx context.Context) (io.Rea
 
 	reqBodyJSON, err := json.Marshal(
 		zyteReqBody{
-			URL: targetURL,
+			URL:              targetURL,
 			HTTPResponseBody: true,
 		},
 	)
@@ -212,14 +213,14 @@ func parse(reader io.Reader) ([][]string, error) {
 					IsDeleted bool `json:"isDeleted"`
 					CardSides []struct {
 						SideID int `json:"sideId"`
-						Media []struct {
-							PlainText string `json:"plainText"`
-							RichText *string `json:"richText"`
+						Media  []struct {
+							PlainText string  `json:"plainText"`
+							RichText  *string `json:"richText"`
 						} `json:"media"`
 					} `json:"cardSides"`
 				} `json:"studiableItems"`
 			} `json:"studiableData"`
-		}`json:"StudyModesCommon"`
+		} `json:"StudyModesCommon"`
 	}
 	if err := json.Unmarshal([]byte(rawNextData), &nextData); err != nil {
 		return nil, err

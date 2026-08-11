@@ -67,6 +67,7 @@ func GetTermsCountByStudysetID(ctx context.Context, studysetID string) (*int32, 
 	loaders := For(ctx)
 	return loaders.TermsCountByStudysetIDLoader.Load(ctx, studysetID)
 }
+
 // GetTermsCountByStudysetIDs returns many studysets' terms counts efficiently
 func GetTermsCountByStudysetIDs(ctx context.Context, studysetIDs []string) ([]*int32, error) {
 	loaders := For(ctx)
