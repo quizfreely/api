@@ -2,14 +2,10 @@ package loader
 
 import (
 	"context"
-	"net/http"
 	"quizfreely/api/auth"
-	"quizfreely/api/graph/model"
-	"time"
+	// "quizfreely/api/graph/model"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
-	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/vikstrous/dataloadgen"
 )
 
 func (dr *dataReader) getMatchActivityTermIDs(ctx context.Context, matchActivityIDs []string) ([][]string, []error) {

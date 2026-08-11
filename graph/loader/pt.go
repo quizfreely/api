@@ -4,14 +4,10 @@ package loader
 
 import (
 	"context"
-	"net/http"
 	"quizfreely/api/auth"
 	"quizfreely/api/graph/model"
-	"time"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
-	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/vikstrous/dataloadgen"
 )
 
 func (dr *dataReader) getPracticeTestsByStudysetIDs(ctx context.Context, studysetIDs []string) ([][]*model.PracticeTest, []error) {
