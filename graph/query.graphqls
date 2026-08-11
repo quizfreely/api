@@ -45,6 +45,7 @@ type PracticeTest {
     id: ID!
     timestamp: String!
     studysetIds: [ID!]!
+    studysets: [Studyset!]
     questionsCorrect: Int
     questionsTotal: Int
     questions: [Question!]!
