@@ -28,6 +28,7 @@ type Query {
     myRecentActivityStudysetCount: Int!
     matchActivity(id: ID!): MatchActivity
     reviewEventStatsByDay(last: Int!): [ReviewEventStats!]
+    activityHistory(last: Int!): [PracticeTest! | MatchActivity!]
 }
 type PageInfo {
     hasNextPage: Boolean!
