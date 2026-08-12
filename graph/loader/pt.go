@@ -71,9 +71,6 @@ func (dr *dataReader) getPracticeTestsByTermIDs(ctx context.Context, termIDs []s
 	authedUser := auth.AuthedUserContext(ctx)
 	if authedUser == nil || authedUser.ID == nil {
 		results := make([][]*model.PracticeTest, len(termIDs))
-		for i := range termIDs {
-			results[i] = []*model.PracticeTest{}
-		}
 		return results, nil
 	}
 
