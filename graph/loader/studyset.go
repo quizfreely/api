@@ -2,6 +2,7 @@ package loader
 
 import (
 	"context"
+	"fmt"
 	"quizfreely/api/auth"
 	"quizfreely/api/graph/model"
 
@@ -31,7 +32,7 @@ func (dr *dataReader) getStudysetsByIDs(ctx context.Context, ids []string) ([]*m
 	var err error
 
 	if authedUser != nil {
-		err = pgxscan.Select(ctx, r.DB, &rows, `
+		err = pgxscan.Select(ctx, dr.DB, &rows, `
 			SELECT `+selectCols+`
 			FROM unnest($1::uuid[]) WITH ORDINALITY AS input(id, ordinality)
 			LEFT JOIN studysets s ON s.id = input.id
@@ -40,7 +41,7 @@ func (dr *dataReader) getStudysetsByIDs(ctx context.Context, ids []string) ([]*m
 			ORDER BY input.ordinality
 		`, ids, authedUser.ID)
 	} else {
-		err = pgxscan.Select(ctx, r.DB, &rows, `
+		err = pgxscan.Select(ctx, dr.DB, &rows, `
 			SELECT `+selectCols+`
 			FROM unnest($1::uuid[]) WITH ORDINALITY AS input(id, ordinality)
 			LEFT JOIN studysets s ON s.id = input.id
