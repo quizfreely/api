@@ -82,7 +82,7 @@ func (r *practiceTestResolver) Studysets(ctx context.Context, obj *model.Practic
 	if err != nil {
 		return nil, err
 	}
-	return loader.GetStudysetsByIDs(ctx, studysetIds)
+	return loader.GetStudysetsByIDs(ctx, studysetIDs)
 }
 
 // Questions is the resolver for the questions field.

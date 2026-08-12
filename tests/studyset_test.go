@@ -246,7 +246,7 @@ func TestDraftStudysetLifecycle(t *testing.T) {
 	var queryResult map[string]interface{}
 	err = json.NewDecoder(resp.Body).Decode(&queryResult)
 	require.NoError(t, err)
-	require.NotNil(t, queryResult["errors"], "should return error when attempting to view someone else's draft")
+	require.Nil(t, getNested(createResult, "data", "studyset"), "should return null when attempting to view someone else's draft")
 
 	// 3. user1 updates the studyset to making it no longer a draft and sets a title
 	updateBody := map[string]interface{}{
