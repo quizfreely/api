@@ -74,7 +74,15 @@ func (r *practiceTestResolver) StudysetIds(ctx context.Context, obj *model.Pract
 
 // Studysets is the resolver for the studysets field.
 func (r *practiceTestResolver) Studysets(ctx context.Context, obj *model.PracticeTest) ([]*model.Studyset, error) {
-	panic(fmt.Errorf("not implemented: Studysets - studysets"))
+	if obj == nil || obj.ID == nil {
+		return nil, nil
+	}
+
+	studysetIDs, err := r.StudysetIds(ctx, obj)
+	if err != nil {
+		return nil, err
+	}
+	return loader.GetStudysetsByIDs(ctx, studysetIds)
 }
 
 // Questions is the resolver for the questions field.
@@ -175,35 +183,7 @@ func (r *queryResolver) AuthedUser(ctx context.Context) (*model.AuthedUser, erro
 
 // Studyset is the resolver for the studyset field.
 func (r *queryResolver) Studyset(ctx context.Context, id string) (*model.Studyset, error) {
-	authedUser := auth.AuthedUserContext(ctx)
-
-	var studyset model.Studyset
-	var err error
-	if authedUser != nil {
-		sql := `
-			SELECT id, user_id, title, private, subject_id, draft, seo_indexing_approved,
-				to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
-				to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
-			FROM public.studysets
-			WHERE id = $1 AND ((private = false AND draft = false) OR user_id = $2)`
-		err = pgxscan.Get(ctx, r.DB, &studyset, sql, id, authedUser.ID)
-	} else {
-		sql := `
-			SELECT id, user_id, title, private, subject_id, draft, seo_indexing_approved,
-				to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
-				to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
-			FROM public.studysets
-			WHERE id = $1 AND private = false AND draft = false`
-		err = pgxscan.Get(ctx, r.DB, &studyset, sql, id)
-	}
-	if err != nil {
-		if pgxscan.NotFound(err) {
-			return nil, fmt.Errorf("studyset not found")
-		}
-		return nil, fmt.Errorf("failed to fetch studyset: %w", err)
-	}
-
-	return &studyset, nil
+	return loader.GetStudysetByID(ctx, id)
 }
 
 // Studysets is the resolver for the studysets field.
