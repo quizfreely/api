@@ -51,7 +51,7 @@ func (dr *dataReader) getStudysetsByIDs(ctx context.Context, ids []string) ([]*m
 		`, ids)
 	}
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch studysets: %w", err)
+		return nil, []error{fmt.Errorf("failed to fetch studysets: %w", err)}
 	}
 
 	result := make([]*model.Studyset, len(ids))
