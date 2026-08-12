@@ -24,15 +24,22 @@ type dataReader struct {
 
 // Loaders wrap our data loaders to inject via middleware
 type Loaders struct {
+	/* loader/user.go */
 	UserLoader                          *dataloadgen.Loader[string, *model.User]
+	/* loader/term.go */
 	TermByIDLoader                      *dataloadgen.Loader[string, *model.Term]
 	TermByStudysetIDLoader              *dataloadgen.Loader[string, []*model.Term]
 	TermProgressLoader                  *dataloadgen.Loader[string, *model.TermProgress]
+	/* loader/studyset.go */
+	StudysetLoader                      *dataloadgen.Loader[string, *model.Studyset]
 	TermsCountByStudysetIDLoader        *dataloadgen.Loader[string, *int32]
+	/* loader/pt.go */
 	PracticeTestByStudysetIDLoader      *dataloadgen.Loader[string, []*model.PracticeTest]
 	PracticeTestByTermIDLoader          *dataloadgen.Loader[string, []*model.PracticeTest]
+	/* loader/fsrs.go */
 	FSRSCardByTermIDLoader              *dataloadgen.Loader[string, *model.FSRSCard]
 	FSRSReviewLogsByTermIDLoader        *dataloadgen.Loader[string, []*model.FSRSReviewLog]
+	/* loader/match.go */
 	MatchActivityTermIDsLoader          *dataloadgen.Loader[string, []string]
 	MatchActivityIncorrectPairIDsLoader *dataloadgen.Loader[string, [][]string]
 	MatchActivityStudysetIDsLoader      *dataloadgen.Loader[string, []string]
@@ -45,25 +52,27 @@ func NewLoaders(db *pgxpool.Pool, usercontentBaseURL *string) *Loaders {
 		db:                 db,
 		usercontentBaseURL: usercontentBaseURL,
 	}
+	w := dataloadgen.WithWait(time.Millisecond)
 	return &Loaders{
 		/* loader/user.go */
-		UserLoader: dataloadgen.NewLoader(dr.getUsers, dataloadgen.WithWait(time.Millisecond)),
+		UserLoader:                          dataloadgen.NewLoader(dr.getUsers, w),
 		/* loader/term.go */
-		TermByIDLoader:         dataloadgen.NewLoader(dr.getTermsByIDs, dataloadgen.WithWait(time.Millisecond)),
-		TermByStudysetIDLoader: dataloadgen.NewLoader(dr.getTermsByStudysetIDs, dataloadgen.WithWait(time.Millisecond)),
-		TermProgressLoader:     dataloadgen.NewLoader(dr.getTermsProgress, dataloadgen.WithWait(time.Millisecond)),
+		TermByIDLoader:                      dataloadgen.NewLoader(dr.getTermsByIDs, w),
+		TermByStudysetIDLoader:              dataloadgen.NewLoader(dr.getTermsByStudysetIDs, w),
+		TermProgressLoader:                  dataloadgen.NewLoader(dr.getTermsProgress, w),
 		/* loader/studyset.go */
-		TermsCountByStudysetIDLoader: dataloadgen.NewLoader(dr.getTermsCountByStudysetIDs, dataloadgen.WithWait(time.Millisecond)),
+		StudysetLoader:                      dataloadgen.NewLoader(dr.getStudysetsByIDs, w),
+		TermsCountByStudysetIDLoader:        dataloadgen.NewLoader(dr.getTermsCountByStudysetIDs, w),
 		/* loader/pt.go */
-		PracticeTestByStudysetIDLoader: dataloadgen.NewLoader(dr.getPracticeTestsByStudysetIDs, dataloadgen.WithWait(time.Millisecond)),
-		PracticeTestByTermIDLoader:     dataloadgen.NewLoader(dr.getPracticeTestsByTermIDs, dataloadgen.WithWait(time.Millisecond)),
+		PracticeTestByStudysetIDLoader:      dataloadgen.NewLoader(dr.getPracticeTestsByStudysetIDs, w),
+		PracticeTestByTermIDLoader:          dataloadgen.NewLoader(dr.getPracticeTestsByTermIDs, w),
 		/* loader/fsrs.go */
-		FSRSCardByTermIDLoader:       dataloadgen.NewLoader(dr.getFSRSCardsByTermIDs, dataloadgen.WithWait(time.Millisecond)),
-		FSRSReviewLogsByTermIDLoader: dataloadgen.NewLoader(dr.getFSRSReviewLogsByTermIDs, dataloadgen.WithWait(time.Millisecond)),
+		FSRSCardByTermIDLoader:              dataloadgen.NewLoader(dr.getFSRSCardsByTermIDs, w),
+		FSRSReviewLogsByTermIDLoader: 		 dataloadgen.NewLoader(dr.getFSRSReviewLogsByTermIDs, w),
 		/* loader/match.go */
-		MatchActivityTermIDsLoader:          dataloadgen.NewLoader(dr.getMatchActivityTermIDs, dataloadgen.WithWait(time.Millisecond)),
-		MatchActivityIncorrectPairIDsLoader: dataloadgen.NewLoader(dr.getMatchActivityIncorrectPairIDs, dataloadgen.WithWait(time.Millisecond)),
-		MatchActivityStudysetIDsLoader:      dataloadgen.NewLoader(dr.getMatchActivityStudysetIDs, dataloadgen.WithWait(time.Millisecond)),
+		MatchActivityTermIDsLoader:          dataloadgen.NewLoader(dr.getMatchActivityTermIDs, w),
+		MatchActivityIncorrectPairIDsLoader: dataloadgen.NewLoader(dr.getMatchActivityIncorrectPairIDs, w),
+		MatchActivityStudysetIDsLoader:      dataloadgen.NewLoader(dr.getMatchActivityStudysetIDs, w),
 	}
 }
 

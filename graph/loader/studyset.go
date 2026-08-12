@@ -3,10 +3,67 @@ package loader
 import (
 	"context"
 	"quizfreely/api/auth"
-	// "quizfreely/api/graph/model"
+	"quizfreely/api/graph/model"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
 )
+
+func (dr *dataReader) getStudysetsByIDs(ctx context.Context, ids []string) ([]*model.Studyset, []error) {
+	if len(ids) == 0 {
+		return []*model.Studyset{}, nil
+	}
+
+	authedUser := auth.AuthedUserContext(ctx)
+
+	type row struct {
+		model.Studyset
+		Ordinality int `db:"ordinality"`
+	}
+
+	selectCols := `
+		s.id, s.user_id, s.title, s.private, s.draft, s.subject_id, s.seo_indexing_approved,
+		to_char(s.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
+		to_char(s.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at,
+		input.ordinality
+	`
+
+	var rows []row
+	var err error
+
+	if authedUser != nil {
+		err = pgxscan.Select(ctx, r.DB, &rows, `
+			SELECT `+selectCols+`
+			FROM unnest($1::uuid[]) WITH ORDINALITY AS input(id, ordinality)
+			LEFT JOIN studysets s ON s.id = input.id
+				AND s.draft = false
+				AND (s.private = false OR s.user_id = $2)
+			ORDER BY input.ordinality
+		`, ids, authedUser.ID)
+	} else {
+		err = pgxscan.Select(ctx, r.DB, &rows, `
+			SELECT `+selectCols+`
+			FROM unnest($1::uuid[]) WITH ORDINALITY AS input(id, ordinality)
+			LEFT JOIN studysets s ON s.id = input.id
+				AND s.draft = false
+				AND s.private = false
+			ORDER BY input.ordinality
+		`, ids)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch studysets: %w", err)
+	}
+
+	result := make([]*model.Studyset, len(ids))
+	for _, r := range rows {
+		idx := r.Ordinality - 1
+		if r.Studyset.ID != nil {
+			s := r.Studyset
+			result[idx] = &s
+		}
+	}
+
+	return result, nil
+}
 
 func (dr *dataReader) getTermsCountByStudysetIDs(ctx context.Context, studysetIDs []string) ([]*int32, []error) {
 	authedUser := auth.AuthedUserContext(ctx)
@@ -56,6 +113,16 @@ func (dr *dataReader) getTermsCountByStudysetIDs(ctx context.Context, studysetID
 	}
 
 	return orderedCounts, nil
+}
+
+func GetStudysetByID(ctx context.Context, id string) (*model.Studyset, error) {
+	loaders := For(ctx)
+	return loaders.StudysetLoader.Load(ctx, id)
+}
+
+func GetStudysetsByIDs(ctx context.Context, ids []string) ([]*model.Studyset, error) {
+	loaders := For(ctx)
+	return loaders.StudysetLoader.LoadAll(ctx, ids)
 }
 
 // GetTermsCountByStudysetID returns a single studyset's terms count efficiently
