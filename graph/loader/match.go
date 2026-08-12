@@ -12,9 +12,6 @@ func (dr *dataReader) getMatchActivityTermIDs(ctx context.Context, matchActivity
 	authedUser := auth.AuthedUserContext(ctx)
 	if authedUser == nil || authedUser.ID == nil {
 		results := make([][]string, len(matchActivityIDs))
-		for i := range matchActivityIDs {
-			results[i] = []string{}
-		}
 		return results, nil
 	}
 
@@ -59,9 +56,6 @@ func (dr *dataReader) getMatchActivityIncorrectPairIDs(ctx context.Context, matc
 	authedUser := auth.AuthedUserContext(ctx)
 	if authedUser == nil || authedUser.ID == nil {
 		results := make([][][]string, len(matchActivityIDs))
-		for i := range matchActivityIDs {
-			results[i] = [][]string{}
-		}
 		return results, nil
 	}
 
@@ -104,6 +98,12 @@ ORDER BY re.match_activity_id`,
 }
 
 func (dr *dataReader) getMatchActivityStudysetIDs(ctx context.Context, matchActivityIDs []string) ([][]string, []error) {
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil || authedUser.ID == nil {
+		emptyRes := make([][]string, len(matchActivityIDs))
+		return emptyRes, nil
+	}
+
 	type dbRow struct {
 		MatchActivityID string `db:"match_id"`
 		StudysetID      string `db:"studyset_id"`
@@ -116,9 +116,12 @@ func (dr *dataReader) getMatchActivityStudysetIDs(ctx context.Context, matchActi
 		&rows,
 		`SELECT mas.match_id, mas.studyset_id
 FROM match_activity_studysets mas
+JOIN match_activities ma ON ma.id = mas.match_id
 WHERE mas.match_id = ANY($1::uuid[])
+	AND ma.user_id = $2::uuid
 ORDER BY mas.match_id`,
 		matchActivityIDs,
+		authedUser.ID,
 	)
 	if err != nil {
 		return nil, []error{err}
