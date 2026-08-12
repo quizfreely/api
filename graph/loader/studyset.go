@@ -94,6 +94,14 @@ func (dr *dataReader) getTermsCountByStudysetIDs(ctx context.Context, studysetID
          JOIN studysets s ON t.studyset_id = s.id
          WHERE t.studyset_id = ANY($1::uuid[]) AND ((s.private = false AND s.draft = false) OR s.user_id = $2)
          GROUP BY t.studyset_id`,
+		/* NOTE: $2 is NULL if authedUserID is nil
+		   `s.user_id = NULL` does NOT select rows where user_id is NULL,
+		   only `IS NULL` would select rows with NULL,
+		   SQL has TRUE, FALSE, and UNKNOWN,
+		   and this will correctly handle NULL for $2
+		   because `TRUE OR UNKNOWN` is true, `FALSE OR UNKNOWN` is unknown,
+		   and `WHERE UNKNOWN` does not select anything,
+		   so a nil ID will only return public studysets (correctly) */
 		studysetIDs,
 		authedUserID,
 	)
