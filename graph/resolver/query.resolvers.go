@@ -1585,7 +1585,84 @@ func (r *queryResolver) ReviewEventStatsByDay(ctx context.Context, last int32) (
 
 // ActivityHistory is the resolver for the activityHistory field.
 func (r *queryResolver) ActivityHistory(ctx context.Context, last int32) ([]model.ReviewActivity, error) {
-	panic(fmt.Errorf("not implemented: ActivityHistory - activityHistory"))
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil {
+		return nil, fmt.Errorf("not authenticated")
+	}
+
+	if last <= 0 {
+		return []model.ReviewActivity{}, nil
+	}
+
+	type activityHistoryRow struct {
+		ActivityType     string  `db:"activity_type"`
+		ID               *string `db:"id"`
+		Timestamp        *string `db:"timestamp"`
+		QuestionsCorrect *int32  `db:"questions_correct"`
+		QuestionsTotal   *int32  `db:"questions_total"`
+		DurationMs       *int32  `db:"duration_ms"`
+		EndTimestamp     *string `db:"end_timestamp"`
+	}
+
+	sql := `
+		SELECT activity_type, id, timestamp, questions_correct, questions_total, duration_ms, end_timestamp
+		FROM (
+			SELECT
+				'PRACTICE_TEST' AS activity_type,
+				id,
+				to_char(timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') AS timestamp,
+				questions_correct,
+				questions_total,
+				NULL::int AS duration_ms,
+				NULL::text AS end_timestamp,
+				timestamp AS sort_ts
+			FROM practice_tests
+			WHERE user_id = $1
+
+			UNION ALL
+
+			SELECT
+				'MATCH' AS activity_type,
+				id,
+				NULL::text AS timestamp,
+				NULL::smallint AS questions_correct,
+				NULL::smallint AS questions_total,
+				duration_ms,
+				to_char(end_timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') AS end_timestamp,
+				end_timestamp AS sort_ts
+			FROM match_activities
+			WHERE user_id = $1
+		) combined
+		ORDER BY sort_ts DESC, id DESC
+		LIMIT $2
+	`
+
+	var rows []*activityHistoryRow
+	err := pgxscan.Select(ctx, r.DB, &rows, sql, authedUser.ID, last)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch activity history: %w", err)
+	}
+
+	activities := make([]model.ReviewActivity, len(rows))
+	for i, row := range rows {
+		switch row.ActivityType {
+		case "PRACTICE_TEST":
+			activities[i] = &model.PracticeTest{
+				ID:               row.ID,
+				Timestamp:        row.Timestamp,
+				QuestionsCorrect: row.QuestionsCorrect,
+				QuestionsTotal:   row.QuestionsTotal,
+			}
+		case "MATCH":
+			activities[i] = &model.MatchActivity{
+				ID:           row.ID,
+				DurationMs:   *row.DurationMs,
+				EndTimestamp: *row.EndTimestamp,
+			}
+		}
+	}
+
+	return activities, nil
 }
 
 // MatchActivity returns graph.MatchActivityResolver implementation.
