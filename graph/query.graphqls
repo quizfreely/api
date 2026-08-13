@@ -90,6 +90,7 @@ type MatchActivity {
     termIds: [ID!]!
     incorrectPairIds: [[ID!]!]!
     studysetIds: [ID!]!
+    studysets: [Studyset]
 }
 type ReviewEventStats {
     timestamp: String!
