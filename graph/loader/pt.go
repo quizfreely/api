@@ -128,6 +128,47 @@ ORDER BY input.og_order ASC, pt.timestamp DESC`,
 	return orderedPracticeTests, nil
 }
 
+func (dr *dataReader) getPracticeTestStudysetIDs(ctx context.Context, practiceTestIDs []string) ([][]string, []error) {
+	if len(practiceTestIDs) == 0 {
+		return nil, nil
+	}
+
+	type dbRow struct {
+		PracticeTestID string `db:"practice_test_id"`
+		StudysetID     string `db:"studyset_id"`
+	}
+	var rows []dbRow
+
+	err := pgxscan.Select(
+		ctx,
+		dr.db,
+		&rows,
+		`SELECT practice_test_id, studyset_id
+FROM practice_test_studysets
+WHERE practice_test_id = ANY($1::uuid[])
+ORDER BY practice_test_id`,
+		practiceTestIDs,
+	)
+	if err != nil {
+		return nil, []error{err}
+	}
+
+	grouped := make(map[string][]string)
+	for _, row := range rows {
+		grouped[row.PracticeTestID] = append(grouped[row.PracticeTestID], row.StudysetID)
+	}
+
+	ordered := make([][]string, len(practiceTestIDs))
+	for i, id := range practiceTestIDs {
+		ordered[i] = grouped[id]
+		if ordered[i] == nil {
+			ordered[i] = []string{}
+		}
+	}
+
+	return ordered, nil
+}
+
 func GetPracticeTestsByStudysetID(ctx context.Context, studysetID string) ([]*model.PracticeTest, error) {
 	loaders := For(ctx)
 	return loaders.PracticeTestByStudysetIDLoader.Load(ctx, studysetID)
@@ -144,4 +185,13 @@ func GetPracticeTestsByTermID(ctx context.Context, termID string) ([]*model.Prac
 func GetPracticeTestsByTermIDs(ctx context.Context, termIDs []string) ([][]*model.PracticeTest, error) {
 	loaders := For(ctx)
 	return loaders.PracticeTestByTermIDLoader.LoadAll(ctx, termIDs)
+}
+
+func GetStudysetIDsByPracticeTest(ctx context.Context, practiceTestID string) ([]string, error) {
+	loaders := For(ctx)
+	return loaders.PracticeTestStudysetIDsLoader.Load(ctx, practiceTestID)
+}
+func GetStudysetIDsByPracticeTests(ctx context.Context, practiceTestIDs []string) ([][]string, error) {
+	loaders := For(ctx)
+	return loaders.PracticeTestStudysetIDsLoader.LoadAll(ctx, practiceTestIDs)
 }

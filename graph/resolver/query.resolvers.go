@@ -75,14 +75,7 @@ func (r *practiceTestResolver) StudysetIds(ctx context.Context, obj *model.Pract
 		return nil, nil
 	}
 
-	var ids []string
-	sql := `SELECT studyset_id FROM practice_test_studysets WHERE practice_test_id = $1`
-	err := pgxscan.Select(ctx, r.DB, &ids, sql, *obj.ID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch studyset ids for practice test: %w", err)
-	}
-
-	return ids, nil
+	return loader.GetPracticeTestStudysetIDs(ctx, *obj.ID)
 }
 
 // Studysets is the resolver for the studysets field.

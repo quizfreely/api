@@ -36,6 +36,7 @@ type Loaders struct {
 	/* loader/pt.go */
 	PracticeTestByStudysetIDLoader      *dataloadgen.Loader[string, []*model.PracticeTest]
 	PracticeTestByTermIDLoader          *dataloadgen.Loader[string, []*model.PracticeTest]
+	PracticeTestStudysetIDsLoader       *dataloadgen.Loader[string, []string]
 	/* loader/fsrs.go */
 	FSRSCardByTermIDLoader              *dataloadgen.Loader[string, *model.FSRSCard]
 	FSRSReviewLogsByTermIDLoader        *dataloadgen.Loader[string, []*model.FSRSReviewLog]
@@ -66,6 +67,7 @@ func NewLoaders(db *pgxpool.Pool, usercontentBaseURL *string) *Loaders {
 		/* loader/pt.go */
 		PracticeTestByStudysetIDLoader:      dataloadgen.NewLoader(dr.getPracticeTestsByStudysetIDs, w),
 		PracticeTestByTermIDLoader:          dataloadgen.NewLoader(dr.getPracticeTestsByTermIDs, w),
+		PracticeTestStudysetIDsLoader:       dataloadgen.NewLoader(dr.getPracticeTestStudysetIDs, w),
 		/* loader/fsrs.go */
 		FSRSCardByTermIDLoader:              dataloadgen.NewLoader(dr.getFSRSCardsByTermIDs, w),
 		FSRSReviewLogsByTermIDLoader: 		 dataloadgen.NewLoader(dr.getFSRSReviewLogsByTermIDs, w),
