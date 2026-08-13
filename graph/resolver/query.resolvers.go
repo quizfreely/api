@@ -58,7 +58,15 @@ func (r *matchActivityResolver) StudysetIds(ctx context.Context, obj *model.Matc
 
 // Studysets is the resolver for the studysets field.
 func (r *matchActivityResolver) Studysets(ctx context.Context, obj *model.MatchActivity) ([]*model.Studyset, error) {
-	panic(fmt.Errorf("not implemented: Studysets - studysets"))
+	if obj == nil || obj.ID == nil {
+		return nil, nil
+	}
+
+	studysetIDs, err := r.StudysetIds(ctx, obj)
+	if err != nil {
+		return nil, err
+	}
+	return loader.GetStudysetsByIDs(ctx, studysetIDs)
 }
 
 // StudysetIds is the resolver for the studysetIds field.
