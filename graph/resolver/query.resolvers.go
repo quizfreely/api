@@ -75,7 +75,7 @@ func (r *practiceTestResolver) StudysetIds(ctx context.Context, obj *model.Pract
 		return nil, nil
 	}
 
-	return loader.GetPracticeTestStudysetIDs(ctx, *obj.ID)
+	return loader.GetStudysetIDsByPracticeTest(ctx, *obj.ID)
 }
 
 // Studysets is the resolver for the studysets field.
