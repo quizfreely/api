@@ -6,6 +6,7 @@ package resolver
 
 import (
 	"context"
+	"fmt"
 	"quizfreely/api/auth"
 	"quizfreely/api/graph"
 	"quizfreely/api/graph/loader"
@@ -49,6 +50,11 @@ func (r *termResolver) PracticeTests(ctx context.Context, obj *model.Term) ([]*m
 	}
 
 	return loader.GetPracticeTestsByTermID(ctx, *obj.ID)
+}
+
+// ReviewEventStatsByDay is the resolver for the reviewEventStatsByDay field.
+func (r *termResolver) ReviewEventStatsByDay(ctx context.Context, obj *model.Term, last int32) ([]*model.ReviewEventStats, error) {
+	panic(fmt.Errorf("not implemented: ReviewEventStatsByDay - reviewEventStatsByDay"))
 }
 
 // Term returns graph.TermResolver implementation.

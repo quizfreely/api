@@ -268,18 +268,19 @@ type ComplexityRoot struct {
 	}
 
 	Term struct {
-		CreatedAt      func(childComplexity int) int
-		Def            func(childComplexity int) int
-		DefImageURL    func(childComplexity int) int
-		FsrsCard       func(childComplexity int) int
-		FsrsReviewLogs func(childComplexity int) int
-		ID             func(childComplexity int) int
-		PracticeTests  func(childComplexity int) int
-		Progress       func(childComplexity int) int
-		SortOrder      func(childComplexity int) int
-		Term           func(childComplexity int) int
-		TermImageURL   func(childComplexity int) int
-		UpdatedAt      func(childComplexity int) int
+		CreatedAt             func(childComplexity int) int
+		Def                   func(childComplexity int) int
+		DefImageURL           func(childComplexity int) int
+		FsrsCard              func(childComplexity int) int
+		FsrsReviewLogs        func(childComplexity int) int
+		ID                    func(childComplexity int) int
+		PracticeTests         func(childComplexity int) int
+		Progress              func(childComplexity int) int
+		ReviewEventStatsByDay func(childComplexity int, last int32) int
+		SortOrder             func(childComplexity int) int
+		Term                  func(childComplexity int) int
+		TermImageURL          func(childComplexity int) int
+		UpdatedAt             func(childComplexity int) int
 	}
 
 	TermATP struct {
@@ -407,6 +408,8 @@ type TermResolver interface {
 	FsrsCard(ctx context.Context, obj *model.Term) (*model.FSRSCard, error)
 	FsrsReviewLogs(ctx context.Context, obj *model.Term) ([]*model.FSRSReviewLog, error)
 	PracticeTests(ctx context.Context, obj *model.Term) ([]*model.PracticeTest, error)
+
+	ReviewEventStatsByDay(ctx context.Context, obj *model.Term, last int32) ([]*model.ReviewEventStats, error)
 }
 type UserResolver interface {
 	Studysets(ctx context.Context, obj *model.User, first *int32, after *string, last *int32, before *string, includePrivate *bool) (*model.StudysetConnection, error)
@@ -1809,6 +1812,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Term.Progress(childComplexity), true
 
+	case "Term.reviewEventStatsByDay":
+		if e.complexity.Term.ReviewEventStatsByDay == nil {
+			break
+		}
+
+		args, err := ec.field_Term_reviewEventStatsByDay_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Term.ReviewEventStatsByDay(childComplexity, args["last"].(int32)), true
+
 	case "Term.sortOrder":
 		if e.complexity.Term.SortOrder == nil {
 			break
@@ -2956,6 +2971,17 @@ func (ec *executionContext) field_Subject_studysets_args(ctx context.Context, ra
 		return nil, err
 	}
 	args["before"] = arg3
+	return args, nil
+}
+
+func (ec *executionContext) field_Term_reviewEventStatsByDay_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalNInt2int32)
+	if err != nil {
+		return nil, err
+	}
+	args["last"] = arg0
 	return args, nil
 }
 
@@ -5735,6 +5761,8 @@ func (ec *executionContext) fieldContext_Mutation_createTerms(ctx context.Contex
 				return ec.fieldContext_Term_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_Term_updatedAt(ctx, field)
+			case "reviewEventStatsByDay":
+				return ec.fieldContext_Term_reviewEventStatsByDay(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Term", field.Name)
 		},
@@ -5813,6 +5841,8 @@ func (ec *executionContext) fieldContext_Mutation_updateTerms(ctx context.Contex
 				return ec.fieldContext_Term_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_Term_updatedAt(ctx, field)
+			case "reviewEventStatsByDay":
+				return ec.fieldContext_Term_reviewEventStatsByDay(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Term", field.Name)
 		},
@@ -7753,6 +7783,8 @@ func (ec *executionContext) fieldContext_Query_term(ctx context.Context, field g
 				return ec.fieldContext_Term_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_Term_updatedAt(ctx, field)
+			case "reviewEventStatsByDay":
+				return ec.fieldContext_Term_reviewEventStatsByDay(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Term", field.Name)
 		},
@@ -7834,6 +7866,8 @@ func (ec *executionContext) fieldContext_Query_terms(ctx context.Context, field 
 				return ec.fieldContext_Term_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_Term_updatedAt(ctx, field)
+			case "reviewEventStatsByDay":
+				return ec.fieldContext_Term_reviewEventStatsByDay(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Term", field.Name)
 		},
@@ -10101,6 +10135,8 @@ func (ec *executionContext) fieldContext_Studyset_terms(_ context.Context, field
 				return ec.fieldContext_Term_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_Term_updatedAt(ctx, field)
+			case "reviewEventStatsByDay":
+				return ec.fieldContext_Term_reviewEventStatsByDay(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Term", field.Name)
 		},
@@ -11788,6 +11824,66 @@ func (ec *executionContext) fieldContext_Term_updatedAt(_ context.Context, field
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Term_reviewEventStatsByDay(ctx context.Context, field graphql.CollectedField, obj *model.Term) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Term_reviewEventStatsByDay(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Term().ReviewEventStatsByDay(rctx, obj, fc.Args["last"].(int32))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.ReviewEventStats)
+	fc.Result = res
+	return ec.marshalOReviewEventStats2ᚕᚖquizfreelyᚋapiᚋgraphᚋmodelᚐReviewEventStatsᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Term_reviewEventStatsByDay(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Term",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "timestamp":
+				return ec.fieldContext_ReviewEventStats_timestamp(ctx, field)
+			case "correct":
+				return ec.fieldContext_ReviewEventStats_correct(ctx, field)
+			case "incorrect":
+				return ec.fieldContext_ReviewEventStats_incorrect(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReviewEventStats", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Term_reviewEventStatsByDay_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -18021,6 +18117,39 @@ func (ec *executionContext) _Term(ctx context.Context, sel ast.SelectionSet, obj
 			out.Values[i] = ec._Term_createdAt(ctx, field, obj)
 		case "updatedAt":
 			out.Values[i] = ec._Term_updatedAt(ctx, field, obj)
+		case "reviewEventStatsByDay":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Term_reviewEventStatsByDay(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
