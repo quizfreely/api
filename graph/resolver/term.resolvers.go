@@ -6,10 +6,14 @@ package resolver
 
 import (
 	"context"
+	"fmt"
 	"quizfreely/api/auth"
 	"quizfreely/api/graph"
 	"quizfreely/api/graph/loader"
 	"quizfreely/api/graph/model"
+	"quizfreely/api/server/middleware"
+
+	"github.com/georgysavva/scany/v2/pgxscan"
 )
 
 // Progress is the resolver for the progress field.
