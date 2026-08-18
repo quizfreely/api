@@ -36,8 +36,7 @@ func (dr *dataReader) getStudysetsByIDs(ctx context.Context, ids []string) ([]*m
 			SELECT `+selectCols+`
 			FROM unnest($1::uuid[]) WITH ORDINALITY AS input(id, ordinality)
 			LEFT JOIN studysets s ON s.id = input.id
-				AND s.draft = false
-				AND (s.private = false OR s.user_id = $2)
+				AND ((s.private = false AND s.draft = false) OR s.user_id = $2)
 			ORDER BY input.ordinality
 		`, ids, authedUser.ID)
 	} else {
