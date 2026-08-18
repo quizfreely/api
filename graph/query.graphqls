@@ -27,6 +27,8 @@ type Query {
     myRecentActivityStudysets(first: Int = 24, after: String, last: Int, before: String): StudysetConnection!
     myRecentActivityStudysetCount: Int!
     matchActivity(id: ID!): MatchActivity
+    reviewEventStatsByDay(last: Int!): [ReviewEventStats!]
+    activityHistory(last: Int!): [ReviewActivity!]
 }
 type PageInfo {
     hasNextPage: Boolean!
@@ -38,10 +40,12 @@ enum AnswerWith {
     TERM
     DEF
 }
+union ReviewActivity = PracticeTest | MatchActivity
 type PracticeTest {
     id: ID!
     timestamp: String!
     studysetIds: [ID!]!
+    studysets: [Studyset]
     questionsCorrect: Int
     questionsTotal: Int
     questions: [Question!]!
@@ -86,4 +90,10 @@ type MatchActivity {
     termIds: [ID!]!
     incorrectPairIds: [[ID!]!]!
     studysetIds: [ID!]!
+    studysets: [Studyset]
+}
+type ReviewEventStats {
+    timestamp: String!
+    correct: Int!
+    incorrect: Int!
 }

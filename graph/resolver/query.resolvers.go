@@ -13,6 +13,7 @@ import (
 	"quizfreely/api/graph/cursor"
 	"quizfreely/api/graph/loader"
 	"quizfreely/api/graph/model"
+	"quizfreely/api/server/middleware"
 	"time"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
@@ -55,20 +56,39 @@ func (r *matchActivityResolver) StudysetIds(ctx context.Context, obj *model.Matc
 	return loader.GetMatchActivityStudysetIDs(ctx, *obj.ID)
 }
 
+// Studysets is the resolver for the studysets field.
+func (r *matchActivityResolver) Studysets(ctx context.Context, obj *model.MatchActivity) ([]*model.Studyset, error) {
+	if obj == nil || obj.ID == nil {
+		return nil, nil
+	}
+
+	studysetIDs, err := r.StudysetIds(ctx, obj)
+	if err != nil {
+		return nil, err
+	}
+	return loader.GetStudysetsByIDs(ctx, studysetIDs)
+}
+
 // StudysetIds is the resolver for the studysetIds field.
 func (r *practiceTestResolver) StudysetIds(ctx context.Context, obj *model.PracticeTest) ([]string, error) {
 	if obj == nil || obj.ID == nil {
 		return nil, nil
 	}
 
-	var ids []string
-	sql := `SELECT studyset_id FROM practice_test_studysets WHERE practice_test_id = $1`
-	err := pgxscan.Select(ctx, r.DB, &ids, sql, *obj.ID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch studyset ids for practice test: %w", err)
+	return loader.GetStudysetIDsByPracticeTest(ctx, *obj.ID)
+}
+
+// Studysets is the resolver for the studysets field.
+func (r *practiceTestResolver) Studysets(ctx context.Context, obj *model.PracticeTest) ([]*model.Studyset, error) {
+	if obj == nil || obj.ID == nil {
+		return nil, nil
 	}
 
-	return ids, nil
+	studysetIDs, err := r.StudysetIds(ctx, obj)
+	if err != nil {
+		return nil, err
+	}
+	return loader.GetStudysetsByIDs(ctx, studysetIDs)
 }
 
 // Questions is the resolver for the questions field.
@@ -169,93 +189,12 @@ func (r *queryResolver) AuthedUser(ctx context.Context) (*model.AuthedUser, erro
 
 // Studyset is the resolver for the studyset field.
 func (r *queryResolver) Studyset(ctx context.Context, id string) (*model.Studyset, error) {
-	authedUser := auth.AuthedUserContext(ctx)
-
-	var studyset model.Studyset
-	var err error
-	if authedUser != nil {
-		sql := `
-			SELECT id, user_id, title, private, subject_id, draft, seo_indexing_approved,
-				to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
-				to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
-			FROM public.studysets
-			WHERE id = $1 AND ((private = false AND draft = false) OR user_id = $2)`
-		err = pgxscan.Get(ctx, r.DB, &studyset, sql, id, authedUser.ID)
-	} else {
-		sql := `
-			SELECT id, user_id, title, private, subject_id, draft, seo_indexing_approved,
-				to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
-				to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at
-			FROM public.studysets
-			WHERE id = $1 AND private = false AND draft = false`
-		err = pgxscan.Get(ctx, r.DB, &studyset, sql, id)
-	}
-	if err != nil {
-		if pgxscan.NotFound(err) {
-			return nil, fmt.Errorf("studyset not found")
-		}
-		return nil, fmt.Errorf("failed to fetch studyset: %w", err)
-	}
-
-	return &studyset, nil
+	return loader.GetStudysetByID(ctx, id)
 }
 
 // Studysets is the resolver for the studysets field.
 func (r *queryResolver) Studysets(ctx context.Context, ids []string) ([]*model.Studyset, error) {
-	if len(ids) == 0 {
-		return []*model.Studyset{}, nil
-	}
-
-	authedUser := auth.AuthedUserContext(ctx)
-
-	type row struct {
-		model.Studyset
-		Ordinality int `db:"ordinality"`
-	}
-
-	selectCols := `
-		s.id, s.user_id, s.title, s.private, s.draft, s.subject_id, s.seo_indexing_approved,
-		to_char(s.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as created_at,
-		to_char(s.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as updated_at,
-		input.ordinality
-	`
-
-	var rows []row
-	var err error
-
-	if authedUser != nil {
-		err = pgxscan.Select(ctx, r.DB, &rows, `
-			SELECT `+selectCols+`
-			FROM unnest($1::uuid[]) WITH ORDINALITY AS input(id, ordinality)
-			LEFT JOIN studysets s ON s.id = input.id
-				AND s.draft = false
-				AND (s.private = false OR s.user_id = $2)
-			ORDER BY input.ordinality
-		`, ids, authedUser.ID)
-	} else {
-		err = pgxscan.Select(ctx, r.DB, &rows, `
-			SELECT `+selectCols+`
-			FROM unnest($1::uuid[]) WITH ORDINALITY AS input(id, ordinality)
-			LEFT JOIN studysets s ON s.id = input.id
-				AND s.draft = false
-				AND s.private = false
-			ORDER BY input.ordinality
-		`, ids)
-	}
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch studysets: %w", err)
-	}
-
-	result := make([]*model.Studyset, len(ids))
-	for _, r := range rows {
-		idx := r.Ordinality - 1
-		if r.Studyset.ID != nil {
-			s := r.Studyset
-			result[idx] = &s
-		}
-	}
-
-	return result, nil
+	return loader.GetStudysetsByIDs(ctx, ids)
 }
 
 // User is the resolver for the user field.
@@ -1605,6 +1544,131 @@ func (r *queryResolver) MatchActivity(ctx context.Context, id string) (*model.Ma
 	}
 
 	return &ma, nil
+}
+
+// ReviewEventStatsByDay is the resolver for the reviewEventStatsByDay field.
+func (r *queryResolver) ReviewEventStatsByDay(ctx context.Context, last int32) ([]*model.ReviewEventStats, error) {
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil {
+		return nil, fmt.Errorf("not authenticated")
+	}
+
+	// fallback to UTC if user timezone from ctx is not available
+	tz := "UTC"
+	if tzCtx := middleware.TimezoneContext(ctx); tzCtx != nil && *tzCtx != "" {
+		tz = *tzCtx
+	}
+
+	days := int32(7)
+	if last > 0 {
+		days = last
+	}
+
+	query := `
+		SELECT
+			(date_trunc('day', timestamp AT TIME ZONE $2) AT TIME ZONE $2)::text AS timestamp,
+			COUNT(*) FILTER (WHERE correct = true)::int AS correct,
+			COUNT(*) FILTER (WHERE correct = false)::int AS incorrect
+		FROM
+			public.review_events
+		WHERE
+			user_id = $1
+			AND timestamp >= ((NOW() AT TIME ZONE $2)::date - ($3 - 1) * INTERVAL '1 day') AT TIME ZONE $2
+		GROUP BY
+			1
+		ORDER BY
+			1 ASC;
+	`
+
+	var stats []*model.ReviewEventStats
+	err := pgxscan.Select(ctx, r.DB, &stats, query, authedUser.ID, tz, days)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch review event stats by day: %w", err)
+	}
+
+	return stats, nil
+}
+
+// ActivityHistory is the resolver for the activityHistory field.
+func (r *queryResolver) ActivityHistory(ctx context.Context, last int32) ([]model.ReviewActivity, error) {
+	authedUser := auth.AuthedUserContext(ctx)
+	if authedUser == nil {
+		return nil, fmt.Errorf("not authenticated")
+	}
+
+	if last <= 0 {
+		return []model.ReviewActivity{}, nil
+	}
+
+	type activityHistoryRow struct {
+		ActivityType     string  `db:"activity_type"`
+		ID               *string `db:"id"`
+		Timestamp        *string `db:"timestamp"`
+		QuestionsCorrect *int32  `db:"questions_correct"`
+		QuestionsTotal   *int32  `db:"questions_total"`
+		DurationMs       *int32  `db:"duration_ms"`
+		EndTimestamp     *string `db:"end_timestamp"`
+	}
+
+	sql := `
+		SELECT activity_type, id, timestamp, questions_correct, questions_total, duration_ms, end_timestamp
+		FROM (
+			SELECT
+				'PRACTICE_TEST' AS activity_type,
+				id,
+				to_char(timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') AS timestamp,
+				questions_correct,
+				questions_total,
+				NULL::int AS duration_ms,
+				NULL::text AS end_timestamp,
+				timestamp AS sort_ts
+			FROM practice_tests
+			WHERE user_id = $1
+
+			UNION ALL
+
+			SELECT
+				'MATCH' AS activity_type,
+				id,
+				NULL::text AS timestamp,
+				NULL::smallint AS questions_correct,
+				NULL::smallint AS questions_total,
+				duration_ms,
+				to_char(end_timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') AS end_timestamp,
+				end_timestamp AS sort_ts
+			FROM match_activities
+			WHERE user_id = $1
+		) combined
+		ORDER BY sort_ts DESC, id DESC
+		LIMIT $2
+	`
+
+	var rows []*activityHistoryRow
+	err := pgxscan.Select(ctx, r.DB, &rows, sql, authedUser.ID, last)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch activity history: %w", err)
+	}
+
+	activities := make([]model.ReviewActivity, len(rows))
+	for i, row := range rows {
+		switch row.ActivityType {
+		case "PRACTICE_TEST":
+			activities[i] = &model.PracticeTest{
+				ID:               row.ID,
+				Timestamp:        row.Timestamp,
+				QuestionsCorrect: row.QuestionsCorrect,
+				QuestionsTotal:   row.QuestionsTotal,
+			}
+		case "MATCH":
+			activities[i] = &model.MatchActivity{
+				ID:           row.ID,
+				DurationMs:   *row.DurationMs,
+				EndTimestamp: *row.EndTimestamp,
+			}
+		}
+	}
+
+	return activities, nil
 }
 
 // MatchActivity returns graph.MatchActivityResolver implementation.

@@ -1,4 +1,4 @@
-\restrict BNHcv39vDkDMzy4uZuRsGdZmnpTOnueAVQigO9ggzBixUe9qdtCldOJsARZhK3t
+\restrict mo6n5HdMg4j3S8AH3tebezXeQ3nRiX8FB9dfAHBTImNwcIEbNtcc14L7VAJACVI
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -145,7 +145,7 @@ SET default_table_access_method = heap;
 --
 
 CREATE TABLE auth.sessions (
-    token text DEFAULT encode(public.gen_random_bytes(32), 'base64'::text) NOT NULL,
+    token text DEFAULT encode(public.gen_random_bytes(32), 'hex'::text) NOT NULL,
     user_id uuid NOT NULL,
     expire_at timestamp with time zone DEFAULT (now() + '10 days'::interval)
 );
@@ -947,7 +947,7 @@ ALTER TABLE ONLY public.terms
 -- PostgreSQL database dump complete
 --
 
-\unrestrict BNHcv39vDkDMzy4uZuRsGdZmnpTOnueAVQigO9ggzBixUe9qdtCldOJsARZhK3t
+\unrestrict mo6n5HdMg4j3S8AH3tebezXeQ3nRiX8FB9dfAHBTImNwcIEbNtcc14L7VAJACVI
 
 
 --
@@ -995,4 +995,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('202606291000'),
     ('202606291100'),
     ('202606301100'),
-    ('202607012025');
+    ('202607012025'),
+    ('202608082030');

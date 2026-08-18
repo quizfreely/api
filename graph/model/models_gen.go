@@ -9,6 +9,10 @@ import (
 	"strconv"
 )
 
+type ReviewActivity interface {
+	IsReviewActivity()
+}
+
 type Frq struct {
 	Term              *TermAtp   `json:"term"`
 	AnswerWith        AnswerWith `json:"answerWith"`
@@ -142,6 +146,12 @@ type QuestionInput struct {
 	Mcq *MCQInput `json:"mcq,omitempty"`
 	Tfq *TFQInput `json:"tfq,omitempty"`
 	Frq *FRQInput `json:"frq,omitempty"`
+}
+
+type ReviewEventStats struct {
+	Timestamp string `json:"timestamp"`
+	Correct   int32  `json:"correct"`
+	Incorrect int32  `json:"incorrect"`
 }
 
 type StudysetConnection struct {

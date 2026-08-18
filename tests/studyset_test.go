@@ -246,7 +246,7 @@ func TestDraftStudysetLifecycle(t *testing.T) {
 	var queryResult map[string]interface{}
 	err = json.NewDecoder(resp.Body).Decode(&queryResult)
 	require.NoError(t, err)
-	require.NotNil(t, queryResult["errors"], "should return error when attempting to view someone else's draft")
+	require.Nil(t, getNested(queryResult, "data", "studyset"), "should return null when attempting to view someone else's draft")
 
 	// 3. user1 updates the studyset to making it no longer a draft and sets a title
 	updateBody := map[string]interface{}{
@@ -292,4 +292,78 @@ func TestDraftStudysetLifecycle(t *testing.T) {
 	require.NoError(t, err)
 	require.Nil(t, queryResult2["errors"], "should have no errors viewing published studyset")
 	require.Equal(t, "Published Set", getNested(queryResult2, "data", "studyset", "title"))
+}
+
+func TestDraftStudysetOwnerCanView(t *testing.T) {
+	// 1. user1 creates a draft studyset
+	createBody := map[string]interface{}{
+		"query": `mutation CreateStudyset($input: StudysetInput!) {
+			createStudyset(studyset: $input, draft: true) {
+				id
+				title
+				draft
+			}
+		}`,
+		"variables": map[string]interface{}{
+			"input": map[string]interface{}{
+				"title":   "",
+				"private": false,
+			},
+		},
+	}
+	req, err := http.NewRequest(http.MethodPost, testServer.URL+"/graphql", marshal(createBody))
+	require.NoError(t, err)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+user1Token)
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+	var createResult map[string]interface{}
+	err = json.NewDecoder(resp.Body).Decode(&createResult)
+	require.NoError(t, err)
+	require.Nil(t, createResult["errors"], "should have no errors on draft creation")
+
+	studysetID := getNested(createResult, "data", "createStudyset", "id").(string)
+	require.NotEmpty(t, studysetID)
+	require.Equal(t, true, getNested(createResult, "data", "createStudyset", "draft"))
+
+	// 2. user1 (owner) can view their own draft studyset
+	queryBody := map[string]interface{}{
+		"query": `query GetStudyset($id: ID!) {
+			studyset(id: $id) {
+				id
+				title
+				draft
+			}
+		}`,
+		"variables": map[string]interface{}{
+			"id": studysetID,
+		},
+	}
+	req, err = http.NewRequest(http.MethodPost, testServer.URL+"/graphql", marshal(queryBody))
+	require.NoError(t, err)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+user1Token)
+	resp, err = http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+	var queryResult map[string]interface{}
+	err = json.NewDecoder(resp.Body).Decode(&queryResult)
+	require.NoError(t, err)
+	require.Nil(t, queryResult["errors"], "should have no errors viewing own draft")
+	require.Equal(t, studysetID, getNested(queryResult, "data", "studyset", "id"))
+	require.Equal(t, true, getNested(queryResult, "data", "studyset", "draft"))
+
+	// 3. user2 (non-owner) cannot view user1's draft studyset
+	req, err = http.NewRequest(http.MethodPost, testServer.URL+"/graphql", marshal(queryBody))
+	require.NoError(t, err)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+user2Token)
+	resp, err = http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+	var queryResult2 map[string]interface{}
+	err = json.NewDecoder(resp.Body).Decode(&queryResult2)
+	require.NoError(t, err)
+	require.Nil(t, getNested(queryResult2, "data", "studyset"), "non-owner should not be able to view a draft studyset")
 }

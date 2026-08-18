@@ -211,6 +211,8 @@ models:
     fields:
       studysetIds:
         resolver: true
+      studysets:
+        resolver: true
       questions:
         resolver: true
   MatchActivity:
@@ -220,4 +222,6 @@ models:
       incorrectPairIds:
         resolver: true
       studysetIds:
+        resolver: true
+      studysets:
         resolver: true

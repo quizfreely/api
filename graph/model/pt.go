@@ -10,6 +10,8 @@ type PracticeTest struct {
 	Questions        []*Question `json:"questions,omitempty"`
 }
 
+func (PracticeTest) IsReviewActivity() {}
+
 type QuestionRow struct {
 	ID             string     `db:"id"`
 	PracticeTestID string     `db:"practice_test_id"`

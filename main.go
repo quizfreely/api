@@ -3,12 +3,12 @@ package main
 import (
 	"context"
 	"errors"
+	"flag"
 	"fmt"
 	"net/http"
 	"os"
 	"strconv"
 	"time"
-	"flag"
 
 	qzfrAPIConfig "quizfreely/api/config"
 	"quizfreely/api/server"
@@ -46,7 +46,7 @@ func main() {
 	default:
 		fmt.Print(
 			"❌ Invalid log level\n" +
-			"Valid levels: panic, fatal, error, warn, info, debug, trace\n",
+				"Valid levels: panic, fatal, error, warn, info, debug, trace\n",
 		)
 		os.Exit(1)
 	}
