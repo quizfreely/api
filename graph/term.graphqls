@@ -11,7 +11,7 @@ type Term {
     practiceTests: [PracticeTest!]!
     createdAt: String
     updatedAt: String
-    reviewEventStatsByDay(last: Int!): [ReviewEventStats!]
+    reviewEventStatsByDay(lastDaysBack: Int, lastDaysTotal: Int): [ReviewEventStats!]
 }
 input NewTermInput {
     term: String
