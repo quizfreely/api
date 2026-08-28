@@ -104,7 +104,7 @@ func (r *termResolver) ReviewEventStatsByDay(ctx context.Context, obj *model.Ter
 			ORDER BY
 				1 ASC;
 		`
-		err := pgxscan.Select(ctx, r.DB, &stats, query, authedUser.ID, obj.ID, tz, *lastDaysBack)
+		err = pgxscan.Select(ctx, r.DB, &stats, query, authedUser.ID, obj.ID, tz, *lastDaysBack)
 	} else {
 		query := `
 			WITH stats AS (
@@ -129,7 +129,7 @@ func (r *termResolver) ReviewEventStatsByDay(ctx context.Context, obj *model.Ter
 			) latest_days
 			ORDER BY timestamp ASC;
 		`
-		err := pgxscan.Select(ctx, r.DB, &stats, query, authedUser.ID, obj.ID, tz, *lastDaysTotal)
+		err = pgxscan.Select(ctx, r.DB, &stats, query, authedUser.ID, obj.ID, tz, *lastDaysTotal)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch term's review event stats by day: %w", err)
