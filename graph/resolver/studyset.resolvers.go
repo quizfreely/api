@@ -205,10 +205,27 @@ func (r *studysetResolver) AuthorFolder(ctx context.Context, obj *model.Studyset
 }
 
 // ReviewEventStatsByDay is the resolver for the reviewEventStatsByDay field.
-func (r *studysetResolver) ReviewEventStatsByDay(ctx context.Context, obj *model.Studyset, last int32) ([]*model.ReviewEventStats, error) {
+func (r *studysetResolver) ReviewEventStatsByDay(ctx context.Context, obj *model.Studyset, lastDaysBack *int32, lastDaysTotal *int32) ([]*model.ReviewEventStats, error) {
+	if obj == nil || obj.ID == nil {
+		return nil, nil
+	}
+
 	authedUser := auth.AuthedUserContext(ctx)
 	if authedUser == nil {
 		return nil, fmt.Errorf("not authenticated")
+	}
+
+	if lastDaysBack == nil && lastDaysTotal == nil {
+		return nil, fmt.Errorf("one of lastDaysBack OR lastDaysTotal is required. BOTH can NOT be null")
+	}
+	if lastDaysBack != nil && lastDaysTotal != nil {
+		return nil, fmt.Errorf("ONLY ONE of lastDaysBack OR lastDaysTotal can be used. One of them must be null, but BOTH were not null")
+	}
+	if lastDaysBack != nil && *lastDaysBack < 1 {
+		return nil, fmt.Errorf("lastDaysBack must be greater than 0 when it's not null")
+	}
+	if lastDaysTotal != nil && *lastDaysTotal < 1 {
+		return nil, fmt.Errorf("lastDaysTotal must be greater than 0 when it's not null")
 	}
 
 	// fallback to UTC if user timezone from ctx is not available
@@ -217,32 +234,56 @@ func (r *studysetResolver) ReviewEventStatsByDay(ctx context.Context, obj *model
 		tz = *tzCtx
 	}
 
-	days := int32(7)
-	if last > 0 {
-		days = last
-	}
-
-	query := `
-		SELECT
-			(date_trunc('day', re.timestamp AT TIME ZONE $3) AT TIME ZONE $3)::text AS timestamp,
-			COUNT(*) FILTER (WHERE re.correct = true)::int AS correct,
-			COUNT(*) FILTER (WHERE re.correct = false)::int AS incorrect
-		FROM
-			public.review_events re
-		JOIN
-			public.terms t ON t.id = re.term_id
-		WHERE
-			re.user_id = $1
-			AND t.studyset_id = $2
-			AND re.timestamp >= ((NOW() AT TIME ZONE $3)::date - ($4 - 1) * INTERVAL '1 day') AT TIME ZONE $3
-		GROUP BY
-			1
-		ORDER BY
-			1 ASC;
-	`
-
 	var stats []*model.ReviewEventStats
-	err := pgxscan.Select(ctx, r.DB, &stats, query, authedUser.ID, obj.ID, tz, days)
+	var err error
+	if lastDaysBack != nil {
+		query := `
+			SELECT
+				(date_trunc('day', re.timestamp AT TIME ZONE $3) AT TIME ZONE $3)::text AS timestamp,
+				COUNT(*) FILTER (WHERE re.correct = true)::int AS correct,
+				COUNT(*) FILTER (WHERE re.correct = false)::int AS incorrect
+			FROM
+				public.review_events re
+			JOIN
+				public.terms t ON t.id = re.term_id
+			WHERE
+				re.user_id = $1
+				AND t.studyset_id = $2
+				AND re.timestamp >= ((NOW() AT TIME ZONE $3)::date - ($4 - 1) * INTERVAL '1 day') AT TIME ZONE $3
+			GROUP BY
+				1
+			ORDER BY
+				1 ASC;
+		`
+		err = pgxscan.Select(ctx, r.DB, &stats, query, authedUser.ID, obj.ID, tz, *lastDaysBack)
+	} else {
+		query := `
+			WITH stats AS (
+				SELECT
+					(date_trunc('day', re.timestamp AT TIME ZONE $3) AT TIME ZONE $3)::text AS timestamp,
+					COUNT(*) FILTER (WHERE re.correct = true)::int AS correct,
+					COUNT(*) FILTER (WHERE re.correct = false)::int AS incorrect
+				FROM
+					public.review_events re
+				JOIN
+					public.terms t ON t.id = re.term_id
+				WHERE
+					re.user_id = $1
+					AND t.studyset_id = $2
+				GROUP BY
+					1
+			)
+			SELECT *
+			FROM (
+				SELECT *
+				FROM stats
+				ORDER BY timestamp DESC
+				LIMIT $4
+			) latest_days
+			ORDER BY timestamp ASC;
+		`
+		err = pgxscan.Select(ctx, r.DB, &stats, query, authedUser.ID, obj.ID, tz, *lastDaysTotal)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch review event stats by day: %w", err)
 	}

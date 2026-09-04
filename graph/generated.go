@@ -193,7 +193,7 @@ type ComplexityRoot struct {
 		PracticeTest                  func(childComplexity int, id string) int
 		RecentlyCreatedStudysets      func(childComplexity int, first *int32, after *string, last *int32, before *string) int
 		RecentlyUpdatedStudysets      func(childComplexity int, first *int32, after *string, last *int32, before *string) int
-		ReviewEventStatsByDay         func(childComplexity int, last int32) int
+		ReviewEventStatsByDay         func(childComplexity int, lastDaysBack int32) int
 		SearchStudysetCount           func(childComplexity int, q string) int
 		SearchStudysets               func(childComplexity int, q string, first *int32, after *string, last *int32, before *string) int
 		Studyset                      func(childComplexity int, id string) int
@@ -230,7 +230,7 @@ type ComplexityRoot struct {
 		MyFolder              func(childComplexity int) int
 		PracticeTests         func(childComplexity int) int
 		Private               func(childComplexity int) int
-		ReviewEventStatsByDay func(childComplexity int, last int32) int
+		ReviewEventStatsByDay func(childComplexity int, lastDaysBack *int32, lastDaysTotal *int32) int
 		SEOIndexingApproved   func(childComplexity int) int
 		Saved                 func(childComplexity int) int
 		Subject               func(childComplexity int) int
@@ -276,7 +276,7 @@ type ComplexityRoot struct {
 		ID                    func(childComplexity int) int
 		PracticeTests         func(childComplexity int) int
 		Progress              func(childComplexity int) int
-		ReviewEventStatsByDay func(childComplexity int, last int32) int
+		ReviewEventStatsByDay func(childComplexity int, lastDaysBack *int32, lastDaysTotal *int32) int
 		SortOrder             func(childComplexity int) int
 		Term                  func(childComplexity int) int
 		TermImageURL          func(childComplexity int) int
@@ -382,7 +382,7 @@ type QueryResolver interface {
 	MyRecentActivityStudysets(ctx context.Context, first *int32, after *string, last *int32, before *string) (*model.StudysetConnection, error)
 	MyRecentActivityStudysetCount(ctx context.Context) (int32, error)
 	MatchActivity(ctx context.Context, id string) (*model.MatchActivity, error)
-	ReviewEventStatsByDay(ctx context.Context, last int32) ([]*model.ReviewEventStats, error)
+	ReviewEventStatsByDay(ctx context.Context, lastDaysBack int32) ([]*model.ReviewEventStats, error)
 	ActivityHistory(ctx context.Context, last int32) ([]model.ReviewActivity, error)
 }
 type StudysetResolver interface {
@@ -397,7 +397,7 @@ type StudysetResolver interface {
 	MyFolder(ctx context.Context, obj *model.Studyset) (*model.Folder, error)
 	AuthorFolder(ctx context.Context, obj *model.Studyset) (*model.Folder, error)
 
-	ReviewEventStatsByDay(ctx context.Context, obj *model.Studyset, last int32) ([]*model.ReviewEventStats, error)
+	ReviewEventStatsByDay(ctx context.Context, obj *model.Studyset, lastDaysBack *int32, lastDaysTotal *int32) ([]*model.ReviewEventStats, error)
 }
 type SubjectResolver interface {
 	Studysets(ctx context.Context, obj *model.Subject, first *int32, after *string, last *int32, before *string) (*model.StudysetConnection, error)
@@ -409,7 +409,7 @@ type TermResolver interface {
 	FsrsReviewLogs(ctx context.Context, obj *model.Term) ([]*model.FSRSReviewLog, error)
 	PracticeTests(ctx context.Context, obj *model.Term) ([]*model.PracticeTest, error)
 
-	ReviewEventStatsByDay(ctx context.Context, obj *model.Term, last int32) ([]*model.ReviewEventStats, error)
+	ReviewEventStatsByDay(ctx context.Context, obj *model.Term, lastDaysBack *int32, lastDaysTotal *int32) ([]*model.ReviewEventStats, error)
 }
 type UserResolver interface {
 	Studysets(ctx context.Context, obj *model.User, first *int32, after *string, last *int32, before *string, includePrivate *bool) (*model.StudysetConnection, error)
@@ -1334,7 +1334,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.ReviewEventStatsByDay(childComplexity, args["last"].(int32)), true
+		return e.complexity.Query.ReviewEventStatsByDay(childComplexity, args["lastDaysBack"].(int32)), true
 
 	case "Query.searchStudysetCount":
 		if e.complexity.Query.SearchStudysetCount == nil {
@@ -1595,7 +1595,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Studyset.ReviewEventStatsByDay(childComplexity, args["last"].(int32)), true
+		return e.complexity.Studyset.ReviewEventStatsByDay(childComplexity, args["lastDaysBack"].(*int32), args["lastDaysTotal"].(*int32)), true
 
 	case "Studyset.seoIndexingApproved":
 		if e.complexity.Studyset.SEOIndexingApproved == nil {
@@ -1822,7 +1822,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Term.ReviewEventStatsByDay(childComplexity, args["last"].(int32)), true
+		return e.complexity.Term.ReviewEventStatsByDay(childComplexity, args["lastDaysBack"].(*int32), args["lastDaysTotal"].(*int32)), true
 
 	case "Term.sortOrder":
 		if e.complexity.Term.SortOrder == nil {
@@ -2757,11 +2757,11 @@ func (ec *executionContext) field_Query_recentlyUpdatedStudysets_args(ctx contex
 func (ec *executionContext) field_Query_reviewEventStatsByDay_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalNInt2int32)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "lastDaysBack", ec.unmarshalNInt2int32)
 	if err != nil {
 		return nil, err
 	}
-	args["last"] = arg0
+	args["lastDaysBack"] = arg0
 	return args, nil
 }
 
@@ -2940,11 +2940,16 @@ func (ec *executionContext) field_Query_user_args(ctx context.Context, rawArgs m
 func (ec *executionContext) field_Studyset_reviewEventStatsByDay_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalNInt2int32)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "lastDaysBack", ec.unmarshalOInt2ᚖint32)
 	if err != nil {
 		return nil, err
 	}
-	args["last"] = arg0
+	args["lastDaysBack"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "lastDaysTotal", ec.unmarshalOInt2ᚖint32)
+	if err != nil {
+		return nil, err
+	}
+	args["lastDaysTotal"] = arg1
 	return args, nil
 }
 
@@ -2977,11 +2982,16 @@ func (ec *executionContext) field_Subject_studysets_args(ctx context.Context, ra
 func (ec *executionContext) field_Term_reviewEventStatsByDay_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalNInt2int32)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "lastDaysBack", ec.unmarshalOInt2ᚖint32)
 	if err != nil {
 		return nil, err
 	}
-	args["last"] = arg0
+	args["lastDaysBack"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "lastDaysTotal", ec.unmarshalOInt2ᚖint32)
+	if err != nil {
+		return nil, err
+	}
+	args["lastDaysTotal"] = arg1
 	return args, nil
 }
 
@@ -9145,7 +9155,7 @@ func (ec *executionContext) _Query_reviewEventStatsByDay(ctx context.Context, fi
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().ReviewEventStatsByDay(rctx, fc.Args["last"].(int32))
+		return ec.resolvers.Query().ReviewEventStatsByDay(rctx, fc.Args["lastDaysBack"].(int32))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -10512,7 +10522,7 @@ func (ec *executionContext) _Studyset_reviewEventStatsByDay(ctx context.Context,
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Studyset().ReviewEventStatsByDay(rctx, obj, fc.Args["last"].(int32))
+		return ec.resolvers.Studyset().ReviewEventStatsByDay(rctx, obj, fc.Args["lastDaysBack"].(*int32), fc.Args["lastDaysTotal"].(*int32))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -11842,7 +11852,7 @@ func (ec *executionContext) _Term_reviewEventStatsByDay(ctx context.Context, fie
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Term().ReviewEventStatsByDay(rctx, obj, fc.Args["last"].(int32))
+		return ec.resolvers.Term().ReviewEventStatsByDay(rctx, obj, fc.Args["lastDaysBack"].(*int32), fc.Args["lastDaysTotal"].(*int32))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

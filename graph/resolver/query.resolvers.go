@@ -1547,21 +1547,20 @@ func (r *queryResolver) MatchActivity(ctx context.Context, id string) (*model.Ma
 }
 
 // ReviewEventStatsByDay is the resolver for the reviewEventStatsByDay field.
-func (r *queryResolver) ReviewEventStatsByDay(ctx context.Context, last int32) ([]*model.ReviewEventStats, error) {
+func (r *queryResolver) ReviewEventStatsByDay(ctx context.Context, lastDaysBack int32) ([]*model.ReviewEventStats, error) {
 	authedUser := auth.AuthedUserContext(ctx)
 	if authedUser == nil {
 		return nil, fmt.Errorf("not authenticated")
+	}
+
+	if lastDaysBack <= 0 {
+		return nil, fmt.Errorf("lastDaysBack must be greater than 0")
 	}
 
 	// fallback to UTC if user timezone from ctx is not available
 	tz := "UTC"
 	if tzCtx := middleware.TimezoneContext(ctx); tzCtx != nil && *tzCtx != "" {
 		tz = *tzCtx
-	}
-
-	days := int32(7)
-	if last > 0 {
-		days = last
 	}
 
 	query := `
@@ -1581,7 +1580,7 @@ func (r *queryResolver) ReviewEventStatsByDay(ctx context.Context, last int32) (
 	`
 
 	var stats []*model.ReviewEventStats
-	err := pgxscan.Select(ctx, r.DB, &stats, query, authedUser.ID, tz, days)
+	err := pgxscan.Select(ctx, r.DB, &stats, query, authedUser.ID, tz, lastDaysBack)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch review event stats by day: %w", err)
 	}
