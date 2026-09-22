@@ -43,9 +43,11 @@ session_cleanup_cron_spec = "0 0 * * *"
 term_image_cleanup_cron_spec = "10 0 * * *"
 
 enable_web_import = false
-# if enable_web_import is true, uncomment web_import_rate_limit_req, web_import_rate_limit_dur, and bright_data_api_key
+# if enable_web_import is true, uncomment web_import_rate_limit_req,
+# web_import_rate_limit_dur, bright_data_zone, and bright_data_api_key
 
 # web_import_rate_limit_req = 2 # requests
 # web_import_rate_limit_dur = 10 # per duration (in seconds)
+# bright_data_zone = "web_unlocker1"
 # bright_data_api_key = ""
 

@@ -37,6 +37,7 @@ func NewRouter(config qzfrAPIConfig.Config, dbPool *pgxpool.Pool, s3Client *s3.C
 		UsercontentBucket:      &config.UsercontentBucket,
 		UsercontentBaseURL:     &config.UsercontentBaseURL,
 		HTTPClient:             sharedClient,
+		BrightDataZone:             config.BrightDataZone,
 		BrightDataAPIKey:             config.BrightDataAPIKey,
 	}
 

@@ -12,5 +12,6 @@ type RESTHandler struct {
 	UsercontentBucket      *string
 	UsercontentBaseURL     *string
 	HTTPClient             *http.Client
+	BrightDataZone             string
 	BrightDataAPIKey             string
 }

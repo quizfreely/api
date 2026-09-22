@@ -21,5 +21,6 @@ type Config struct {
 	EnableWebImport          bool   `toml:"enable_web_import"`
 	WebImportRateLimitReq    int    `toml:"web_import_rate_limit_req"`
 	WebImportRateLimitDur    int    `toml:"web_import_rate_limit_dur"`
+	BrightDataZone           string `toml:"bright_data_zone"`
 	BrightDataAPIKey         string `toml:"bright_data_api_key"`
 }
