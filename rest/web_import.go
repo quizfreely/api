@@ -3,7 +3,7 @@ package rest
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
+	// "encoding/base64"
 	"encoding/json"
 	"errors"
 	"github.com/PuerkitoBio/goquery"
@@ -11,7 +11,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"io"
 	"net/http"
-	"net/url"
+	// "net/url"
 	"time"
 	"os"
 	"path/filepath"
@@ -46,13 +46,13 @@ func (rh *RESTHandler) WebImport(w http.ResponseWriter, r *http.Request) {
 	// 	reader, err = rh.zyteReq(reqBody.URL, ctx)
 	// } else if rh.UseCrawlbase {
 	// 	reader, err = rh.crawlbaseReq(reqBody.URL, ctx)
-	if rh.BrightDataAPIKey != nil && rh.BrightDataZone != nil {
+	if rh.BrightDataAPIKey != "" && rh.BrightDataZone != "" {
 		reader, err = rh.brightDataReq(reqBody.URL, ctx)
 	} else {
-		log.Error().Err(err).Msg("web import unavailable. bright_data_api_key or bright_data_zone is nil. check config.toml")
+		log.Error().Err(err).Msg("web import unavailable. bright_data_api_key or bright_data_zone is missing. check config.toml")
 		render.Status(r, 503)
 		render.JSON(w, r, map[string]any{
-			"error": "web import unavailable because bright_data_api_key or bright_data_zone is nil",
+			"error": "web import unavailable because bright_data_api_key or bright_data_zone is missing",
 		})
 		return
 	}
@@ -120,66 +120,66 @@ func (rh *RESTHandler) WebImport(w http.ResponseWriter, r *http.Request) {
 // 	return buf, nil
 // }
 
-type zyteReqBody struct {
-	URL              string `json:"url"`
-	HTTPResponseBody bool   `json:"httpResponseBody"`
-}
-type zyteRespBody struct {
-	HTTPResponseBody string `json:"httpResponseBody"`
-}
-
-func (rh *RESTHandler) zyteReq(targetURL string, reqCtx context.Context) (io.Reader, error) {
-	log.Trace().Msg("zyte attempted")
-	ctx, cancel := context.WithTimeout(reqCtx, 90*time.Second)
-	defer cancel()
-
-	reqBodyJSON, err := json.Marshal(
-		zyteReqBody{
-			URL:              targetURL,
-			HTTPResponseBody: true,
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequestWithContext(
-		ctx,
-		http.MethodPost,
-		"https://api.zyte.com/v1/extract",
-		bytes.NewBuffer(reqBodyJSON),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.SetBasicAuth(rh.ZyteAPIKey, "")
-
-	resp, err := rh.HTTPClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	var respBody zyteRespBody
-	err = json.Unmarshal(body, &respBody)
-	if err != nil {
-		return nil, err
-	}
-
-	decodedBody, err := base64.StdEncoding.DecodeString(respBody.HTTPResponseBody)
-	if err != nil {
-		return nil, err
-	}
-
-	return bytes.NewReader(decodedBody), nil
-}
+// type zyteReqBody struct {
+// 	URL              string `json:"url"`
+// 	HTTPResponseBody bool   `json:"httpResponseBody"`
+// }
+// type zyteRespBody struct {
+// 	HTTPResponseBody string `json:"httpResponseBody"`
+// }
+//
+// func (rh *RESTHandler) zyteReq(targetURL string, reqCtx context.Context) (io.Reader, error) {
+// 	log.Trace().Msg("zyte attempted")
+// 	ctx, cancel := context.WithTimeout(reqCtx, 90*time.Second)
+// 	defer cancel()
+//
+// 	reqBodyJSON, err := json.Marshal(
+// 		zyteReqBody{
+// 			URL:              targetURL,
+// 			HTTPResponseBody: true,
+// 		},
+// 	)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+//
+// 	req, err := http.NewRequestWithContext(
+// 		ctx,
+// 		http.MethodPost,
+// 		"https://api.zyte.com/v1/extract",
+// 		bytes.NewBuffer(reqBodyJSON),
+// 	)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+//
+// 	req.Header.Set("Content-Type", "application/json")
+// 	req.SetBasicAuth(rh.ZyteAPIKey, "")
+//
+// 	resp, err := rh.HTTPClient.Do(req)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	defer resp.Body.Close()
+//
+// 	body, err := io.ReadAll(resp.Body)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+//
+// 	var respBody zyteRespBody
+// 	err = json.Unmarshal(body, &respBody)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+//
+// 	decodedBody, err := base64.StdEncoding.DecodeString(respBody.HTTPResponseBody)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+//
+// 	return bytes.NewReader(decodedBody), nil
+// }
 
 type bdReqBody struct {
 	Zone              string `json:"zone"`
