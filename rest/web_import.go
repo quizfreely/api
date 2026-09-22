@@ -310,8 +310,8 @@ func parse(reader io.Reader) ([][]string, error) {
 	return termDefPairs, nil
 }
 
-saveToTempFile dumps the raw bytes into a temporary file on the server (for debugging only)
-returns filename (to log)
+// saveToTempFile dumps the raw bytes into a temporary file on the server (for debugging only)
+// returns filename (to log)
 func saveToTempFile(r io.Reader) (string, error) {
 	// Creates a file like /tmp/web-import-failed-123456789.html
 	tmpFile, err := os.CreateTemp("", "web-import-failed-*.html")
