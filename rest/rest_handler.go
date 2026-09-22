@@ -12,9 +12,5 @@ type RESTHandler struct {
 	UsercontentBucket      *string
 	UsercontentBaseURL     *string
 	HTTPClient             *http.Client
-	UseCrawlbase           bool
-	CrawlbaseAPIKey        string
-	UseZyte                bool
-	ZyteAPIKey             string
-	TryZyteBeforeCrawlbase bool
+	BrightDataAPIKey             string
 }

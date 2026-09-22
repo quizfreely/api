@@ -37,11 +37,7 @@ func NewRouter(config qzfrAPIConfig.Config, dbPool *pgxpool.Pool, s3Client *s3.C
 		UsercontentBucket:      &config.UsercontentBucket,
 		UsercontentBaseURL:     &config.UsercontentBaseURL,
 		HTTPClient:             sharedClient,
-		UseCrawlbase:           config.UseCrawlbase,
-		CrawlbaseAPIKey:        config.CrawlbaseAPIKey,
-		UseZyte:                config.UseZyte,
-		ZyteAPIKey:             config.ZyteAPIKey,
-		TryZyteBeforeCrawlbase: config.TryZyteBeforeCrawlbase,
+		BrightDataAPIKey:             config.BrightDataAPIKey,
 	}
 
 	router.Get("/ping", func(w http.ResponseWriter, r *http.Request) {
