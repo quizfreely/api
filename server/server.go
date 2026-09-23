@@ -32,16 +32,13 @@ func NewRouter(config qzfrAPIConfig.Config, dbPool *pgxpool.Pool, s3Client *s3.C
 	}
 	authHandler := &auth.AuthHandler{DB: dbPool}
 	restHandler := &rest.RESTHandler{
-		DB:                     dbPool,
-		Storage:                s3Client,
-		UsercontentBucket:      &config.UsercontentBucket,
-		UsercontentBaseURL:     &config.UsercontentBaseURL,
-		HTTPClient:             sharedClient,
-		UseCrawlbase:           config.UseCrawlbase,
-		CrawlbaseAPIKey:        config.CrawlbaseAPIKey,
-		UseZyte:                config.UseZyte,
-		ZyteAPIKey:             config.ZyteAPIKey,
-		TryZyteBeforeCrawlbase: config.TryZyteBeforeCrawlbase,
+		DB:                 dbPool,
+		Storage:            s3Client,
+		UsercontentBucket:  &config.UsercontentBucket,
+		UsercontentBaseURL: &config.UsercontentBaseURL,
+		HTTPClient:         sharedClient,
+		BrightDataZone:     config.BrightDataZone,
+		BrightDataAPIKey:   config.BrightDataAPIKey,
 	}
 
 	router.Get("/ping", func(w http.ResponseWriter, r *http.Request) {

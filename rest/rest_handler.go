@@ -7,14 +7,11 @@ import (
 )
 
 type RESTHandler struct {
-	DB                     *pgxpool.Pool
-	Storage                *s3.Client
-	UsercontentBucket      *string
-	UsercontentBaseURL     *string
-	HTTPClient             *http.Client
-	UseCrawlbase           bool
-	CrawlbaseAPIKey        string
-	UseZyte                bool
-	ZyteAPIKey             string
-	TryZyteBeforeCrawlbase bool
+	DB                 *pgxpool.Pool
+	Storage            *s3.Client
+	UsercontentBucket  *string
+	UsercontentBaseURL *string
+	HTTPClient         *http.Client
+	BrightDataZone     string
+	BrightDataAPIKey   string
 }

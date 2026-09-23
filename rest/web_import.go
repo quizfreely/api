@@ -3,7 +3,6 @@ package rest
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"github.com/PuerkitoBio/goquery"
@@ -11,11 +10,8 @@ import (
 	"github.com/rs/zerolog/log"
 	"io"
 	"net/http"
-	"net/url"
-	"time"
-	// "os"
-	// "path/filepath"
 	"strings"
+	"time"
 )
 
 func (rh *RESTHandler) WebImport(w http.ResponseWriter, r *http.Request) {
@@ -42,45 +38,32 @@ func (rh *RESTHandler) WebImport(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var reader io.Reader
-	if rh.UseZyte && (rh.TryZyteBeforeCrawlbase || !rh.UseCrawlbase) {
-		reader, err = rh.zyteReq(reqBody.URL, ctx)
-	} else if rh.UseCrawlbase {
-		reader, err = rh.crawlbaseReq(reqBody.URL, ctx)
+	// if rh.UseZyte && (rh.TryZyteBeforeCrawlbase || !rh.UseCrawlbase) {
+	// 	reader, err = rh.zyteReq(reqBody.URL, ctx)
+	// } else if rh.UseCrawlbase {
+	// 	reader, err = rh.crawlbaseReq(reqBody.URL, ctx)
+	if rh.BrightDataAPIKey != "" && rh.BrightDataZone != "" {
+		reader, err = rh.brightDataReq(reqBody.URL, ctx)
 	} else {
-		log.Error().Err(err).Msg("web import unavailable. use_crawlbase and use_zyte are both disabled/false. check config.toml")
+		log.Error().Err(err).Msg("web import unavailable. bright_data_api_key or bright_data_zone is missing. check config.toml")
 		render.Status(r, 503)
 		render.JSON(w, r, map[string]any{
-			"error": "web import unavailable because use_crawlbase and use_zyte are both disabled/false",
+			"error": "web import unavailable because bright_data_api_key or bright_data_zone is missing",
 		})
 		return
 	}
 
-	if err != nil && rh.UseZyte && rh.TryZyteBeforeCrawlbase && rh.UseCrawlbase {
-		log.Error().Err(err).Msg("web import zyte err on first try")
-		reader, err = rh.crawlbaseReq(reqBody.URL, ctx)
-	} else if err != nil && rh.UseCrawlbase && rh.UseZyte {
-		log.Error().Err(err).Msg("web import crawlbase err on first try")
-		reader, err = rh.zyteReq(reqBody.URL, ctx)
-	}
-
 	if err != nil {
-		log.Error().Err(err).Msg("web import err w crawlbase/zyte req")
+		log.Error().Err(err).Msg("web import err w bright data req")
 		render.Status(r, 500)
 		render.JSON(w, r, map[string]any{
-			"error": "error with crawlbase/zyte request",
+			"error": "error with bright data request",
 		})
 		return
 	}
 
 	terms, err := parse(reader)
 	if err != nil {
-
-		/* for debugging ONLY */
-		// tmpPath, tmpErr := saveToTempFile(reader)
-		// if tmpErr == nil {
-		// 	log.Error().Err(err).Msg("err parsing. saved tmp file to inspect: " + tmpPath)
-		// }
-
 		log.Error().Err(err).Msg("web import parsing err")
 		render.Status(r, 500)
 		render.JSON(w, r, map[string]any{
@@ -94,23 +77,39 @@ func (rh *RESTHandler) WebImport(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (rh *RESTHandler) crawlbaseReq(targetURL string, reqCtx context.Context) (io.Reader, error) {
-	log.Trace().Msg("crawlbase attempted")
+type bdReqBody struct {
+	Zone   string `json:"zone"`
+	URL    string `json:"url"`
+	Format string `json:"format"`
+}
+
+func (rh *RESTHandler) brightDataReq(targetURL string, reqCtx context.Context) (io.Reader, error) {
 	ctx, cancel := context.WithTimeout(reqCtx, 90*time.Second)
 	defer cancel()
 
-	params := url.Values{}
-	params.Add("token", rh.CrawlbaseAPIKey)
-	params.Add("url", targetURL)
-	req, err := http.NewRequestWithContext(
-		ctx,
-		http.MethodGet,
-		"https://api.crawlbase.com/?"+params.Encode(),
-		nil,
+	reqBodyJSON, err := json.Marshal(
+		bdReqBody{
+			Zone:   rh.BrightDataZone,
+			URL:    targetURL,
+			Format: "raw",
+		},
 	)
 	if err != nil {
 		return nil, err
 	}
+
+	req, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodPost,
+		"https://api.brightdata.com/request",
+		bytes.NewBuffer(reqBodyJSON),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+rh.BrightDataAPIKey)
 
 	resp, err := rh.HTTPClient.Do(req)
 	if err != nil {
@@ -124,67 +123,6 @@ func (rh *RESTHandler) crawlbaseReq(targetURL string, reqCtx context.Context) (i
 	}
 
 	return buf, nil
-}
-
-type zyteReqBody struct {
-	URL              string `json:"url"`
-	HTTPResponseBody bool   `json:"httpResponseBody"`
-}
-type zyteRespBody struct {
-	HTTPResponseBody string `json:"httpResponseBody"`
-}
-
-func (rh *RESTHandler) zyteReq(targetURL string, reqCtx context.Context) (io.Reader, error) {
-	log.Trace().Msg("zyte attempted")
-	ctx, cancel := context.WithTimeout(reqCtx, 90*time.Second)
-	defer cancel()
-
-	reqBodyJSON, err := json.Marshal(
-		zyteReqBody{
-			URL:              targetURL,
-			HTTPResponseBody: true,
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequestWithContext(
-		ctx,
-		http.MethodPost,
-		"https://api.zyte.com/v1/extract",
-		bytes.NewBuffer(reqBodyJSON),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.SetBasicAuth(rh.ZyteAPIKey, "")
-
-	resp, err := rh.HTTPClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	var respBody zyteRespBody
-	err = json.Unmarshal(body, &respBody)
-	if err != nil {
-		return nil, err
-	}
-
-	decodedBody, err := base64.StdEncoding.DecodeString(respBody.HTTPResponseBody)
-	if err != nil {
-		return nil, err
-	}
-
-	return bytes.NewReader(decodedBody), nil
 }
 
 func parse(reader io.Reader) ([][]string, error) {
@@ -267,21 +205,3 @@ func parse(reader io.Reader) ([][]string, error) {
 
 	return termDefPairs, nil
 }
-
-// saveToTempFile dumps the raw bytes into a temporary file on the server (for debugging only)
-// returns filename (to log)
-// func saveToTempFile(r io.Reader) (string, error) {
-// 	// Creates a file like /tmp/web-import-failed-123456789.html
-// 	tmpFile, err := os.CreateTemp("", "web-import-failed-*.html")
-// 	if err != nil {
-// 		return "", err
-// 	}
-// 	defer tmpFile.Close()
-//
-// 	if _, err := io.Copy(tmpFile, r); err != nil {
-// 		return "", err
-// 	}
-//
-// 	// Returns the absolute path so we can log it
-// 	return filepath.Abs(tmpFile.Name())
-// }

@@ -21,9 +21,6 @@ type Config struct {
 	EnableWebImport          bool   `toml:"enable_web_import"`
 	WebImportRateLimitReq    int    `toml:"web_import_rate_limit_req"`
 	WebImportRateLimitDur    int    `toml:"web_import_rate_limit_dur"`
-	UseCrawlbase             bool   `toml:"use_crawlbase"`
-	CrawlbaseAPIKey          string `toml:"crawlbase_api_key"`
-	UseZyte                  bool   `toml:"use_zyte"`
-	ZyteAPIKey               string `toml:"zyte_api_key"`
-	TryZyteBeforeCrawlbase   bool   `toml:"try_zyte_before_crawlbase"`
+	BrightDataZone           string `toml:"bright_data_zone"`
+	BrightDataAPIKey         string `toml:"bright_data_api_key"`
 }
