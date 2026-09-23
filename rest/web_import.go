@@ -10,8 +10,8 @@ import (
 	"github.com/rs/zerolog/log"
 	"io"
 	"net/http"
-	"time"
 	"strings"
+	"time"
 )
 
 func (rh *RESTHandler) WebImport(w http.ResponseWriter, r *http.Request) {
@@ -78,9 +78,9 @@ func (rh *RESTHandler) WebImport(w http.ResponseWriter, r *http.Request) {
 }
 
 type bdReqBody struct {
-	Zone              string `json:"zone"`
-	URL              string `json:"url"`
-	Format string   `json:"format"`
+	Zone   string `json:"zone"`
+	URL    string `json:"url"`
+	Format string `json:"format"`
 }
 
 func (rh *RESTHandler) brightDataReq(targetURL string, reqCtx context.Context) (io.Reader, error) {
@@ -89,8 +89,8 @@ func (rh *RESTHandler) brightDataReq(targetURL string, reqCtx context.Context) (
 
 	reqBodyJSON, err := json.Marshal(
 		bdReqBody{
-			Zone:              rh.BrightDataZone,
-			URL:              targetURL,
+			Zone:   rh.BrightDataZone,
+			URL:    targetURL,
 			Format: "raw",
 		},
 	)
@@ -205,4 +205,3 @@ func parse(reader io.Reader) ([][]string, error) {
 
 	return termDefPairs, nil
 }
-

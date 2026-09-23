@@ -7,11 +7,11 @@ import (
 )
 
 type RESTHandler struct {
-	DB                     *pgxpool.Pool
-	Storage                *s3.Client
-	UsercontentBucket      *string
-	UsercontentBaseURL     *string
-	HTTPClient             *http.Client
-	BrightDataZone             string
-	BrightDataAPIKey             string
+	DB                 *pgxpool.Pool
+	Storage            *s3.Client
+	UsercontentBucket  *string
+	UsercontentBaseURL *string
+	HTTPClient         *http.Client
+	BrightDataZone     string
+	BrightDataAPIKey   string
 }
