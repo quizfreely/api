@@ -1,6 +1,6 @@
 module quizfreely/api
 
-go 1.24.5
+go 1.26
 
 require (
 	github.com/99designs/gqlgen v0.17.78
@@ -90,6 +90,7 @@ require (
 	github.com/moby/sys/userns v0.1.0 // indirect
 	github.com/moby/term v0.5.0 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
+	github.com/open-spaced-repetition/go-fsrs/v4 v4.0.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect

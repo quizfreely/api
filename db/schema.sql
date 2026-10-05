@@ -1,4 +1,4 @@
-\restrict mo6n5HdMg4j3S8AH3tebezXeQ3nRiX8FB9dfAHBTImNwcIEbNtcc14L7VAJACVI
+\restrict wEhcUJPzKQkDkWR456e1xglPRF0pWUXxuZDYakVpAaza2aZ2RbWqk3iGks7kHDO
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -201,14 +201,14 @@ CREATE TABLE public.folders (
 CREATE TABLE public.fsrs_cards (
     term_id uuid NOT NULL,
     user_id uuid NOT NULL,
-    difficulty double precision NOT NULL,
+    difficulty real NOT NULL,
     due timestamp with time zone NOT NULL,
     lapses integer NOT NULL,
     last_review timestamp with time zone,
     learning_steps integer NOT NULL,
     reps integer NOT NULL,
     scheduled_days integer NOT NULL,
-    stability double precision NOT NULL,
+    stability real NOT NULL,
     state public.fsrs_state NOT NULL
 );
 
@@ -221,13 +221,13 @@ CREATE TABLE public.fsrs_review_logs (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     term_id uuid,
     user_id uuid,
-    difficulty double precision NOT NULL,
+    difficulty real NOT NULL,
     due timestamp with time zone NOT NULL,
     learning_steps integer NOT NULL,
     rating public.fsrs_rating NOT NULL,
     review timestamp with time zone NOT NULL,
     scheduled_days integer NOT NULL,
-    stability double precision NOT NULL,
+    stability real NOT NULL,
     state public.fsrs_state NOT NULL
 );
 
@@ -732,7 +732,7 @@ ALTER TABLE ONLY public.folders
 --
 
 ALTER TABLE ONLY public.fsrs_cards
-    ADD CONSTRAINT fsrs_cards_term_id_fkey FOREIGN KEY (term_id) REFERENCES public.terms(id);
+    ADD CONSTRAINT fsrs_cards_term_id_fkey FOREIGN KEY (term_id) REFERENCES public.terms(id) ON DELETE CASCADE;
 
 
 --
@@ -740,7 +740,7 @@ ALTER TABLE ONLY public.fsrs_cards
 --
 
 ALTER TABLE ONLY public.fsrs_cards
-    ADD CONSTRAINT fsrs_cards_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id);
+    ADD CONSTRAINT fsrs_cards_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
 
 
 --
@@ -748,7 +748,7 @@ ALTER TABLE ONLY public.fsrs_cards
 --
 
 ALTER TABLE ONLY public.fsrs_review_logs
-    ADD CONSTRAINT fsrs_review_logs_term_id_fkey FOREIGN KEY (term_id) REFERENCES public.terms(id);
+    ADD CONSTRAINT fsrs_review_logs_term_id_fkey FOREIGN KEY (term_id) REFERENCES public.terms(id) ON DELETE CASCADE;
 
 
 --
@@ -756,7 +756,7 @@ ALTER TABLE ONLY public.fsrs_review_logs
 --
 
 ALTER TABLE ONLY public.fsrs_review_logs
-    ADD CONSTRAINT fsrs_review_logs_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id);
+    ADD CONSTRAINT fsrs_review_logs_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
 
 
 --
@@ -947,7 +947,7 @@ ALTER TABLE ONLY public.terms
 -- PostgreSQL database dump complete
 --
 
-\unrestrict mo6n5HdMg4j3S8AH3tebezXeQ3nRiX8FB9dfAHBTImNwcIEbNtcc14L7VAJACVI
+\unrestrict wEhcUJPzKQkDkWR456e1xglPRF0pWUXxuZDYakVpAaza2aZ2RbWqk3iGks7kHDO
 
 
 --
@@ -996,4 +996,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('202606291100'),
     ('202606301100'),
     ('202607012025'),
-    ('202608082030');
+    ('202608082030'),
+    ('202610051750');
