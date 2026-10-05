@@ -872,19 +872,9 @@ RETURNING
 				term_incorrect_count = term_progress.term_incorrect_count + EXCLUDED.term_incorrect_count,
 				def_correct_count = term_progress.def_correct_count + EXCLUDED.def_correct_count,
 				def_incorrect_count = term_progress.def_incorrect_count + EXCLUDED.def_incorrect_count
-			RETURNING term_progress.id,
-				to_char(term_progress.term_first_reviewed_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as term_first_reviewed_at,
-				to_char(term_progress.term_last_reviewed_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as term_last_reviewed_at,
-				term_progress.term_review_count,
-				to_char(term_progress.def_first_reviewed_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as def_first_reviewed_at,
-				to_char(term_progress.def_last_reviewed_at, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as def_last_reviewed_at,
-				term_progress.def_review_count,
-				term_progress.term_correct_count, term_progress.term_incorrect_count,
-				term_progress.def_correct_count, term_progress.def_incorrect_count
 		`, strings.Join(valueStrings, ","))
 
-		var results []*model.TermProgress
-		if err := pgxscan.Select(ctx, tx, &results, query, valueArgs...); err != nil {
+		if _, err := tx.Exec(ctx, query, valueArgs...); err != nil {
 			return nil, fmt.Errorf("bulk upsert of term progress failed: %w", err)
 		}
 	}
