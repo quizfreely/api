@@ -491,12 +491,12 @@ func (r *mutationResolver) RecordPracticeTest(ctx context.Context, input model.P
 	defer tx.Rollback(ctx)
 
 	var questionsCorrect int32 = 0
-	var questionsTotal int32 = int32(len(input.Questions))
 
 	nowStr := time.Now().Format(time.RFC3339)
 	termProgressMap := make(map[string]*model.TermProgressInput)
 
 	var questionRows []model.QuestionRow
+	var questionInputs []*model.QuestionInput
 	var allTermIDs []string
 
 	for i, q := range input.Questions {
@@ -585,6 +585,7 @@ func (r *mutationResolver) RecordPracticeTest(ctx context.Context, input model.P
 			Position:   int32(i),
 			Data:       dataBytes,
 		})
+		questionInputs = append(questionInputs, q)
 
 		if termID == "" {
 			continue
@@ -684,7 +685,7 @@ RETURNING
 	questions_total`,
 		authedUser.ID,
 		questionsCorrect,
-		questionsTotal,
+		int32(len(questionInputs)),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("database error in RecordPracticeTest: %w", err)
@@ -725,7 +726,7 @@ RETURNING
 
 			var answeredTermID *string
 			var answeredString *string
-			qInput := input.Questions[i]
+			qInput := questionInputs[i]
 
 			if qInput.Mcq != nil {
 				mcq := qInput.Mcq
