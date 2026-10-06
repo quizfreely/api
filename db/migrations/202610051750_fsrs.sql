@@ -3,8 +3,8 @@ drop table if exists fsrs_cards;
 drop table if exists fsrs_review_logs;
 
 create table fsrs_cards (
-    term_id uuid references terms(id) on delete cascade,
-    user_id uuid references auth.users(id) on delete cascade,
+    term_id uuid not null references terms(id) on delete cascade,
+    user_id uuid not null references auth.users(id) on delete cascade,
     difficulty real not null,
     due timestamptz not null,
     lapses int not null,
@@ -20,8 +20,8 @@ grant select, insert, update, delete on fsrs_cards to quizfreely_api;
 
 create table fsrs_review_logs (
     id uuid primary key default gen_random_uuid(),
-    term_id uuid references terms(id) on delete cascade,
-    user_id uuid references auth.users(id) on delete cascade,
+    term_id uuid not null references terms(id) on delete cascade,
+    user_id uuid not null references auth.users(id) on delete cascade,
     difficulty real not null,
     due timestamptz not null,
     learning_steps int not null,
