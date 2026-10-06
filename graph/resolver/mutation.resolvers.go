@@ -11,11 +11,13 @@ import (
 	"fmt"
 	"quizfreely/api/auth"
 	"quizfreely/api/graph"
+	"quizfreely/api/graph/loader"
 	"quizfreely/api/graph/model"
 	"strings"
 	"time"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
+	fsrs "github.com/open-spaced-repetition/go-fsrs/v4"
 	pgx "github.com/jackc/pgx/v5"
 	"github.com/rs/zerolog/log"
 )
@@ -492,8 +494,11 @@ func (r *mutationResolver) RecordPracticeTest(ctx context.Context, input model.P
 
 	var questionsCorrect int32 = 0
 
-	nowStr := time.Now().Format(time.RFC3339)
+	now := time.Now()
+	nowStr := now.Format(time.RFC3339)
 	termProgressMap := make(map[string]*model.TermProgressInput)
+	fsrsRatingsByTerm := make(map[string][]fsrs.Rating)
+	var fsrsTermOrder []string
 
 	var questionRows []model.QuestionRow
 	var questionInputs []*model.QuestionInput
@@ -599,6 +604,15 @@ func (r *mutationResolver) RecordPracticeTest(ctx context.Context, input model.P
 			termProgressMap[termID] = tp
 		}
 
+		if _, ok := fsrsRatingsByTerm[termID]; !ok {
+			fsrsTermOrder = append(fsrsTermOrder, termID)
+		}
+		if correct {
+			fsrsRatingsByTerm[termID] = append(fsrsRatingsByTerm[termID], fsrs.Good)
+		} else {
+			fsrsRatingsByTerm[termID] = append(fsrsRatingsByTerm[termID], fsrs.Again)
+		}
+
 		var termCorrectIncrease int32
 		var termIncorrectIncrease int32
 		var defCorrectIncrease int32
@@ -676,13 +690,13 @@ func (r *mutationResolver) RecordPracticeTest(ctx context.Context, input model.P
 		tx,
 		&practiceTest,
 		`INSERT INTO practice_tests
-	(timestamp, user_id, questions_correct, questions_total)
-VALUES (now(), $1, $2, $3)
-RETURNING
-	id,
-	to_char(timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as timestamp,
-	questions_correct,
-	questions_total`,
+			(timestamp, user_id, questions_correct, questions_total)
+		VALUES (now(), $1, $2, $3)
+		RETURNING
+			id,
+			to_char(timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MSTZH:TZM') as timestamp,
+			questions_correct,
+			questions_total`,
 		authedUser.ID,
 		questionsCorrect,
 		int32(len(questionInputs)),
@@ -880,11 +894,206 @@ RETURNING
 		}
 	}
 
+	if len(fsrsTermOrder) > 0 {
+		existingCards, err := loader.GETFSRSCardsByTermIDs(ctx, fsrsTermOrder)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load existing fsrs cards: %w", err)
+		}
+
+		fsrsScheduler := fsrs.NewFSRS(fsrs.DefaultParam())
+		var cardUpdates []fsrsCardUpdate
+		var reviewLogWrites []fsrsReviewLogWrite
+
+		for i, termID := range fsrsTermOrder {
+			var card fsrs.Card
+			if existingCards != nil && i < len(existingCards) && existingCards[i] != nil {
+				card, err = fsrsCardFromModel(existingCards[i])
+				if err != nil {
+					return nil, fmt.Errorf("failed to parse fsrs card for term %s: %w", termID, err)
+				}
+			} else {
+				card = fsrs.NewCard(now)
+			}
+
+			for _, rating := range fsrsRatingsByTerm[termID] {
+				info, err := fsrsScheduler.Next(card, now, rating)
+				if err != nil {
+					return nil, fmt.Errorf("failed to schedule fsrs card: %w", err)
+				}
+				card = info.Card
+				reviewLogWrites = append(reviewLogWrites, fsrsReviewLogWrite{termID: termID, log: info.ReviewLog})
+			}
+			cardUpdates = append(cardUpdates, fsrsCardUpdate{termID: termID, card: card})
+		}
+
+		// bulk upsert fsrs cards
+		cardValueStrings := make([]string, 0, len(cardUpdates))
+		cardArgs := make([]interface{}, 0, len(cardUpdates)*11)
+		for i, cu := range cardUpdates {
+			base := i*11 + 1
+			cardValueStrings = append(cardValueStrings, fmt.Sprintf(
+				"($%d::uuid,$%d::uuid,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d)",
+				base, base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9, base+10,
+			))
+			cardArgs = append(cardArgs,
+				cu.termID,
+				authedUser.ID,
+				cu.card.Difficulty,
+				cu.card.Due,
+				int32(cu.card.Lapses),
+				cu.card.LastReview,
+				int32(cu.card.RemainingSteps),
+				int32(cu.card.Reps),
+				int32(cu.card.ScheduledDays),
+				cu.card.Stability,
+				fsrsStateToDB(cu.card.State),
+			)
+		}
+		cardQuery := fmt.Sprintf(`
+			INSERT INTO fsrs_cards (
+				term_id, user_id, difficulty, due, lapses, last_review,
+				learning_steps, reps, scheduled_days, stability, state
+			) VALUES %s
+			ON CONFLICT (term_id, user_id) DO UPDATE SET
+				difficulty = EXCLUDED.difficulty,
+				due = EXCLUDED.due,
+				lapses = EXCLUDED.lapses,
+				last_review = EXCLUDED.last_review,
+				learning_steps = EXCLUDED.learning_steps,
+				reps = EXCLUDED.reps,
+				scheduled_days = EXCLUDED.scheduled_days,
+				stability = EXCLUDED.stability,
+				state = EXCLUDED.state`, strings.Join(cardValueStrings, ","))
+		if _, err := tx.Exec(ctx, cardQuery, cardArgs...); err != nil {
+			return nil, fmt.Errorf("failed to upsert fsrs cards: %w", err)
+		}
+
+		if len(reviewLogWrites) > 0 {
+			logValueStrings := make([]string, 0, len(reviewLogWrites))
+			logArgs := make([]interface{}, 0, len(reviewLogWrites)*10)
+			for i, rlw := range reviewLogWrites {
+				base := i*10 + 1
+				logValueStrings = append(logValueStrings, fmt.Sprintf(
+					"($%d::uuid,$%d::uuid,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d)",
+					base, base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9,
+				))
+				logArgs = append(logArgs,
+					rlw.termID,
+					authedUser.ID,
+					rlw.log.Difficulty,
+					rlw.log.Due,
+					int32(rlw.log.RemainingSteps),
+					fsrsRatingToDB(rlw.log.Rating),
+					rlw.log.Review,
+					int32(rlw.log.ScheduledDays),
+					rlw.log.Stability,
+					fsrsStateToDB(rlw.log.State),
+				)
+			}
+			logQuery := fmt.Sprintf(`
+				INSERT INTO fsrs_review_logs (
+					term_id, user_id, difficulty, due, learning_steps, rating,
+					review, scheduled_days, stability, state
+				) VALUES %s`, strings.Join(logValueStrings, ","))
+			if _, err := tx.Exec(ctx, logQuery, logArgs...); err != nil {
+				return nil, fmt.Errorf("failed to insert fsrs review logs: %w", err)
+			}
+		}
+	}
+
 	if err := tx.Commit(ctx); err != nil {
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
 	return &practiceTest, nil
+}
+
+type fsrsCardUpdate struct {
+	termID string
+	card   fsrs.Card
+}
+
+type fsrsReviewLogWrite struct {
+	termID string
+	log    fsrs.ReviewLog
+}
+
+func fsrsStateToDB(s fsrs.State) string {
+	switch s {
+	case fsrs.New:
+		return "NEW"
+	case fsrs.Learning:
+		return "LEARNING"
+	case fsrs.Review:
+		return "REVIEW"
+	case fsrs.Relearning:
+		return "RELEARNING"
+	}
+	return "NEW"
+}
+
+func fsrsStateFromModel(s model.FSRSState) fsrs.State {
+	switch s {
+	case model.FSRSStateNew:
+		return fsrs.New
+	case model.FSRSStateLearning:
+		return fsrs.Learning
+	case model.FSRSStateReview:
+		return fsrs.Review
+	case model.FSRSStateRelearning:
+		return fsrs.Relearning
+	}
+	return fsrs.New
+}
+
+func fsrsRatingToDB(r fsrs.Rating) string {
+	switch r {
+	case fsrs.Again:
+		return "AGAIN"
+	case fsrs.Hard:
+		return "HARD"
+	case fsrs.Good:
+		return "GOOD"
+	case fsrs.Easy:
+		return "EASY"
+	}
+	return "MANUAL"
+}
+
+func parseFSRSTime(s string) (time.Time, error) {
+	t, err := time.Parse("2006-01-02T15:04:05-07:00", s)
+	if err != nil {
+		t, err = time.Parse("2006-01-02T15:04:05Z07:00", s)
+		if err != nil {
+			return time.Time{}, fmt.Errorf("failed to parse timestamp %q: %w", s, err)
+		}
+	}
+	return t, nil
+}
+
+func fsrsCardFromModel(c *model.FSRSCard) (fsrs.Card, error) {
+	due, err := parseFSRSTime(c.Due)
+	if err != nil {
+		return fsrs.Card{}, err
+	}
+	var lastReview time.Time
+	if c.LastReview != nil {
+		lastReview, err = parseFSRSTime(*c.LastReview)
+		if err != nil {
+			return fsrs.Card{}, err
+		}
+	}
+	return fsrs.Card{
+		Due:            due,
+		Stability:      c.Stability,
+		Difficulty:     c.Difficulty,
+		ScheduledDays:  uint64(c.ScheduledDays),
+		Reps:           uint64(c.Reps),
+		Lapses:         uint64(c.Lapses),
+		State:          fsrsStateFromModel(c.State),
+		LastReview:     lastReview,
+		RemainingSteps: int(c.LearningSteps),
+	}, nil
 }
 
 // UpdatePracticeTestQuestion is the resolver for the updatePracticeTestQuestion field.
