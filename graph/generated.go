@@ -204,6 +204,7 @@ type ComplexityRoot struct {
 		SubjectsByCategory            func(childComplexity int, category *model.SubjectCategory) int
 		SubjectsByKeyword             func(childComplexity int, keyword *string) int
 		Term                          func(childComplexity int, id string) int
+		TermCount                     func(childComplexity int) int
 		Terms                         func(childComplexity int, ids []string) int
 		User                          func(childComplexity int, id string) int
 	}
@@ -374,6 +375,7 @@ type QueryResolver interface {
 	SubjectsByCategory(ctx context.Context, category *model.SubjectCategory) ([]*model.Subject, error)
 	AllSubjects(ctx context.Context) ([]*model.Subject, error)
 	Folder(ctx context.Context, id string) (*model.Folder, error)
+	TermCount(ctx context.Context) (int32, error)
 	StudysetCount(ctx context.Context, after *string, includePrivate *bool, includeDrafts *bool) (int32, error)
 	StudysetUpdateCount(ctx context.Context, after *string, includePrivate *bool, includeDrafts *bool) (int32, error)
 	SearchStudysetCount(ctx context.Context, q string) (int32, error)
@@ -1455,6 +1457,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.Term(childComplexity, args["id"].(string)), true
+
+	case "Query.termCount":
+		if e.complexity.Query.TermCount == nil {
+			break
+		}
+
+		return e.complexity.Query.TermCount(childComplexity), true
 
 	case "Query.terms":
 		if e.complexity.Query.Terms == nil {
@@ -8700,6 +8709,50 @@ func (ec *executionContext) fieldContext_Query_folder(ctx context.Context, field
 	if fc.Args, err = ec.field_Query_folder_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_termCount(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_termCount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().TermCount(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int32)
+	fc.Result = res
+	return ec.marshalNInt2int32(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_termCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
 	}
 	return fc, nil
 }
@@ -16965,6 +17018,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_folder(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "termCount":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_termCount(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
 				return res
 			}
 

@@ -1226,6 +1226,16 @@ func (r *queryResolver) Folder(ctx context.Context, id string) (*model.Folder, e
 	return folder, nil
 }
 
+// TermCount is the resolver for the termCount field.
+func (r *queryResolver) TermCount(ctx context.Context) (int32, error) {
+	var count int32
+	err := r.DB.QueryRow(ctx, "SELECT COUNT(*) FROM terms").Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get total terms count: %w", err)
+	}
+	return count, nil
+}
+
 // StudysetCount is the resolver for the studysetCount field.
 func (r *queryResolver) StudysetCount(ctx context.Context, after *string, includePrivate *bool, includeDrafts *bool) (int32, error) {
 	incPrivate := false
